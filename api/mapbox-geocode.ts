@@ -12,7 +12,7 @@ export default async function handler(req: any, res: any) {
     return
   }
 
-  const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN || process.env.VITE_PUBLIC_MAPBOX_TOKEN
+  const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN
   if (!mapboxToken) {
     res.status(500).json({ error: 'Missing MAPBOX_ACCESS_TOKEN' })
     return
