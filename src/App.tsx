@@ -23,7 +23,7 @@ function App() {
       <main className="phone-shell">
         <header className="topbar">
           <div className="brand-wrap">
-            <img src="/assets/logo/bzzo-transparent.png" alt="Buzo" className="brand-logo" />
+            <img src="/assets/logo/buzo-app-logo.png" alt="Buzo" className="brand-logo" />
           </div>
           <div className="actions">
             {tab === 'profile' ? (
