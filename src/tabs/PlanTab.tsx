@@ -16,7 +16,12 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
       transition={{ duration: 0.2 }}
     >
       <article className="event-card compact">
-        <img src={event.image} alt={event.title} />
+        <img
+          src={event.image}
+          alt={event.title}
+          loading="lazy"
+          decoding="async"
+        />
         <div className="event-meta">
           <span className="chip">Neon Pulse</span>
           <span className="chip verified">92 Verified</span>

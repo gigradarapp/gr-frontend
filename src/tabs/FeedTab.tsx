@@ -76,9 +76,15 @@ export function FeedTab({ onOpenEvent, onAsk }: FeedTabProps) {
       <div className="section-title">Friend Activity</div>
 
       <div className="card-stack">
-        {events.slice(0, 2).map((event) => (
+        {events.slice(0, 2).map((event, index) => (
           <article className="event-card" key={event.id}>
-            <img src={event.image} alt={event.title} />
+            <img
+              src={event.image}
+              alt={event.title}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              fetchPriority={index === 0 ? 'high' : 'low'}
+            />
             <div className="event-meta">
               <span className="chip">{event.genre}</span>
               <span className="chip verified">{event.verified} Verified</span>

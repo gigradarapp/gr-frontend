@@ -36,13 +36,15 @@ export function GigHistoryList({ items, hasMore = false }: Props) {
               {gig.images.length > 0 && (
                 <div className="gig-thumbs">
                   {gig.images.map((src, i) => (
-                      <img
-                        key={i}
-                        src={src}
-                        alt=""
-                        className="gig-thumb"
-                        referrerPolicy="no-referrer"
-                      />
+                    <img
+                      key={i}
+                      src={src}
+                      alt=""
+                      className="gig-thumb"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   ))}
                 </div>
               )}

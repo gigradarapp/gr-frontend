@@ -24,26 +24,59 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
 html,
 body,
 #root {
   margin: 0;
-  min-height: 100%;
 }
 
 body {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  /* Mobile: snappier taps, less accidental double-tap zoom */
+  touch-action: manipulation;
+  overflow: hidden;
+  overflow-x: hidden;
+  overscroll-behavior: none;
   font-family: Sora, Manrope, 'Segoe UI', sans-serif;
   background: radial-gradient(1200px 450px at 25% -10%, rgba(226, 67, 37, 0.3), transparent),
     radial-gradient(800px 350px at 100% 20%, rgba(29, 66, 145, 0.2), transparent), var(--bg);
   color: var(--text);
 }
 
+#root {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
 .app {
   position: relative;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  /* Mobile: edge-to-edge; safe area only (no side gutters). Desktop framed in @media. */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   overflow: hidden;
   color: var(--text);
 }
@@ -73,26 +106,32 @@ body {
 
 .phone-shell {
   position: relative;
-  width: min(100%, 390px);
-  height: min(94vh, 844px);
-  border-radius: 32px;
-  border: 1px solid var(--stroke);
-  background: color-mix(in oklab, var(--bg) 80%, black);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  /* Mobile: full-bleed panel (no floating “device” frame). Desktop restores radius in @media. */
+  border-radius: 0;
+  border: none;
+  background: var(--bg);
+  box-shadow: none;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(6px);
+  backdrop-filter: none;
 }
 
 .topbar {
-  min-height: 66px;
+  min-height: 52px;
   border-bottom: 1px solid var(--stroke);
-  padding: 14px 14px 12px;
+  /* Extra top inset on phones so logo/actions sit below the status bar comfort zone */
+  padding: 14px 12px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .brand-wrap {
@@ -103,7 +142,7 @@ body {
 }
 
 .brand-logo {
-  height: 48px;
+  height: 34px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -609,7 +648,10 @@ body {
 }
 
 .bottom-nav {
-  min-height: 74px;
+  flex-shrink: 0;
+  min-height: 56px;
+  padding-top: 10px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   border-top: 1px solid var(--stroke);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -622,9 +664,10 @@ body {
   color: var(--muted);
   display: grid;
   place-items: center;
-  gap: 4px;
-  font-size: 0.72rem;
-  min-height: 74px;
+  gap: 2px;
+  font-size: 0.68rem;
+  min-height: 48px;
+  padding: 4px 4px 6px;
 }
 
 .nav-item.active {
@@ -707,9 +750,54 @@ body {
   font-size: 1.35rem;
 }
 
+/* Narrow screens: prefer small viewport height so layout matches URL-bar-visible Chrome/Safari */
+@media (max-width: 767.98px) {
+  html {
+    min-height: 100svh;
+  }
+
+  body,
+  #root {
+    min-height: 100svh;
+  }
+
+  .app {
+    max-height: 100svh;
+  }
+}
+
+.tab-suspense-fallback {
+  flex: 1;
+  min-height: 0;
+}
+
 @media (min-width: 768px) {
+  .app {
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
   .phone-shell {
     width: min(100%, 420px);
+    max-width: min(100%, 420px);
+    flex: 0 1 auto;
+    height: min(844px, calc(100dvh - 40px));
+    max-height: min(844px, calc(100dvh - 40px));
+    border-radius: 32px;
+    border: 1px solid var(--stroke);
+    background: color-mix(in oklab, var(--bg) 80%, black);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+  }
+
+  .brand-logo {
+    height: 40px;
+  }
+
+  .topbar {
+    min-height: 58px;
+    padding: 10px 14px;
   }
 }
 
@@ -750,6 +838,12 @@ body {
   flex: 1;
   height: 1px;
   background: var(--stroke);
+}
+
+.section-title-count {
+  font-weight: 600;
+  opacity: 0.88;
+  letter-spacing: 0.08em;
 }
 
 /* Hero — reference: broken ring, grayscale portrait, tight stack */

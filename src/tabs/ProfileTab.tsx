@@ -45,6 +45,8 @@ export function ProfileTab({
 
   const previewGigs = gigHistory.slice(0, PREVIEW_COUNT)
   const remaining = gigHistory.length - PREVIEW_COUNT
+  const tasteCount = tasteGenres.length
+  const badgeCount = badges.length
 
   return (
     <motion.div
@@ -81,6 +83,8 @@ export function ProfileTab({
                 src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80"
                 alt="Vincenzo_K"
                 className="profile-avatar-img"
+                decoding="async"
+                fetchPriority="high"
               />
             </div>
           </div>
@@ -107,8 +111,12 @@ export function ProfileTab({
       </div>
 
       {/* Taste Identity */}
-      <section className="profile-section">
-        <div className="section-title-rule"><span>TASTE IDENTITY</span></div>
+      <section className="profile-section" aria-labelledby="profile-taste-heading">
+        <div className="section-title-rule" id="profile-taste-heading">
+          <span>
+            Taste identity <span className="section-title-count">({tasteCount})</span>
+          </span>
+        </div>
         <div className="taste-tags">
           {tasteGenres.map((g) => (
             <span
@@ -122,8 +130,12 @@ export function ProfileTab({
       </section>
 
       {/* Reputation */}
-      <section className="profile-section">
-        <div className="section-title-rule"><span>REPUTATION</span></div>
+      <section className="profile-section" aria-labelledby="profile-reputation-heading">
+        <div className="section-title-rule" id="profile-reputation-heading">
+          <span>
+            Reputation <span className="section-title-count">({badgeCount})</span>
+          </span>
+        </div>
         <div className="badges-row">
           {badges.map(({ icon: Icon, label }, i) => {
             const active = i === 0 || i === 2

@@ -163,7 +163,12 @@ export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Exp
             Tiong Bahru is swinging tonight. I found two spots with high credibility and matching vibe.
           </div>
           <article className="event-card compact">
-            <img src={event.image} alt={event.title} />
+            <img
+              src={event.image}
+              alt={event.title}
+              loading="lazy"
+              decoding="async"
+            />
             <div className="event-meta">
               <span className="chip">Jazz</span>
               <span className="chip verified">94 Verified</span>
@@ -192,7 +197,12 @@ export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Exp
 
       {status === 'done' && resultMode === 'agent' && agentEvent && (
         <article className="event-card compact">
-          <img src={agentEvent.image} alt={agentEvent.title} />
+          <img
+            src={agentEvent.image}
+            alt={agentEvent.title}
+            loading="lazy"
+            decoding="async"
+          />
           <div className="event-meta">
             <span className="chip">{agentEvent.genre}</span>
             <span className="chip verified">{agentEvent.verified} Verified</span>

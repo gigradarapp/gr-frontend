@@ -38,6 +38,8 @@ function GigRow({ gig, isLast }: { gig: GigEntry; isLast: boolean }) {
                 alt=""
                 className="gig-thumb"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                decoding="async"
               />
             ))}
           </div>

@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Moon, Sun, X } from 'lucide-react'
 import { events } from './demoData'
 import { useAppState } from './store/appStore'
 import { tabNavItems } from './tabNavigation'
-import { ExploreTab, FeedTab, PlanTab, ProfileTab } from './tabs'
+import { FeedTab } from './tabs/FeedTab'
 import { GigHistoryScreen } from './screens/GigHistoryScreen'
 import {
   SettingsScreen,
@@ -13,6 +13,16 @@ import {
   FeedbackScreen,
   EmailLoginScreen,
 } from './screens/settings'
+
+const ExploreTab = lazy(() =>
+  import('./tabs/ExploreTab').then((m) => ({ default: m.ExploreTab })),
+)
+const PlanTab = lazy(() =>
+  import('./tabs/PlanTab').then((m) => ({ default: m.PlanTab })),
+)
+const ProfileTab = lazy(() =>
+  import('./tabs/ProfileTab').then((m) => ({ default: m.ProfileTab })),
+)
 
 function App() {
   const {
@@ -45,7 +55,13 @@ function App() {
       <main className="phone-shell">
         <header className="topbar">
           <div className="brand-wrap">
-            <img src="/assets/logo/buzo-app-logo.png" alt="Buzo" className="brand-logo" />
+            <img
+              src="/assets/logo/buzo-app-logo.png"
+              alt="Buzo"
+              className="brand-logo"
+              decoding="async"
+              fetchPriority="high"
+            />
           </div>
           <div className="actions">
             <button
@@ -60,24 +76,26 @@ function App() {
         </header>
 
         <section className="screen">
-          {tab === 'feed' && (
-            <FeedTab
-              onOpenEvent={openEvent}
-              onAsk={(prompt) => {
-                setExplorePrefill(prompt)
-                setTab('explore')
-              }}
-            />
-          )}
-          {tab === 'explore' && (
-            <ExploreTab
-              onOpenEvent={openEvent}
-              prefillPrompt={explorePrefill}
-              onConsumePrefill={() => setExplorePrefill('')}
-            />
-          )}
-          {tab === 'plan' && <PlanTab onOpenEvent={openEvent} />}
-          {tab === 'profile' && <ProfileTab />}
+          <Suspense fallback={<div className="tab-suspense-fallback" aria-hidden />}>
+            {tab === 'feed' && (
+              <FeedTab
+                onOpenEvent={openEvent}
+                onAsk={(prompt) => {
+                  setExplorePrefill(prompt)
+                  setTab('explore')
+                }}
+              />
+            )}
+            {tab === 'explore' && (
+              <ExploreTab
+                onOpenEvent={openEvent}
+                prefillPrompt={explorePrefill}
+                onConsumePrefill={() => setExplorePrefill('')}
+              />
+            )}
+            {tab === 'plan' && <PlanTab onOpenEvent={openEvent} />}
+            {tab === 'profile' && <ProfileTab />}
+          </Suspense>
         </section>
 
         <AnimatePresence>
@@ -121,7 +139,13 @@ function App() {
             <button className="close" type="button" onClick={closeEvent}>
               <X size={16} />
             </button>
-            <img src={activeEvent.image} alt={activeEvent.title} className="sheet-image" />
+            <img
+              src={activeEvent.image}
+              alt={activeEvent.title}
+              className="sheet-image"
+              loading="lazy"
+              decoding="async"
+            />
             <div className="sheet-content">
               <div className="chip-row">
                 <span className="chip live">Live Now</span>
