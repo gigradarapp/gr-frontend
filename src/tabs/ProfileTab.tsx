@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 import { Lock, Star, Building2, Moon, Settings, Zap, Trophy, ChevronRight } from 'lucide-react'
-import { gigHistory } from '../demoData'
+import { buzzSummary, getBuzzTierState, gigHistory } from '../demoData'
 import { useAppState } from '../store/appStore'
 import { GigHistoryList } from '../components/GigHistoryList'
 
@@ -38,7 +38,14 @@ const badges = [
 export function ProfileTab({
   experienceRingFill = PROFILE_EXPERIENCE_RING_FALLBACK,
 }: ProfileTabProps) {
-  const { openGigHistory, openSettings } = useAppState()
+  const { openGigHistory, openSettings, openBuzzPoints, userProfile } = useAppState()
+  const { current: buzzTier } = getBuzzTierState(buzzSummary.total)
+  const headline =
+    userProfile.displayName.trim() !== ''
+      ? userProfile.displayName.trim()
+      : `@${userProfile.username}`
+  const avatarLabel =
+    userProfile.displayName.trim() !== '' ? userProfile.displayName.trim() : userProfile.username
   const ringFill = Math.min(1, Math.max(0, experienceRingFill))
   const ringPercent = Math.round(ringFill * 100)
   const ringStyle = { '--ring-fill': ringFill } as CSSProperties
@@ -80,18 +87,31 @@ export function ProfileTab({
           >
             <div className="profile-avatar-inner">
               <img
-                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80"
-                alt="Vincenzo_K"
+                src={userProfile.avatarUrl}
+                alt={avatarLabel}
                 className="profile-avatar-img"
                 decoding="async"
                 fetchPriority="high"
               />
             </div>
           </div>
-          <span className="profile-rank-badge">SCENE REGULAR</span>
+          <span className="profile-rank-badge">
+            Lv.{buzzTier.level} {buzzTier.label}
+          </span>
         </div>
-        <h2 className="profile-username">@VINCENZO_K</h2>
-        <p className="profile-buzz">9,420 BUZZ POINTS</p>
+        <h2 className="profile-display-name">{headline}</h2>
+        <span className="profile-handle-pill">@{userProfile.username}</span>
+        <button
+          type="button"
+          className="profile-buzz-row"
+          onClick={openBuzzPoints}
+          aria-label="Open buzz points details"
+        >
+          <span className="profile-buzz">
+            {buzzSummary.total.toLocaleString('en-US')} BUZZ POINTS
+          </span>
+          <ChevronRight size={16} className="profile-buzz-chevron" aria-hidden />
+        </button>
         <div className="profile-stats-row">
           <div className="profile-stat">
             <strong>12</strong>

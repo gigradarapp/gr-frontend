@@ -6,8 +6,10 @@ import { useAppState } from './store/appStore'
 import { tabNavItems } from './tabNavigation'
 import { FeedTab } from './tabs/FeedTab'
 import { GigHistoryScreen } from './screens/GigHistoryScreen'
+import { BuzzPointsScreen } from './screens/BuzzPointsScreen'
 import {
   SettingsScreen,
+  EditProfileScreen,
   LanguageScreen,
   PrivacySafetyScreen,
   FeedbackScreen,
@@ -30,11 +32,13 @@ function App() {
     theme,
     activeEventId,
     showGigHistory,
+    showBuzzPoints,
     showSettings,
     showLanguage,
     showPrivacySafety,
     showFeedback,
     showEmailLogin,
+    showEditProfile,
     setTab,
     setTheme,
     openEvent,
@@ -100,7 +104,9 @@ function App() {
 
         <AnimatePresence>
           {showGigHistory && <GigHistoryScreen key="gig-history" />}
+          {showBuzzPoints && <BuzzPointsScreen key="buzz-points" />}
           {showSettings && <SettingsScreen key="settings" />}
+          {showEditProfile && <EditProfileScreen key="edit-profile" />}
           {showLanguage && <LanguageScreen key="language" />}
           {showPrivacySafety && <PrivacySafetyScreen key="privacy-safety" />}
           {showFeedback && <FeedbackScreen key="feedback" />}

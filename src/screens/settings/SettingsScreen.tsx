@@ -62,8 +62,14 @@ function SettingsRow({
 }
 
 export function SettingsScreen() {
-  const { closeSettings, openLanguage, openPrivacySafety, openFeedback, openEmailLogin } =
-    useAppState()
+  const {
+    closeSettings,
+    openLanguage,
+    openPrivacySafety,
+    openFeedback,
+    openEmailLogin,
+    openEditProfile,
+  } = useAppState()
 
   const handleLogout = () => {
     closeSettings()
@@ -101,7 +107,7 @@ export function SettingsScreen() {
         </SettingsGroup>
 
         <SettingsGroup title="Account">
-          <SettingsRow icon={User} label="Edit profile" onClick={noop} />
+          <SettingsRow icon={User} label="Edit profile" onClick={openEditProfile} />
           <SettingsRow icon={Mail} label="Change Email & Login" onClick={openEmailLogin} />
         </SettingsGroup>
 

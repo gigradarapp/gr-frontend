@@ -1,4 +1,5 @@
 export { SettingsScreen } from './SettingsScreen'
+export { EditProfileScreen } from './EditProfileScreen'
 export { LanguageScreen } from './LanguageScreen'
 export { PrivacySafetyScreen } from './PrivacySafetyScreen'
 export { FeedbackScreen } from './FeedbackScreen'

@@ -271,3 +271,111 @@ export const gigHistory: GigEntry[] = [
     images: [],
   },
 ]
+
+/**
+ * Visual palette for tier cards / hero (gradients). Not shown as user-facing labels.
+ * Event-goer tier names live in `label` + `id`.
+ */
+export type BuzzTierMetal = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'black'
+
+export type BuzzTierDef = {
+  id: string
+  /** Display level, e.g. Lv.3 */
+  level: number
+  metal: BuzzTierMetal
+  label: string
+  minPoints: number
+}
+
+export const buzzTiers: BuzzTierDef[] = [
+  { id: 'first_in', level: 1, metal: 'bronze', label: 'First In', minPoints: 0 },
+  { id: 'on_the_floor', level: 2, metal: 'silver', label: 'On the Floor', minPoints: 4_000 },
+  { id: 'scene_regular', level: 3, metal: 'gold', label: 'Scene Regular', minPoints: 8_000 },
+  { id: 'front_row', level: 4, metal: 'platinum', label: 'Front Row', minPoints: 12_000 },
+  { id: 'afters', level: 5, metal: 'diamond', label: 'Afters', minPoints: 20_000 },
+  { id: 'sunrise', level: 6, metal: 'black', label: 'Sunrise', minPoints: 50_000 },
+]
+
+/** Demo buzz balance — replace with API / user stats. */
+export const buzzSummary = {
+  total: 9420,
+} as const
+
+export function getBuzzTierState(total: number) {
+  let currentIndex = 0
+  for (let i = buzzTiers.length - 1; i >= 0; i--) {
+    if (total >= buzzTiers[i].minPoints) {
+      currentIndex = i
+      break
+    }
+  }
+  const current = buzzTiers[currentIndex]
+  const next = buzzTiers[currentIndex + 1]
+  const nextGoal = next?.minPoints ?? current.minPoints
+  const span = next != null ? next.minPoints - current.minPoints : 1
+  const progressToNext =
+    next != null ? Math.min(1, Math.max(0, (total - current.minPoints) / span)) : 1
+  const remaining = next != null ? Math.max(0, next.minPoints - total) : 0
+  return {
+    currentIndex,
+    current,
+    next,
+    nextGoal,
+    progressToNext,
+    remaining,
+    pctToNext: Math.round(progressToNext * 100),
+  }
+}
+
+export type BuzzActivityRow = {
+  id: string
+  title: string
+  subtitle?: string
+  points: number
+  when: string
+}
+
+export const buzzActivities: BuzzActivityRow[] = [
+  {
+    id: 'b1',
+    title: 'Venue check-in',
+    subtitle: 'Berghain · Klubnacht',
+    points: 120,
+    when: '2 days ago',
+  },
+  {
+    id: 'b2',
+    title: 'Post-gig review',
+    subtitle: '4★ + photos',
+    points: 85,
+    when: '3 days ago',
+  },
+  {
+    id: 'b3',
+    title: 'Friend joined on your invite',
+    subtitle: '@MARCO_T',
+    points: 200,
+    when: '1 week ago',
+  },
+  {
+    id: 'b4',
+    title: 'Weekly streak bonus',
+    subtitle: '3 weekends in a row',
+    points: 150,
+    when: '1 week ago',
+  },
+  {
+    id: 'b5',
+    title: 'Check-in',
+    subtitle: 'Shelter Amsterdam',
+    points: 95,
+    when: '2 weeks ago',
+  },
+  {
+    id: 'b6',
+    title: 'Profile milestone',
+    subtitle: '10 cities explored',
+    points: 300,
+    when: '3 weeks ago',
+  },
+]
