@@ -11,7 +11,9 @@ import {
   Mail,
   MapPin,
   MessageSquare,
+  Moon,
   Shield,
+  Sun,
   User,
 } from 'lucide-react'
 import { useAppState } from '../../../store/appStore'
@@ -70,6 +72,8 @@ export function SettingsScreen() {
     openEmailLogin,
     openEditProfile,
     openSubscription,
+    theme,
+    setTheme,
   } = useAppState()
 
   const handleLogout = () => {
@@ -113,6 +117,12 @@ export function SettingsScreen() {
         </SettingsGroup>
 
         <SettingsGroup title="Preferences">
+          <SettingsRow
+            icon={theme === 'dark' ? Moon : Sun}
+            label="Appearance"
+            value={theme === 'dark' ? 'Dark' : 'Light'}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          />
           <SettingsRow icon={MapPin} label="Location & gigs near you" onClick={noop} />
           <SettingsRow icon={Fingerprint} label="Taste & recommendations" onClick={noop} />
           <SettingsRow icon={Globe} label="Language" value="English" onClick={openLanguage} />

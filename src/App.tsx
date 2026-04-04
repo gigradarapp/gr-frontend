@@ -1,8 +1,10 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Moon, Sun, X } from 'lucide-react'
-import { events } from './data/demoData'
+import { Info, Moon, Sun, X, Zap } from 'lucide-react'
+import { events, getPlanDetailPast, getPlanDetailUpcoming } from './data/demoData'
 import { useAppState } from './store/appStore'
+import type { Tab } from './types'
+import { PlanEventDetail } from './views/plan/PlanEventDetail'
 import { tabNavItems } from './config/tabNavigation'
 import { FeedTab } from './views'
 import { BuzzPointsScreen } from './views/profile/BuzzPointsScreen'
@@ -26,6 +28,23 @@ const ProfileTab = lazy(() =>
   import('./views/profile/ProfileTab').then((m) => ({ default: m.ProfileTab })),
 )
 
+type SheetPlanOverlay =
+  | { kind: 'upcoming'; id: string }
+  | { kind: 'past'; id: string }
+
+function tabReturnAriaLabel(t: Tab): string {
+  switch (t) {
+    case 'feed':
+      return 'Back to feed'
+    case 'discover':
+      return 'Back to discover'
+    case 'plan':
+      return 'Back to plan list'
+    case 'profile':
+      return 'Back to profile'
+  }
+}
+
 function App() {
   const {
     tab,
@@ -43,30 +62,94 @@ function App() {
     setTheme,
     openEvent,
     closeEvent,
+    requestPlanDetail,
+    pendingPlanDetail,
+    clearPendingPlanDetail,
   } = useAppState()
   const [discoverPrefill, setDiscoverPrefill] = useState('')
+  const [sheetPlanOverlay, setSheetPlanOverlay] = useState<SheetPlanOverlay | null>(null)
+  const [sheetPlanReturnTab, setSheetPlanReturnTab] = useState<Tab | null>(null)
+
+  useEffect(() => {
+    if (!pendingPlanDetail) return
+    if (pendingPlanDetail.returnTab != null && pendingPlanDetail.returnTab !== 'plan') {
+      setSheetPlanOverlay({ kind: pendingPlanDetail.kind, id: pendingPlanDetail.id })
+      setSheetPlanReturnTab(pendingPlanDetail.returnTab)
+      clearPendingPlanDetail()
+    }
+  }, [pendingPlanDetail, clearPendingPlanDetail])
+
+  useEffect(() => {
+    if (
+      !sheetPlanOverlay ||
+      sheetPlanReturnTab == null ||
+      tab === sheetPlanReturnTab
+    ) {
+      return
+    }
+    setSheetPlanOverlay(null)
+    setSheetPlanReturnTab(null)
+  }, [tab, sheetPlanOverlay, sheetPlanReturnTab])
+
+  const closeSheetPlanOverlay = useCallback(() => {
+    setSheetPlanOverlay(null)
+    setSheetPlanReturnTab(null)
+  }, [])
 
   const activeEvent = useMemo(
     () => events.find((event) => event.id === activeEventId) ?? null,
     [activeEventId],
   )
 
+  const sheetPlanOverlayBody = useMemo(() => {
+    if (!sheetPlanOverlay) return null
+    const data =
+      sheetPlanOverlay.kind === 'upcoming'
+        ? getPlanDetailUpcoming(sheetPlanOverlay.id)
+        : getPlanDetailPast(sheetPlanOverlay.id)
+    if (!data) {
+      return (
+        <div className="plan-detail-overlay-fallback screen-content plan-home">
+          <p className="plan-home-sub">This event is no longer available.</p>
+          <button
+            type="button"
+            className="plan-segment plan-segment--on"
+            onClick={closeSheetPlanOverlay}
+          >
+            {sheetPlanReturnTab ? tabReturnAriaLabel(sheetPlanReturnTab) : 'Back'}
+          </button>
+        </div>
+      )
+    }
+    return (
+      <PlanEventDetail
+        data={data}
+        variant={sheetPlanOverlay.kind}
+        backAriaLabel={
+          sheetPlanReturnTab ? tabReturnAriaLabel(sheetPlanReturnTab) : 'Back'
+        }
+        onBack={closeSheetPlanOverlay}
+        onOpenEvent={openEvent}
+      />
+    )
+  }, [sheetPlanOverlay, sheetPlanReturnTab, closeSheetPlanOverlay, openEvent])
+
   return (
     <div className={`app theme-${theme}`}>
       <div className="glow glow-1" />
       <div className="glow glow-2" />
 
-      <main className="phone-shell">
+      <main
+        className={
+          activeEvent
+            ? 'phone-shell phone-shell--behind-event-sheet'
+            : sheetPlanOverlay
+              ? 'phone-shell phone-shell--behind-plan-overlay'
+              : 'phone-shell'
+        }
+      >
         <header className="topbar">
-          <div className="brand-wrap">
-            <img
-              src="/assets/logo/buzo-app-logo.png"
-              alt="Buzo"
-              className="brand-logo"
-              decoding="async"
-              fetchPriority="high"
-            />
-          </div>
+          <span className="brand-wordmark">BUZO</span>
           <div className="actions">
             <button
               className="icon-btn"
@@ -103,6 +186,18 @@ function App() {
         </section>
 
         <AnimatePresence>
+          {sheetPlanOverlay ? (
+            <motion.div
+              key="sheet-plan-detail"
+              className="plan-detail-overlay"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 14 }}
+              transition={{ duration: 0.22 }}
+            >
+              {sheetPlanOverlayBody}
+            </motion.div>
+          ) : null}
           {showBuzzPoints && <BuzzPointsScreen key="buzz-points" />}
           {showSettings && <SettingsScreen key="settings" />}
           {showEditProfile && <EditProfileScreen key="edit-profile" />}
@@ -147,16 +242,38 @@ function App() {
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.2 }}
           >
-            <button className="close" type="button" onClick={closeEvent}>
-              <X size={16} />
-            </button>
-            <img
-              src={activeEvent.image}
-              alt={activeEvent.title}
-              className="sheet-image"
-              loading="lazy"
-              decoding="async"
-            />
+            <div className="event-sheet-hero">
+              <img
+                src={activeEvent.image}
+                alt={activeEvent.title}
+                className="sheet-image"
+                loading="lazy"
+                decoding="async"
+              />
+              <button
+                className="event-sheet-close"
+                type="button"
+                onClick={closeEvent}
+                aria-label="Close event details"
+              >
+                <X size={18} strokeWidth={2.25} aria-hidden />
+              </button>
+              {activeEvent.bpReward != null || activeEvent.buzzPct != null ? (
+                <div className="feed-wf-badges event-sheet-badges">
+                  {activeEvent.bpReward != null ? (
+                    <span className="feed-wf-badge feed-wf-badge--bp">
+                      +{activeEvent.bpReward} BP
+                    </span>
+                  ) : null}
+                  {activeEvent.buzzPct != null ? (
+                    <span className="feed-wf-badge feed-wf-badge--buzz">
+                      <Zap size={12} strokeWidth={2.5} aria-hidden />
+                      {activeEvent.buzzPct}% BUZZ
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <div className="sheet-content">
               <div className="chip-row">
                 <span className="chip live">Live Now</span>
@@ -177,9 +294,24 @@ function App() {
                   <strong>{activeEvent.ticketPrice}</strong>
                 </div>
               </div>
-              <button type="button" className="cta-full">
-                I'm Going
-              </button>
+              <div className="event-sheet-actions">
+                <button type="button" className="event-sheet-cta-primary">
+                  I&apos;m Going
+                </button>
+                <button
+                  type="button"
+                  className="event-sheet-details-btn"
+                  aria-label={`More details for ${activeEvent.title}`}
+                  onClick={() => {
+                    const id = activeEvent.id
+                    closeEvent()
+                    requestPlanDetail(id, 'upcoming', tab)
+                  }}
+                >
+                  <Info size={17} strokeWidth={2} aria-hidden />
+                  <span>More details</span>
+                </button>
+              </div>
             </div>
           </motion.aside>
         )}

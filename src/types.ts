@@ -17,6 +17,10 @@ export type EventItem = {
   district: string
   time: string
   genre: string
+  /** Plan explore category id: tech, food, ai, arts, climate, fitness, wellness, crypto */
+  exploreCategoryId: string
+  /** Matches `LocationCity.id` in `locationRegions.ts` (city / market). */
+  locationCityId: string
   verified: number
   image: string
   host: string
@@ -24,6 +28,32 @@ export type EventItem = {
   friendsGoing: number
   vibeTags: string[]
   ticketPrice: string
+  /** Top-right BP badge on event sheet hero (optional). */
+  bpReward?: number
+  /** Top-right BUZZ % badge on event sheet hero (optional). */
+  buzzPct?: number
+}
+
+/** One template for all feed cards: hero media + overlay + badges + CTA row. */
+export type FeedCardKickerStyle = 'neon' | 'quote'
+
+export type FeedWireframePost = {
+  eventId: string
+  host: string
+  hostAvatar: string
+  hostVerb: 'asked' | 'scrawled'
+  hostLine: string
+  bp: number
+  /** Omit to hide the BUZZ badge (same layout). */
+  buzzPct?: number
+  heroImage: string
+  /** Line above venue name (`neon`: uppercase glow; `quote`: serif italic with quotes). */
+  kicker: string
+  kickerStyle: FeedCardKickerStyle
+  venueName: string
+  venueLine: string
+  /** High-contrast / B&W treatment on the hero photo. */
+  imageGrayscale?: boolean
 }
 
 /** Rich mock for the Plan tab event-detail layout (wireframe). */

@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Clock } from 'lucide-react'
+import { ArrowUpRight, Clock, MapPin } from 'lucide-react'
 import {
   events,
   getPlanDetailPast,
   getPlanDetailUpcoming,
   planPastEvents,
 } from '../../data/demoData'
+import { useAppState } from '../../store/appStore'
+import type { Tab } from '../../types'
 import { PlanEventDetail } from './PlanEventDetail'
+import { PlanExploreEvents } from './PlanExploreEvents'
+import { PlanExploreEventsDetail, type PlanExploreDetailFocus } from './PlanExploreEventsDetail'
 import { PlanEventReview } from './PlanEventReview'
 
 type PlanTabProps = {
@@ -18,10 +22,70 @@ type DetailRoute =
   | { kind: 'upcoming'; id: string }
   | { kind: 'past'; id: string }
 
+function tabReturnAriaLabel(t: Tab): string {
+  switch (t) {
+    case 'feed':
+      return 'Back to feed'
+    case 'discover':
+      return 'Back to discover'
+    case 'plan':
+      return 'Back to plan list'
+    case 'profile':
+      return 'Back to profile'
+  }
+}
+
 export function PlanTab({ onOpenEvent }: PlanTabProps) {
+  const pendingPlanDetail = useAppState((s) => s.pendingPlanDetail)
+  const clearPendingPlanDetail = useAppState((s) => s.clearPendingPlanDetail)
+  const setTab = useAppState((s) => s.setTab)
+
   const [segment, setSegment] = useState<'upcoming' | 'past'>('upcoming')
   const [detail, setDetail] = useState<DetailRoute | null>(null)
+  const [detailReturnTab, setDetailReturnTab] = useState<Tab | null>(null)
   const [reviewPastId, setReviewPastId] = useState<string | null>(null)
+  const [exploreEventsOpen, setExploreEventsOpen] = useState(false)
+  const [exploreDetailFocus, setExploreDetailFocus] = useState<PlanExploreDetailFocus | null>(null)
+
+  const exitEventDetail = () => {
+    setReviewPastId(null)
+    setDetail(null)
+    const go = detailReturnTab
+    setDetailReturnTab(null)
+    if (go) setTab(go)
+  }
+
+  useEffect(() => {
+    if (!pendingPlanDetail) return
+    // Feed / Explore / Profile: App shows full detail as an overlay; tab stays put.
+    if (pendingPlanDetail.returnTab != null && pendingPlanDetail.returnTab !== 'plan') return
+    setDetail({ kind: pendingPlanDetail.kind, id: pendingPlanDetail.id })
+    setSegment(pendingPlanDetail.kind === 'past' ? 'past' : 'upcoming')
+    setDetailReturnTab(pendingPlanDetail.returnTab ?? null)
+    clearPendingPlanDetail()
+  }, [pendingPlanDetail, clearPendingPlanDetail])
+
+  if (exploreEventsOpen) {
+    if (exploreDetailFocus) {
+      return (
+        <PlanExploreEventsDetail
+          focus={exploreDetailFocus}
+          onBack={() => setExploreDetailFocus(null)}
+          onOpenEvent={onOpenEvent}
+        />
+      )
+    }
+    return (
+      <PlanExploreEvents
+        onBack={() => {
+          setExploreEventsOpen(false)
+          setExploreDetailFocus(null)
+        }}
+        onSelectCategory={(id) => setExploreDetailFocus({ type: 'category', id })}
+        onSelectCity={(id) => setExploreDetailFocus({ type: 'city', id })}
+      />
+    )
+  }
 
   if (reviewPastId) {
     const reviewData = getPlanDetailPast(reviewPastId)
@@ -57,8 +121,8 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
           animate={{ opacity: 1 }}
         >
           <p className="plan-home-sub">This event is no longer available.</p>
-          <button type="button" className="plan-segment plan-segment--on" onClick={() => setDetail(null)}>
-            Back to plan
+          <button type="button" className="plan-segment plan-segment--on" onClick={exitEventDetail}>
+            {detailReturnTab ? tabReturnAriaLabel(detailReturnTab) : 'Back to plan'}
           </button>
         </motion.div>
       )
@@ -68,10 +132,10 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
       <PlanEventDetail
         data={data}
         variant={detail.kind}
-        onBack={() => {
-          setReviewPastId(null)
-          setDetail(null)
-        }}
+        backAriaLabel={
+          detailReturnTab ? tabReturnAriaLabel(detailReturnTab) : 'Back to plan list'
+        }
+        onBack={exitEventDetail}
         onOpenEvent={onOpenEvent}
         onOpenReview={detail.kind === 'past' ? () => setReviewPastId(detail.id) : undefined}
       />
@@ -86,7 +150,20 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
       transition={{ duration: 0.2 }}
     >
       <header className="plan-home-header">
-        <h1 className="plan-home-title">Plan</h1>
+        <div className="plan-home-header-row">
+          <h1 className="plan-home-title">Plan</h1>
+          <button
+            type="button"
+            className="plan-home-explore-events"
+            onClick={() => {
+              setExploreDetailFocus(null)
+              setExploreEventsOpen(true)
+            }}
+          >
+            <span>Explore Events</span>
+            <ArrowUpRight size={15} strokeWidth={2} className="plan-home-explore-events-icon" aria-hidden />
+          </button>
+        </div>
         <p className="plan-home-sub">Upcoming nights and where you&apos;ve been.</p>
       </header>
 
@@ -118,7 +195,10 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
                 type="button"
                 key={ev.id}
                 className="plan-list-card"
-                onClick={() => setDetail({ kind: 'upcoming', id: ev.id })}
+                onClick={() => {
+                  setDetailReturnTab(null)
+                  setDetail({ kind: 'upcoming', id: ev.id })
+                }}
               >
                 <img src={ev.image} alt="" className="plan-list-card-img" decoding="async" />
                 <div className="plan-list-card-body">
@@ -141,7 +221,10 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
                 type="button"
                 key={p.id}
                 className="plan-list-card plan-list-card--past"
-                onClick={() => setDetail({ kind: 'past', id: p.id })}
+                onClick={() => {
+                  setDetailReturnTab(null)
+                  setDetail({ kind: 'past', id: p.id })
+                }}
               >
                 <img src={p.image} alt="" className="plan-list-card-img" decoding="async" />
                 <div className="plan-list-card-body">

@@ -1,4 +1,10 @@
-import type { EventItem, GigEntry, PlanPageEvent, PlanPastEvent } from '../types'
+import type {
+  EventItem,
+  FeedWireframePost,
+  GigEntry,
+  PlanPageEvent,
+  PlanPastEvent,
+} from '../types'
 
 export const events: EventItem[] = [
   {
@@ -8,6 +14,8 @@ export const events: EventItem[] = [
     district: 'Clarke Quay',
     time: '22:30',
     genre: 'Techno',
+    exploreCategoryId: 'tech',
+    locationCityId: 'singapore',
     verified: 89,
     image:
       'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
@@ -16,6 +24,27 @@ export const events: EventItem[] = [
     friendsGoing: 2,
     vibeTags: ['Warehouse', 'Peak Energy'],
     ticketPrice: '$42.00',
+    bpReward: 15,
+    buzzPct: 98,
+  },
+  {
+    id: 'neon-noir',
+    title: 'Neon Noir',
+    venue: 'Neon Noir',
+    district: 'Raffles Place',
+    time: '19:00',
+    genre: 'Cocktail Bar',
+    exploreCategoryId: 'food',
+    locationCityId: 'singapore',
+    verified: 91,
+    image:
+      'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1200&q=80',
+    host: 'Elena',
+    hostPrompt: 'Best cocktails, worst acoustics.',
+    friendsGoing: 4,
+    vibeTags: ['Speakeasy', 'Smoked Negroni'],
+    ticketPrice: '$28.00',
+    bpReward: 12,
   },
   {
     id: 'bluenote',
@@ -24,6 +53,8 @@ export const events: EventItem[] = [
     district: 'Tiong Bahru',
     time: '22:00',
     genre: 'Jazz',
+    exploreCategoryId: 'arts',
+    locationCityId: 'singapore',
     verified: 94,
     image:
       'https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=1200&q=80',
@@ -40,6 +71,8 @@ export const events: EventItem[] = [
     district: 'Downtown Core',
     time: '23:00',
     genre: 'Electronic',
+    exploreCategoryId: 'ai',
+    locationCityId: 'singapore',
     verified: 92,
     image:
       'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1200&q=80',
@@ -123,6 +156,42 @@ export const feedSuggestedPrompts = [
   'Any good jazz tonight near Tiong Bahru?',
   'Best techno tonight in Clarke Quay?',
   'Rooftop vibes with friends tonight?',
+]
+
+/** Feed tab layout: `docs/ui-wireframe/01-social-feed.png`. */
+export const feedWireframePosts: FeedWireframePost[] = [
+  {
+    eventId: 'marquee',
+    host: 'Marcus',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    hostVerb: 'asked',
+    hostLine: 'any techno in Clarke Quay tonight?',
+    bp: 15,
+    buzzPct: 98,
+    heroImage:
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
+    kicker: 'UNDERGROUND CLUB',
+    kickerStyle: 'neon',
+    venueName: 'THE VAULT',
+    venueLine: 'WAREHOUSE 14 · CLARKE QUAY',
+  },
+  {
+    eventId: 'neon-noir',
+    host: 'Elena',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+    hostVerb: 'scrawled',
+    hostLine: 'Best cocktails, worst acoustics.',
+    bp: 12,
+    heroImage:
+      'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1200&q=80',
+    kicker: 'Try the smoked negroni',
+    kickerStyle: 'quote',
+    venueName: 'NEON NOIR',
+    venueLine: 'RAFFLES PLACE',
+    imageGrayscale: true,
+  },
 ]
 
 export const telegramBotLink = 'http://t.me/gigradar123_bot?start=hello'

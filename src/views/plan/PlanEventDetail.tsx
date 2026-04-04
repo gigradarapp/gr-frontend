@@ -13,6 +13,7 @@ import type { PlanPageEvent } from '../../types'
 type PlanEventDetailProps = {
   data: PlanPageEvent
   variant: 'upcoming' | 'past'
+  backAriaLabel?: string
   onBack: () => void
   onOpenEvent: (eventId: string) => void
   /** Past events only: opens post-event review flow. */
@@ -26,6 +27,7 @@ const waveformHeights = [
 export function PlanEventDetail({
   data,
   variant,
+  backAriaLabel = 'Back to plan list',
   onBack,
   onOpenEvent,
   onOpenReview,
@@ -49,7 +51,7 @@ export function PlanEventDetail({
         <button
           type="button"
           className="plan-toolbar-btn"
-          aria-label="Back to plan list"
+          aria-label={backAriaLabel}
           onClick={onBack}
         >
           <ArrowLeft size={22} strokeWidth={2} />
