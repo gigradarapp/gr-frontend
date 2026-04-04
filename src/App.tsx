@@ -16,8 +16,8 @@ import {
   SubscriptionScreen,
 } from './views/profile/settings'
 
-const ExploreTab = lazy(() =>
-  import('./views/explore/ExploreTab').then((m) => ({ default: m.ExploreTab })),
+const DiscoverTab = lazy(() =>
+  import('./views/discover/DiscoverTab').then((m) => ({ default: m.DiscoverTab })),
 )
 const PlanTab = lazy(() =>
   import('./views/plan/PlanTab').then((m) => ({ default: m.PlanTab })),
@@ -44,7 +44,7 @@ function App() {
     openEvent,
     closeEvent,
   } = useAppState()
-  const [explorePrefill, setExplorePrefill] = useState('')
+  const [discoverPrefill, setDiscoverPrefill] = useState('')
 
   const activeEvent = useMemo(
     () => events.find((event) => event.id === activeEventId) ?? null,
@@ -85,16 +85,16 @@ function App() {
               <FeedTab
                 onOpenEvent={openEvent}
                 onAsk={(prompt) => {
-                  setExplorePrefill(prompt)
-                  setTab('explore')
+                  setDiscoverPrefill(prompt)
+                  setTab('discover')
                 }}
               />
             )}
-            {tab === 'explore' && (
-              <ExploreTab
+            {tab === 'discover' && (
+              <DiscoverTab
                 onOpenEvent={openEvent}
-                prefillPrompt={explorePrefill}
-                onConsumePrefill={() => setExplorePrefill('')}
+                prefillPrompt={discoverPrefill}
+                onConsumePrefill={() => setDiscoverPrefill('')}
               />
             )}
             {tab === 'plan' && <PlanTab onOpenEvent={openEvent} />}

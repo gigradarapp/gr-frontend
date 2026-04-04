@@ -511,7 +511,7 @@ body {
   min-width: 40px;
 }
 
-.explore-actions {
+.discover-actions {
   position: sticky;
   bottom: 12px;
   display: grid;

@@ -111,9 +111,9 @@ export const planPageEvent: PlanPageEvent = {
   ],
 }
 
-export const exploreTargetPrompt = 'any good jazz tonight near tiong bahru ?'
+export const discoverTargetPrompt = 'any good jazz tonight near tiong bahru ?'
 
-export const exploreSuggestedPrompts = [
+export const discoverSuggestedPrompts = [
   'any good jazz tonight near Tiong Bahru ?',
   'best techno tonight in Clarke Quay?',
   'who is going to neon pulse tonight?',

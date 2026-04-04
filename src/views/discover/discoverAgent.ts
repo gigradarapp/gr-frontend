@@ -1,6 +1,6 @@
 import { events } from '../../data/demoData'
 
-export type ExploreAgentResult = {
+export type DiscoverAgentResult = {
   reply: string
   suggestedEventId: string | null
   locationQuery: string | null
@@ -14,7 +14,7 @@ export function normalizePrompt(prompt: string) {
     .replace(/\s*\?/g, ' ?')
 }
 
-export function getHardcodedAgentFallback(prompt: string): ExploreAgentResult {
+export function getHardcodedAgentFallback(prompt: string): DiscoverAgentResult {
   const normalizedPrompt = normalizePrompt(prompt)
 
   if (normalizedPrompt.includes('jazz')) {
@@ -40,7 +40,7 @@ export function getHardcodedAgentFallback(prompt: string): ExploreAgentResult {
   }
 }
 
-export async function fetchOpenAIExploreResult(prompt: string): Promise<ExploreAgentResult | null> {
+export async function fetchOpenAIDiscoverResult(prompt: string): Promise<DiscoverAgentResult | null> {
   try {
     const response = await fetch(import.meta.env.VITE_OPENAI_PROXY_URL ?? '/api/openai-recommend', {
       method: 'POST',
@@ -66,7 +66,7 @@ export async function fetchOpenAIExploreResult(prompt: string): Promise<ExploreA
       return null
     }
 
-    const payload = (await response.json()) as Partial<ExploreAgentResult>
+    const payload = (await response.json()) as Partial<DiscoverAgentResult>
     if (typeof payload.reply !== 'string' || !payload.reply.trim()) {
       return null
     }

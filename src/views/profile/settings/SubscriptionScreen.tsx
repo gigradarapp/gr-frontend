@@ -4,7 +4,7 @@ import { useAppState } from '../../../store/appStore'
 
 const PERKS = [
   'Early access to hot gigs & drops near you',
-  'Ad-free home and explore',
+  'Ad-free home and discover',
   'Smarter recommendations based on your taste',
 ]
 

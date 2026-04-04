@@ -11,7 +11,7 @@ export type TabNavItem = {
 
 export const tabNavItems: TabNavItem[] = [
   { key: 'feed', label: 'Feed', icon: LayoutGrid },
-  { key: 'explore', label: 'Explore', icon: Search },
+  { key: 'discover', label: 'Discover', icon: Search },
   { key: 'plan', label: 'Plan', icon: Calendar, iconDot: true },
   { key: 'profile', label: 'Profile', icon: User },
 ]

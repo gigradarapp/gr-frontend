@@ -3,24 +3,24 @@ import { motion } from 'framer-motion'
 import { Send } from 'lucide-react'
 import {
   events,
-  exploreSuggestedPrompts,
-  exploreTargetPrompt,
+  discoverSuggestedPrompts,
+  discoverTargetPrompt,
   telegramBotLink,
 } from '../../data/demoData'
 import {
   fetchMapboxPlaceName,
-  fetchOpenAIExploreResult,
+  fetchOpenAIDiscoverResult,
   getHardcodedAgentFallback,
   normalizePrompt,
-} from './exploreAgent'
+} from './discoverAgent'
 
-type ExploreTabProps = {
+type DiscoverTabProps = {
   onOpenEvent: (eventId: string) => void
   prefillPrompt: string
   onConsumePrefill: () => void
 }
 
-export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: ExploreTabProps) {
+export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: DiscoverTabProps) {
   const event = events[1]
   const [inputValue, setInputValue] = useState('')
   const [submittedPrompt, setSubmittedPrompt] = useState('')
@@ -76,7 +76,7 @@ export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Exp
     setAgentReply('')
     setAgentEventId(null)
 
-    if (normalizePrompt(nextPrompt) === exploreTargetPrompt) {
+    if (normalizePrompt(nextPrompt) === discoverTargetPrompt) {
       setResultMode('hardcoded')
       setStatus('loading')
       return
@@ -86,7 +86,7 @@ export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Exp
     setStatus('loading')
 
     const resolvedAgentResult =
-      (await fetchOpenAIExploreResult(nextPrompt)) ?? getHardcodedAgentFallback(nextPrompt)
+      (await fetchOpenAIDiscoverResult(nextPrompt)) ?? getHardcodedAgentFallback(nextPrompt)
 
     if (requestCounter.current !== requestId) {
       return
@@ -127,9 +127,9 @@ export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Exp
       transition={{ duration: 0.2 }}
     >
       <div className="suggestion-wrap">
-        <p>Suggested prompts</p>
+        <p>Discover prompts</p>
         <div className="suggestion-list">
-          {exploreSuggestedPrompts.map((prompt) => (
+          {discoverSuggestedPrompts.map((prompt) => (
             <button
               key={prompt}
               className="suggestion-chip"
@@ -224,7 +224,7 @@ export function ExploreTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Exp
         </article>
       )}
 
-      <div className="explore-actions">
+      <div className="discover-actions">
         <div className="chat-input">
           <input
             placeholder="Ask GigRadar..."
