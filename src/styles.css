@@ -1462,7 +1462,7 @@ body {
   min-height: 0;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (min-height: 560px) {
   .app {
     justify-content: center;
     align-items: center;
