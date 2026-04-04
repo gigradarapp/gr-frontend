@@ -1441,8 +1441,11 @@ body {
   background: var(--card);
 }
 
-/* Narrow screens: prefer small viewport height so layout matches URL-bar-visible Chrome/Safari */
-@media (max-width: 767.98px) {
+/*
+ * Prefer small viewport height on phones and on short viewports (landscape mobile is often
+ * wider than 768px but still needs svh so chrome matches the visible area).
+ */
+@media (max-width: 767.98px), (max-height: 600px) {
   html {
     min-height: 100svh;
   }
@@ -1462,7 +1465,12 @@ body {
   min-height: 0;
 }
 
-@media (min-width: 768px) and (min-height: 560px) {
+/*
+ * Desktop “device frame” preview — only on large viewports. Do not use width ~768px here:
+ * iOS Safari often matches (hover:hover)/(pointer:fine), and phone landscape width exceeds
+ * 768px, which produced a narrow centered column on real devices.
+ */
+@media (min-width: 1200px) and (min-height: 680px) {
   .app {
     justify-content: center;
     align-items: center;
@@ -1489,6 +1497,136 @@ body {
   .topbar {
     min-height: 58px;
     padding: 10px 14px;
+  }
+}
+
+/*
+ * Touch landscape: force full-bleed shell (esp. iPad / large phones). Coarse pointer avoids
+ * clobbering the desktop frame for mouse users in landscape. Short viewport height covers
+ * iOS quirks where pointer is mis-reported but the visible strip is clearly phone-like.
+ */
+@media (orientation: landscape) and (pointer: coarse),
+  (orientation: landscape) and (max-height: 500px) {
+  .app {
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+
+  .phone-shell {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+    height: auto;
+    max-height: 100%;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    background: var(--bg);
+  }
+}
+
+/*
+ * Landscape with limited height: tighten chrome so feed/plan scroll comfortably above the tab bar.
+ */
+@media (orientation: landscape) and (max-height: 600px) {
+  .topbar {
+    min-height: 44px;
+    padding: 6px 10px 6px;
+  }
+
+  .brand-logo {
+    height: 28px;
+  }
+
+  .screen-content {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .feed-wf {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .feed-filters-row {
+    gap: 6px;
+  }
+
+  .feed-filter-pill {
+    padding: 6px 10px 6px 12px;
+    font-size: 0.68rem;
+  }
+
+  .feed-prompt-card {
+    min-height: 56px;
+  }
+
+  .feed-prompt-body {
+    padding: 8px 10px 8px 12px;
+    gap: 4px;
+  }
+
+  .feed-prompt-title {
+    font-size: 0.82rem;
+  }
+
+  .feed-prompt-example {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .feed-wf-post {
+    gap: 10px;
+  }
+
+  .feed-wf-card--hero {
+    min-height: 140px;
+  }
+
+  .feed-wf-hero-img {
+    height: min(160px, 38svh);
+  }
+
+  .feed-wf-hero-copy {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .feed-wf-kicker--quote {
+    font-size: 0.82rem;
+  }
+
+  .feed-wf-venue-title {
+    font-size: 1.2rem;
+  }
+
+  .feed-wf-cta {
+    min-height: 44px;
+  }
+
+  .bottom-nav {
+    min-height: 50px;
+    padding-top: 4px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  }
+
+  .nav-item {
+    min-height: 46px;
+    gap: 4px;
+    padding: 4px 4px 0;
+  }
+
+  .plan-home {
+    padding: 10px 10px 14px;
+    gap: 10px;
+  }
+
+  .plan-home-title {
+    font-size: 1.15rem;
   }
 }
 
