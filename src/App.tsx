@@ -149,7 +149,16 @@ function App() {
         }
       >
         <header className="topbar">
-          <span className="brand-wordmark">BUZO</span>
+          <div className="brand-wrap">
+            <img
+              className="brand-logo"
+              src="/assets/logo/b-logo.svg"
+              alt="Buzo"
+              width={34}
+              height={34}
+              decoding="async"
+            />
+          </div>
           <div className="actions">
             <button
               className="icon-btn"

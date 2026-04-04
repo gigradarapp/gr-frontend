@@ -6,7 +6,7 @@
 Sign up, pick your cities, and declare your music taste (techno, jazz, indie, etc.). Follow friends or import contacts. This builds your taste profile immediately, similar to how Strava asks what sports you do.
 
 ### 2) Friday Afternoon — The Trigger Moment
-You open GigRadar and see a feed.
+You open Buzo and see a feed.
 
 - Your friend Marcus asked the agent, "any good techno tonight in Clarke Quay."
 - Sarah is planning to go to Headquarters.

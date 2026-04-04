@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 
 ## Product
-GigRadar
+Buzo
 
 ## Document Owner
 TBD
@@ -21,23 +21,23 @@ This creates two failures:
 - **User failure**: too much effort, bad choices, low trust.
 - **Market failure**: high-intent demand is not efficiently matched to quality supply (events, venues, ticketing).
 
-GigRadar solves this by becoming the trusted decision layer between intent and action.
+Buzo solves this by becoming the trusted decision layer between intent and action.
 
 ## 1) Context and Problem
 Nightlife discovery is fragmented and mostly utility-based: users can search events, but they rarely discover through people they trust.
 
 Historically, Facebook Events solved this through social proof (seeing who is going), but that behavior no longer has a clear product owner. Current event apps optimize listings, not social coordination and taste identity.
 
-GigRadar’s opportunity is to rebuild this social layer for nightlife, powered by AI and real-time event verification.
+Buzo’s opportunity is to rebuild this social layer for nightlife, powered by AI and real-time event verification.
 
 ## 2) Product Vision
-GigRadar is not only an event discovery app. It is the social graph for nightlife:
+Buzo is not only an event discovery app. It is the social graph for nightlife:
 - Real-time social signals for what people are asking, considering, and attending.
 - Public taste identity that compounds over time.
 - Shared plans that turn intent into attendance.
 
 Positioning statement:
-> GigRadar is what Facebook Events was at its peak, rebuilt for the AI era with real-time verification.
+> Buzo is what Facebook Events was at its peak, rebuilt for the AI era with real-time verification.
 
 ## 3) Goals and Non-Goals
 ### Goals
@@ -103,7 +103,7 @@ Positioning statement:
 - Paid boosts/ads.
 
 ## 8) User Experience Flow (MVP)
-1. User opens GigRadar on a high-intent day (e.g., Friday afternoon).
+1. User opens Buzo on a high-intent day (e.g., Friday afternoon).
 2. Feed shows trusted social signals (prompts, interest, going activity).
 3. User opens an event and views confidence + social proof.
 4. User taps Interested or Going.

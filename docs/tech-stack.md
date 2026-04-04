@@ -1,7 +1,7 @@
 # UI Tech Stack (Mobile-Web-First)
 
 ## Goal
-Build GigRadar as a fast, mobile-first web app that feels app-like on phones and scales cleanly to desktop.
+Build Buzo as a fast, mobile-first web app that feels app-like on phones and scales cleanly to desktop.
 
 ## Recommended Default Stack (UI Only)
 - **Framework**: `Vite` + `React` + `TypeScript`
