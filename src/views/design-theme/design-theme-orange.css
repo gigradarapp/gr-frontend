@@ -1,0 +1,308 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap');
+
+html.design-theme-active {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100dvh;
+}
+
+html.design-theme-active body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100dvh;
+}
+
+html.design-theme-active #root {
+  overflow: visible;
+  height: auto;
+  min-height: 100dvh;
+}
+
+.design-theme-orange-page {
+  --orange: #e24325;
+  --orange-soft: #f15b3f;
+  --orange-deep: #b83218;
+  --orange-glow: rgba(226, 67, 37, 0.45);
+  --surface: #0c0a0a;
+  --surface-card: #161212;
+  --stroke: rgba(255, 255, 255, 0.09);
+  --text: #f8f6f5;
+  --text-muted: #a8a09e;
+
+  min-height: 100dvh;
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Public Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 56px;
+}
+
+.design-theme-orange-page *,
+.design-theme-orange-page *::before,
+.design-theme-orange-page *::after {
+  box-sizing: border-box;
+}
+
+.dtor-hero {
+  padding: 48px 24px 40px;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, var(--orange-glow), transparent 55%),
+    linear-gradient(180deg, #1a0f0c 0%, var(--surface) 42%);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.dtor-hero-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 28px 40px;
+}
+
+.dtor-hero-copy {
+  flex: 1 1 280px;
+  min-width: 0;
+  max-width: 560px;
+}
+
+.dtor-hero-mascot {
+  flex: 0 1 min(280px, 42vw);
+  max-width: 300px;
+}
+
+.dtor-hero-mascot img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 16px 40px rgba(226, 67, 37, 0.4));
+}
+
+.dtor-eyebrow {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange-soft);
+  margin: 0 0 12px;
+}
+
+.dtor-hero h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.dtor-hero p {
+  margin: 0;
+  max-width: 520px;
+  font-size: 1.02rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.dtor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--stroke);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in oklab, var(--surface) 88%, #1a1412);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dtor-header h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.dtor-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.dtor-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--surface-card);
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.dtor-link:hover {
+  border-color: color-mix(in oklab, var(--orange) 45%, var(--stroke));
+  background: color-mix(in oklab, var(--orange) 8%, var(--surface-card));
+}
+
+.dtor-link--primary {
+  background: var(--orange);
+  border-color: transparent;
+  color: #fff;
+}
+
+.dtor-link--primary:hover {
+  background: var(--orange-soft);
+  color: #fff;
+}
+
+.dtor-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dtor-section {
+  background: var(--surface-card);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  padding: 22px 22px 24px;
+}
+
+.dtor-section h2 {
+  margin: 0 0 16px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dtor-scale {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 10px;
+}
+
+.dtor-swatch {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 52px;
+}
+
+.dtor-swatch figcaption {
+  margin-top: 8px;
+  font-size: 0.65rem;
+  font-family: ui-monospace, monospace;
+  color: var(--text-muted);
+  text-align: center;
+  word-break: break-all;
+}
+
+.dtor-swatch-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dtor-row-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dtor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+.dtor-btn--fill {
+  background: var(--orange);
+  color: #fff;
+}
+
+.dtor-btn--outline {
+  background: transparent;
+  color: var(--orange-soft);
+  border: 2px solid var(--orange);
+}
+
+.dtor-btn--ghost {
+  background: color-mix(in oklab, var(--orange) 12%, transparent);
+  color: var(--text);
+  border: 1px solid color-mix(in oklab, var(--orange) 28%, var(--stroke));
+}
+
+.dtor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dtor-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  border: 1px solid color-mix(in oklab, var(--orange) 35%, var(--stroke));
+  background: color-mix(in oklab, var(--orange) 10%, var(--surface-card));
+  color: var(--text);
+}
+
+.dtor-chip--solid {
+  background: var(--orange);
+  border-color: transparent;
+  color: #fff;
+}
+
+.dtor-note {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.dtor-note strong {
+  color: var(--orange-soft);
+  font-weight: 700;
+}
+
+.dtor-gradient-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--orange-deep),
+    var(--orange),
+    var(--orange-soft),
+    #ffb39a
+  );
+  margin-top: 8px;
+}

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Info, Moon, Sun, User, X, Zap } from 'lucide-react'
 import {
@@ -22,6 +23,9 @@ import {
   SubscriptionScreen,
 } from './views/profile/settings'
 import { WelcomeScreen, SignInSheet } from './views/welcome'
+import { DesignThemePage } from './views/design-theme/DesignThemePage'
+import { DesignThemeOrangePage } from './views/design-theme/DesignThemeOrangePage'
+import { DesignThemePurplePage } from './views/design-theme/DesignThemePurplePage'
 
 const DiscoverTab = lazy(() =>
   import('./views/discover/DiscoverTab').then((m) => ({ default: m.DiscoverTab })),
@@ -50,7 +54,7 @@ function tabReturnAriaLabel(t: Tab): string {
   }
 }
 
-function App() {
+function MainApp() {
   const {
     tab,
     theme,
@@ -387,4 +391,18 @@ function App() {
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Nested so /design-theme/purple never competes with the /design-theme index */}
+        <Route path="/design-theme" element={<Outlet />}>
+          <Route index element={<DesignThemePage />} />
+          <Route path="orange" element={<DesignThemeOrangePage />} />
+          <Route path="purple" element={<DesignThemePurplePage />} />
+        </Route>
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}

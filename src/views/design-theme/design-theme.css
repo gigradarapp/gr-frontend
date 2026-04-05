@@ -1,0 +1,580 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Unlock document scroll — global styles set html/body/#root to overflow:hidden */
+html.design-theme-active {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100dvh;
+}
+
+html.design-theme-active body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100dvh;
+}
+
+html.design-theme-active #root {
+  overflow: visible;
+  height: auto;
+  min-height: 100dvh;
+}
+
+.design-theme-page {
+  --dt-primary: #e24325;
+  --dt-secondary: #1a1a1a;
+  --dt-neutral: #000000;
+  --dt-surface: #141414;
+  --dt-surface-elev: #1f1f1f;
+  --dt-border: rgba(255, 255, 255, 0.08);
+  --dt-text: #f5f5f5;
+  --dt-text-muted: #9ca3af;
+  --dt-peach: #f5d0c5;
+  --dt-coral: #e8a090;
+
+  min-height: 100dvh;
+  box-sizing: border-box;
+  background: var(--dt-neutral);
+  color: var(--dt-text);
+  font-family: 'Public Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 48px;
+}
+
+/* Full-board purple counterpart: swap tokens + mascot via page modifier */
+.design-theme-page--purple {
+  --dt-primary: #7c3aed;
+  --dt-neutral: #06040f;
+  --dt-surface: #14101c;
+  --dt-surface-elev: #1f1829;
+  --dt-peach: #ddd6fe;
+  --dt-coral: #c4b5fd;
+  --dt-text: #f5f3ff;
+  --dt-text-muted: #a8a0c2;
+}
+
+.design-theme-page *,
+.design-theme-page *::before,
+.design-theme-page *::after {
+  box-sizing: border-box;
+}
+
+.design-theme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--dt-border);
+  position: sticky;
+  top: 0;
+  background: color-mix(in oklab, var(--dt-neutral) 94%, #1a1a1a);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10;
+}
+
+.design-theme-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.design-theme-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.design-theme-accent-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.design-theme-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--dt-border);
+  background: var(--dt-surface);
+  color: var(--dt-text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.design-theme-back:hover {
+  background: var(--dt-surface-elev);
+  border-color: color-mix(in oklab, var(--dt-primary) 35%, var(--dt-border));
+}
+
+.design-theme-back--ghost {
+  background: color-mix(in oklab, var(--dt-primary) 8%, var(--dt-surface));
+  border-color: color-mix(in oklab, var(--dt-primary) 35%, var(--dt-border));
+}
+
+.design-theme-back--ghost:hover {
+  background: color-mix(in oklab, var(--dt-primary) 14%, var(--dt-surface));
+}
+
+button.design-theme-back {
+  cursor: pointer;
+}
+
+.design-theme-accent-btn--active {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--dt-primary) 50%, transparent);
+  background: color-mix(in oklab, var(--dt-primary) 18%, var(--dt-surface)) !important;
+  border-color: color-mix(in oklab, var(--dt-primary) 45%, var(--dt-border)) !important;
+}
+
+.design-theme-main {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.design-theme-mascot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 28px;
+  margin: 0 0 28px;
+  padding: 20px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--dt-border);
+  background: color-mix(in oklab, var(--dt-primary) 8%, var(--dt-surface));
+}
+
+.design-theme-mascot-img {
+  width: min(140px, 36vw);
+  height: auto;
+  flex-shrink: 0;
+  display: block;
+  border-radius: 12px;
+}
+
+.design-theme-mascot-copy {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.design-theme-mascot-label {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dt-coral);
+  margin: 0 0 6px;
+}
+
+.design-theme-mascot-desc {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--dt-text-muted);
+  line-height: 1.55;
+}
+
+.design-theme-mascot-code {
+  font-size: 0.85em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--dt-surface-elev) 88%, transparent);
+  border: 1px solid var(--dt-border);
+  color: var(--dt-peach);
+}
+
+/* Four reference columns; stack on small screens */
+.design-theme-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .design-theme-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .design-theme-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.design-theme-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.design-theme-card {
+  background: var(--dt-surface);
+  border: 1px solid var(--dt-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.design-theme-card--compact {
+  padding: 16px;
+  gap: 12px;
+}
+
+.design-theme-card-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dt-text-muted);
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+/* Legacy h2 inside cards */
+.design-theme-card > h2 {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dt-text-muted);
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+/* Palettes */
+.design-theme-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.design-theme-palette-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.design-theme-palette-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.design-theme-palette-hex {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--dt-text-muted);
+}
+
+.design-theme-scale {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  min-height: 44px;
+}
+
+.design-theme-swatch {
+  border-radius: 8px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 640px) {
+  .design-theme-scale {
+    grid-template-columns: repeat(5, 1fr);
+    grid-auto-rows: 40px;
+  }
+}
+
+/* Typography cards (reference layout) */
+.design-theme-type-card {
+  gap: 16px;
+  min-height: 140px;
+}
+
+.design-theme-type-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.design-theme-type-role {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--dt-text);
+}
+
+.design-theme-type-font {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--dt-text-muted);
+}
+
+.design-theme-type-aa {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.design-theme-type-aa--headline {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 4rem;
+  letter-spacing: -0.04em;
+}
+
+.design-theme-type-aa--body {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 2.25rem;
+  letter-spacing: -0.03em;
+}
+
+.design-theme-type-aa--label {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  .design-theme-type-aa--headline {
+    font-size: 2.75rem;
+  }
+
+  .design-theme-type-aa--body {
+    font-size: 1.75rem;
+  }
+}
+
+/* Buttons 2×2 */
+.design-theme-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.design-theme-buttons--grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: default;
+  width: 100%;
+}
+
+.dt-btn--primary {
+  background: #fff;
+  color: #0a0a0a;
+}
+
+.dt-btn--secondary {
+  background: var(--dt-secondary);
+  color: #fff;
+  border: 1px solid var(--dt-border);
+}
+
+.dt-btn--inverted {
+  background: #2a2a2a;
+  color: #f5f5f5;
+}
+
+.dt-btn--outline {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* Progress — thicker bars + visible track */
+.design-theme-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dt-progress {
+  height: 12px;
+  border-radius: 999px;
+  background: #2a2a2a;
+  overflow: hidden;
+}
+
+.dt-progress--thick {
+  height: 14px;
+}
+
+.dt-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.dt-progress__fill--white {
+  width: 85%;
+  background: #fff;
+}
+
+.dt-progress__fill--gray {
+  width: 55%;
+  background: #9ca3af;
+}
+
+.dt-progress__fill--coral {
+  width: 70%;
+  background: var(--dt-coral);
+}
+
+/* Actions — two sub-cards */
+.design-theme-actions-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.design-theme-nested-card {
+  background: color-mix(in oklab, var(--dt-neutral) 40%, var(--dt-surface));
+  border: 1px solid var(--dt-border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+}
+
+.dt-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: default;
+  color: #0a0a0a;
+  background: var(--dt-primary);
+}
+
+.dt-label-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--dt-peach);
+  color: #0a0a0a;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* Search */
+.dt-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--dt-border);
+  background: var(--dt-surface-elev);
+  color: var(--dt-text-muted);
+  font-family: 'Public Sans', sans-serif;
+  font-size: 0.9rem;
+}
+
+/* Nav — white icons; active = white tile + dark icon */
+.dt-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--dt-surface-elev);
+  border: 1px solid var(--dt-border);
+}
+
+.dt-nav-pill button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.dt-nav-pill button.dt-nav-pill--active {
+  background: #fff;
+  color: #0a0a0a;
+}
+
+/* Icon grid */
+.design-theme-icon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dt-icon-tile {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.dt-icon-tile--white {
+  background: #fff;
+  color: #0a0a0a;
+}
+
+.dt-icon-tile--gray {
+  background: #3a3a3a;
+  color: #e5e5e5;
+}
+
+.dt-icon-tile--peach {
+  background: var(--dt-peach);
+  color: #0a0a0a;
+}
+
+.dt-icon-tile--trash {
+  color: var(--dt-primary);
+}

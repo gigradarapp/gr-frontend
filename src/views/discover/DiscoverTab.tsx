@@ -1,6 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, Mic, Paperclip, Send, History, Trash2, X, Maximize2, Minimize2 } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Mic,
+  Maximize2,
+  Minimize2,
+  MoreHorizontal,
+  Paperclip,
+  Send,
+  History,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useAppState } from '../../store/appStore'
 import {
   events,
@@ -46,8 +58,13 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [newChatMenuOpen, setNewChatMenuOpen] = useState(false)
+  const [discoverMoreOpen, setDiscoverMoreOpen] = useState(false)
 
   const requestCounter = useRef(0)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const newChatMenuRef = useRef<HTMLDivElement | null>(null)
+  const discoverMoreRef = useRef<HTMLDivElement | null>(null)
   const agentEvent = useMemo(
     () => (agentEventId ? events.find((item) => item.id === agentEventId) ?? null : null),
     [agentEventId],
@@ -83,6 +100,8 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
     setAgentEventId(null)
     setCurrentConversationId(null)
     setIsDrawerOpen(false)
+    setNewChatMenuOpen(false)
+    setDiscoverMoreOpen(false)
   }
 
   const handleSelectConversation = (conv: Conversation) => {
@@ -207,6 +226,78 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
     status === 'loading' ||
     (status === 'done' && (resultMode === 'hardcoded' || resultMode === 'agent'))
 
+  const syncCompactTextareaHeight = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) {
+      return
+    }
+    if (!hasThread) {
+      el.style.height = ''
+      return
+    }
+    const cs = getComputedStyle(el)
+    const lineHeight = parseFloat(cs.lineHeight)
+    const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
+    const minPx = Number.isFinite(lineHeight)
+      ? Math.ceil(lineHeight * 2 + padY)
+      : 52
+    const maxPx = Math.min(window.innerHeight * 0.34, 140)
+    el.style.height = 'auto'
+    const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
+    el.style.height = `${next}px`
+  }, [hasThread, inputValue])
+
+  useLayoutEffect(() => {
+    syncCompactTextareaHeight()
+  }, [syncCompactTextareaHeight])
+
+  useEffect(() => {
+    if (!newChatMenuOpen && !discoverMoreOpen) {
+      return
+    }
+
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      const t = e.target
+      if (!(t instanceof Node)) {
+        return
+      }
+      if (newChatMenuOpen && newChatMenuRef.current && !newChatMenuRef.current.contains(t)) {
+        setNewChatMenuOpen(false)
+      }
+      if (
+        discoverMoreOpen &&
+        discoverMoreRef.current &&
+        !discoverMoreRef.current.contains(t)
+      ) {
+        if (t instanceof Element) {
+          if (
+            t.closest('.discover-drawer-backdrop') ||
+            t.closest('.discover-drawer')
+          ) {
+            return
+          }
+        }
+        setDiscoverMoreOpen(false)
+      }
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setNewChatMenuOpen(false)
+        setDiscoverMoreOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown, { passive: true })
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [newChatMenuOpen, discoverMoreOpen])
+
   return (
     <motion.div
       className="discover-tab discover-layla"
@@ -215,44 +306,112 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
       transition={{ duration: 0.2 }}
     >
       <div className="discover-secondary-header">
-        <button
-          className="icon-btn"
-          type="button"
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Open chat history"
-        >
-          <History size={20} />
-        </button>
+        <div className="discover-more-row" ref={discoverMoreRef}>
+          <button
+            className={`icon-btn discover-more-btn${discoverMoreOpen ? ' icon-btn--active' : ''}`}
+            type="button"
+            aria-expanded={discoverMoreOpen}
+            aria-controls="discover-more-panel"
+            id="discover-more-trigger"
+            aria-label={discoverMoreOpen ? 'Close more options' : 'More options'}
+            onClick={() => {
+              setNewChatMenuOpen(false)
+              setDiscoverMoreOpen((open) => !open)
+            }}
+          >
+            <MoreHorizontal size={20} strokeWidth={2} aria-hidden />
+          </button>
+          <motion.div
+            id="discover-more-panel"
+            className="discover-more-panel-clip"
+            role="region"
+            aria-labelledby="discover-more-trigger"
+            aria-hidden={!discoverMoreOpen}
+            initial={false}
+            animate={{
+              maxWidth: discoverMoreOpen ? 120 : 0,
+              opacity: discoverMoreOpen ? 1 : 0,
+            }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            style={{
+              overflow: 'hidden',
+              pointerEvents: discoverMoreOpen ? 'auto' : 'none',
+            }}
+          >
+            <div className="discover-more-panel-inner">
+              <button
+                type="button"
+                className="icon-btn discover-more-strip-btn"
+                onClick={() => {
+                  setNewChatMenuOpen(false)
+                  toggleDiscoverExpanded()
+                }}
+                aria-label={isDiscoverExpanded ? 'Show header and footer' : 'Hide header and footer'}
+              >
+                {isDiscoverExpanded ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
+              </button>
+              <button
+                type="button"
+                className="icon-btn discover-more-strip-btn"
+                onClick={() => {
+                  setNewChatMenuOpen(false)
+                  setIsDrawerOpen(true)
+                }}
+                aria-label="Open chat history"
+              >
+                <History size={20} aria-hidden />
+              </button>
+            </div>
+          </motion.div>
+        </div>
         <div className="discover-secondary-header-actions">
-          <button
-            className="discover-new-chat-btn"
-            type="button"
-            onClick={handleNewChat}
-            aria-label="New chat"
-          >
-            New chat
-          </button>
-          {!hasThread && (
-            <a
-              className="discover-telegram-btn discover-telegram-btn--header"
-              href={telegramBotLink}
-              target="_blank"
-              rel="noreferrer"
-              title="@gigradar123_bot"
-              aria-label="Continue in Telegram — @gigradar123_bot"
-            >
-              <span className="discover-telegram-header-label">Continue in Telegram</span>
-              <ChevronRight size={16} strokeWidth={2.25} className="topbar-telegram-chevron" aria-hidden />
-            </a>
-          )}
-          <button
-            className="icon-btn discover-expand-btn"
-            type="button"
-            onClick={toggleDiscoverExpanded}
-            aria-label={isDiscoverExpanded ? "Collapse chat" : "Expand chat"}
-          >
-            {isDiscoverExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-          </button>
+          <div className="discover-new-chat-wrap" ref={newChatMenuRef}>
+            <div className="discover-chat-menu-split">
+              <button
+                className="discover-chat-menu-primary"
+                type="button"
+                aria-label="Start new chat"
+                onClick={() => handleNewChat()}
+              >
+                <span className="discover-new-chat-label">New chat</span>
+              </button>
+              <span className="discover-chat-menu-divider" aria-hidden="true" />
+              <button
+                className="discover-chat-menu-chevron-btn"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={newChatMenuOpen}
+                aria-controls="discover-chat-menu"
+                id="discover-chat-menu-trigger"
+                aria-label="More new chat options"
+                onClick={() => setNewChatMenuOpen((open) => !open)}
+              >
+                <ChevronDown size={16} strokeWidth={2.25} className="discover-header-chevron" aria-hidden />
+              </button>
+            </div>
+            {newChatMenuOpen ? (
+              <div
+                id="discover-chat-menu"
+                className="discover-new-chat-menu"
+                role="menu"
+                aria-labelledby="discover-chat-menu-trigger"
+              >
+                <a
+                  role="menuitem"
+                  className="discover-new-chat-menu-item discover-new-chat-menu-item--link"
+                  href={telegramBotLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setNewChatMenuOpen(false)}
+                >
+                  <span className="discover-chat-menu-item-row">
+                    <span>Start in Telegram</span>
+                    <ChevronRight size={16} strokeWidth={2.25} className="discover-header-chevron" aria-hidden />
+                  </span>
+                </a>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -432,6 +591,7 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
               </button>
             )}
             <textarea
+              ref={textareaRef}
               className="welcome-layla-textarea"
               placeholder={SAMPLE_PLACEHOLDER}
               value={inputValue}
@@ -442,7 +602,7 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
                   handleSend()
                 }
               }}
-              rows={hasThread ? 1 : 2}
+              rows={2}
               aria-label="What do you want to do tonight?"
             />
             <div className="welcome-layla-toolbar">
