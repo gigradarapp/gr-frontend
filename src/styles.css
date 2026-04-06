@@ -320,7 +320,8 @@ body {
   background: color-mix(in oklab, var(--bg) 90%, var(--card));
   color: var(--text);
   font: inherit;
-  font-size: 0.8rem;
+  /* ≥16px prevents iOS Safari from zooming the viewport on input focus */
+  font-size: max(16px, 0.8rem);
   font-weight: 500;
 }
 
@@ -387,6 +388,193 @@ body {
 .feed-filter-menu-item.is-active {
   color: var(--primary);
   background: color-mix(in oklab, var(--primary) 12%, transparent);
+}
+
+/* Feed — full-height location “curtain” (portaled under `main.phone-shell`) */
+.feed-location-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  pointer-events: auto;
+}
+
+.feed-location-curtain__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.52);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theme-light .feed-location-curtain__backdrop {
+  background: rgba(20, 24, 35, 0.4);
+}
+
+.feed-location-curtain__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background: var(--bg);
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.42);
+}
+
+.feed-location-curtain__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(36px, env(safe-area-inset-right, 0px)) 12px
+    max(36px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--stroke);
+}
+
+.feed-location-curtain__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.feed-location-curtain__close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--card) 90%, var(--bg));
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.feed-location-curtain__close:hover {
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--stroke));
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+}
+
+.feed-location-curtain__search-wrap {
+  flex-shrink: 0;
+  padding: 12px max(36px, env(safe-area-inset-right, 0px)) 10px max(36px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid color-mix(in oklab, var(--stroke) 85%, transparent);
+}
+
+.feed-location-curtain__search {
+  border-radius: 12px;
+}
+
+.feed-location-curtain__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px max(36px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px))
+    max(36px, env(safe-area-inset-left, 0px));
+}
+
+.feed-location-curtain__section {
+  margin: 0 0 22px;
+}
+
+.feed-location-curtain__section:last-child {
+  margin-bottom: 8px;
+}
+
+.feed-location-curtain__region-heading {
+  margin: 0;
+  padding: 6px 0 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  border-bottom: 1px solid color-mix(in oklab, var(--stroke) 80%, transparent);
+}
+
+.feed-location-curtain__chip-row {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.feed-location-curtain__chip-item {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.feed-location-curtain__chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: color-mix(in oklab, var(--card) 92%, var(--bg));
+  color: var(--text);
+  /* ≥16px: comfortable taps + no iOS focus zoom */
+  font-size: max(16px, 0.88rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.feed-location-curtain__chip:hover {
+  border-color: color-mix(in oklab, var(--primary) 38%, var(--stroke));
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+}
+
+.feed-location-curtain__chip.is-active {
+  border-color: color-mix(in oklab, var(--primary) 55%, var(--stroke));
+  color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+}
+
+.theme-light .feed-location-curtain__chip.is-active {
+  color: var(--primary-soft);
+  border-color: color-mix(in oklab, var(--primary-soft) 50%, var(--stroke));
+  background: color-mix(in oklab, var(--primary-soft) 12%, transparent);
+}
+
+.feed-location-curtain__empty {
+  margin: 0;
+  padding: 36px max(36px, env(safe-area-inset-right, 0px)) 24px max(36px, env(safe-area-inset-left, 0px));
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .actions {
