@@ -2,6 +2,8 @@
 
 GigRadar mobile-web UI (Vite + React + TypeScript).
 
+**Architecture** (stack, POC rollout, cost): see the [north-star](https://github.com/gigradarco/north-star) repo, folder `architecture/`.
+
 ## Local development
 
 ```bash
