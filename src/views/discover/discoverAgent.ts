@@ -1,4 +1,4 @@
-import { events } from '../../data/demoData'
+import type { EventItem } from '../../types'
 
 export type DiscoverAgentResult = {
   reply: string
@@ -40,7 +40,10 @@ export function getHardcodedAgentFallback(prompt: string): DiscoverAgentResult {
   }
 }
 
-export async function fetchOpenAIDiscoverResult(prompt: string): Promise<DiscoverAgentResult | null> {
+export async function fetchOpenAIDiscoverResult(
+  prompt: string,
+  eventList: EventItem[],
+): Promise<DiscoverAgentResult | null> {
   try {
     const response = await fetch(import.meta.env.VITE_OPENAI_PROXY_URL ?? '/api/openai-recommend', {
       method: 'POST',
@@ -49,7 +52,7 @@ export async function fetchOpenAIDiscoverResult(prompt: string): Promise<Discove
       },
       body: JSON.stringify({
         prompt,
-        events: events.map((event) => ({
+        events: eventList.map((event) => ({
           id: event.id,
           title: event.title,
           venue: event.venue,
@@ -83,7 +86,7 @@ export async function fetchOpenAIDiscoverResult(prompt: string): Promise<Discove
 
 export async function fetchMapboxPlaceName(locationQuery: string): Promise<string | null> {
   try {
-    const endpoint = import.meta.env.VITE_MAPBOX_PROXY_URL ?? '/api/mapbox-geocode'
+    const endpoint = import.meta.env.VITE_MAPBOX_PROXY_URL ?? '/api/geocode'
     const separator = endpoint.includes('?') ? '&' : '?'
     const response = await fetch(`${endpoint}${separator}q=${encodeURIComponent(locationQuery)}`)
 

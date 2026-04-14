@@ -59,6 +59,14 @@ export type SubscriptionTier = 'basic' | 'pro'
 /** Section to scroll to when opening scene stats from profile. */
 export type ProfileStatsFocus = 'cities' | 'gigs' | 'genres'
 
+/** Auth user from `GET /api/auth/session` (no Supabase client in the browser). */
+export type AuthUserPayload = {
+  id: string
+  email?: string | null
+  is_anonymous?: boolean
+  user_metadata?: Record<string, unknown>
+}
+
 type AppState = {
   userProfile: UserProfile
   /** After the Layla-style welcome, user can explore before optional sign-in. */
@@ -94,6 +102,19 @@ type AppState = {
   closeSignIn: () => void
   /** Demo only — call after OAuth / email auth succeeds. */
   completeSignInDemo: () => void
+  /**
+   * Sync UI from auth user + optional `profiles` row (from backend).
+   * `isAuthenticated` is true only for non-anonymous users (Google / email).
+   */
+  applySupabaseSession: (
+    user: AuthUserPayload | null,
+    profile?: {
+      display_name?: string | null
+      username?: string | null
+      avatar_url?: string | null
+      bio?: string | null
+    } | null,
+  ) => void
   /** Sign out demo session and show the pre-login welcome again. */
   returnToLanding: () => void
   setTab: (tab: Tab) => void
@@ -173,6 +194,56 @@ export const useAppState = create<AppState>((set) => ({
       showSignIn: false,
       tab: 'discover',
     })
+  },
+  applySupabaseSession: (user, profile) => {
+    if (!user) {
+      set({
+        isAuthenticated: false,
+        userProfile: defaultUserProfile,
+      })
+      return
+    }
+
+    const u = user
+    const isRealUser = !u.is_anonymous
+    const meta = (u.user_metadata ?? {}) as Record<string, string | undefined>
+    const displayName =
+      profile?.display_name?.trim() ||
+      meta.full_name ||
+      meta.name ||
+      u.email?.split('@')[0] ||
+      defaultUserProfile.displayName
+    const usernameRaw =
+      profile?.username?.trim() ||
+      meta.username ||
+      displayName.replace(/\s+/g, '_').toUpperCase()
+    const username = usernameRaw || defaultUserProfile.username
+    const avatarUrl =
+      profile?.avatar_url?.trim() ||
+      meta.avatar_url ||
+      defaultUserProfile.avatarUrl
+    const bio = profile?.bio?.trim() ?? ''
+
+    set({
+      isAuthenticated: isRealUser,
+      userProfile: {
+        displayName,
+        username: username.replace(/^@/, ''),
+        bio,
+        avatarUrl,
+      },
+      ...(isRealUser
+        ? {
+            showSignIn: false,
+            welcomeDismissed: true,
+            tab: 'discover' as Tab,
+          }
+        : {}),
+    })
+
+    if (isRealUser) {
+      persistWelcomeDismissed()
+    }
   },
   returnToLanding: () => {
     clearWelcomeDismissedPersisted()

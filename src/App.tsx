@@ -3,10 +3,12 @@ import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Info, Moon, Sun, User, X, Zap } from 'lucide-react'
 import {
-  events,
+  events as demoEvents,
   getPlanDetailPast,
   getPlanDetailUpcoming,
 } from './data/demoData'
+import { mapDbEventToEventItem } from './lib/map-event'
+import { api } from './lib/trpc'
 import { useAppState } from './store/appStore'
 import type { Tab } from './types'
 import { PlanEventDetail } from './views/plan/PlanEventDetail'
@@ -89,6 +91,18 @@ function MainApp() {
   const [sheetPlanOverlay, setSheetPlanOverlay] = useState<SheetPlanOverlay | null>(null)
   const [sheetPlanReturnTab, setSheetPlanReturnTab] = useState<Tab | null>(null)
 
+  const eventsQuery = api.events.list.useQuery(
+    {},
+    { staleTime: 60_000, retry: 1 },
+  )
+  const mergedEvents = useMemo(() => {
+    const rows = eventsQuery.data
+    if (rows?.length) {
+      return rows.map((row) => mapDbEventToEventItem(row as Record<string, unknown>))
+    }
+    return demoEvents
+  }, [eventsQuery.data])
+
   useEffect(() => {
     if (!pendingPlanDetail) return
     if (pendingPlanDetail.returnTab != null && pendingPlanDetail.returnTab !== 'plan') {
@@ -116,8 +130,8 @@ function MainApp() {
   }, [])
 
   const activeEvent = useMemo(
-    () => events.find((event) => event.id === activeEventId) ?? null,
-    [activeEventId],
+    () => mergedEvents.find((event) => event.id === activeEventId) ?? null,
+    [activeEventId, mergedEvents],
   )
 
   const sheetPlanOverlayBody = useMemo(() => {
@@ -238,6 +252,7 @@ function MainApp() {
                   onOpenEvent={openEvent}
                   prefillPrompt={discoverPrefill}
                   onConsumePrefill={() => setDiscoverPrefill('')}
+                  events={mergedEvents}
                 />
               )}
               {tab === 'plan' && <PlanTab onOpenEvent={openEvent} />}

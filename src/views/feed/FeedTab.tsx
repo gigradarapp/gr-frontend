@@ -4,6 +4,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarClock, ChevronDown, ChevronRight, MapPin, Search, X, Zap } from 'lucide-react'
 import { feedWireframePosts } from '../../data/demoData'
 import { filterLocationRegionsByQuery, getLocationCityById } from '../../data/locationRegions'
+import { mapFeedRowToWireframe, type FeedPostRow } from '../../lib/map-feed'
+import { api } from '../../lib/trpc'
 import { useAppState } from '../../store/appStore'
 import type { FeedWireframePost } from '../../types'
 
@@ -130,6 +132,17 @@ export function FeedTab({ onOpenEvent, onAsk }: FeedTabProps) {
   const setLocationCityId = useAppState((s) => s.setFeedLocationCityId)
   const locationCity = getLocationCityById(locationCityId)
   const locationLabel = locationCity?.name ?? 'Singapore'
+  const feedQuery = api.feed.get.useQuery(
+    { limit: 20, cityId: locationCityId },
+    { staleTime: 30_000, retry: 1 },
+  )
+  const feedPosts = useMemo(() => {
+    const raw = feedQuery.data?.items
+    if (raw?.length) {
+      return raw.map((row) => mapFeedRowToWireframe(row as unknown as FeedPostRow))
+    }
+    return feedWireframePosts
+  }, [feedQuery.data])
   const [locationMenuOpen, setLocationMenuOpen] = useState(false)
   const [locationSearchQuery, setLocationSearchQuery] = useState('')
   const locationWrapRef = useRef<HTMLDivElement>(null)
@@ -285,9 +298,9 @@ export function FeedTab({ onOpenEvent, onAsk }: FeedTabProps) {
       </button>
 
       <div className="feed-wf-stack">
-        {feedWireframePosts.map((post, index) => (
+        {feedPosts.map((post, index) => (
           <FeedPostCard
-            key={post.eventId}
+            key={`${post.eventId}-${index}`}
             post={post}
             onOpenEvent={onOpenEvent}
             index={index}

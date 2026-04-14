@@ -14,6 +14,7 @@ import {
   PROFILE_GENRES_TRACKED,
   PROFILE_GIGS_TOTAL,
 } from '../../data/profileStats'
+import { postSignOut } from '../../lib/auth-api'
 import { useAppState } from '../../store/appStore'
 
 type ProfileTabProps = {
@@ -75,7 +76,9 @@ export function ProfileTab({
           className="icon-btn profile-toolbar-logout"
           type="button"
           aria-label="Log out"
-          onClick={returnToLanding}
+          onClick={() => {
+            void postSignOut().finally(() => returnToLanding())
+          }}
         >
           <LogOut size={18} aria-hidden />
         </button>

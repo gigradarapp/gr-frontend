@@ -1780,6 +1780,16 @@ body {
   min-height: 0;
 }
 
+/* Sole child of #root during TrpcProvider bootstrap — #root is not flex, so flex:1 collapses without this */
+#root > .tab-suspense-fallback {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 /*
  * Desktop “device frame” preview — only on large viewports. Do not use width ~768px here:
  * iOS Safari often matches (hover:hover)/(pointer:fine), and phone landscape width exceeds
@@ -9939,6 +9949,63 @@ button.profile-stat-btn {
 
 .welcome-signin-google-mark {
   display: inline-flex;
+}
+
+.welcome-signin-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: color-mix(in oklab, #ef4444 18%, var(--card));
+  border: 1px solid color-mix(in oklab, #ef4444 35%, var(--stroke));
+  border-radius: 12px;
+}
+
+.welcome-signin-success {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: color-mix(in oklab, #22c55e 14%, var(--card));
+  border: 1px solid color-mix(in oklab, #22c55e 28%, var(--stroke));
+  border-radius: 12px;
+}
+
+.welcome-signin-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.78em;
+  word-break: break-all;
+}
+
+.welcome-signin-email-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.welcome-signin-email-input {
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  outline: none;
+}
+
+.welcome-signin-email-input:focus {
+  border-color: color-mix(in oklab, var(--primary) 45%, var(--stroke));
+}
+
+.welcome-signin-email-input::placeholder {
+  color: var(--muted);
 }
 
 .welcome-signin-note {

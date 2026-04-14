@@ -8,8 +8,13 @@ GigRadar mobile-web UI (Vite + React + TypeScript).
 
 ```bash
 npm install
+cp .env.example .env
+# Leave VITE_API_BASE_URL empty locally so Vite proxies /trpc and /api/* to http://127.0.0.1:8787.
+
 npm run dev
 ```
+
+Run **[gr-backend](https://github.com/gigradarco/gr-backend)** on **8787** — the UI uses it for **tRPC**, **geocode**, and **auth** (`/api/auth/*`). Supabase keys live only in the Worker (`.dev.vars`); the browser never loads the Supabase client. In Supabase, enable **Anonymous**, **Email**, and **Google**; set **Site URL** / **Redirect URLs** to your app origin(s). On the Worker, set **`ALLOWED_ORIGINS`** to those same origins (e.g. `http://localhost:5173,http://127.0.0.1:5173`). Run `npm run db:migrate` and `npm run db:seed-feed` in gr-backend for feed data.
 
 ## Assets folder
 

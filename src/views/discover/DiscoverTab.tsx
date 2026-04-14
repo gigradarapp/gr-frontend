@@ -13,18 +13,22 @@ import {
 } from 'lucide-react'
 import { useAppState } from '../../store/appStore'
 import {
-  events,
   discoverSuggestedPrompts,
   discoverTargetPrompt,
+  events as demoEventsFallback,
   telegramBotLink,
 } from '../../data/demoData'
 import {
+  type DiscoverAgentResult,
   fetchMapboxPlaceName,
   fetchOpenAIDiscoverResult,
   getHardcodedAgentFallback,
   normalizePrompt,
 } from './discoverAgent'
 import { LaylaAttachDropdown } from '../../components/LaylaAttachDropdown'
+import { api } from '../../lib/trpc'
+import { getAccessToken } from '../../lib/session'
+import type { EventItem } from '../../types'
 
 const SAMPLE_PLACEHOLDER =
   'Techno in Marina Bay tonight under $50, credible lineups only'
@@ -36,6 +40,7 @@ type DiscoverTabProps = {
   onOpenEvent: (eventId: string) => void
   prefillPrompt: string
   onConsumePrefill: () => void
+  events: EventItem[]
 }
 
 type Conversation = {
@@ -49,7 +54,13 @@ type Conversation = {
   usedDemoFallback: boolean
 }
 
-export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: DiscoverTabProps) {
+export function DiscoverTab({
+  onOpenEvent,
+  prefillPrompt,
+  onConsumePrefill,
+  events,
+}: DiscoverTabProps) {
+  const discoverMut = api.discover.recommend.useMutation()
   const discoverChipAgentPromptsNormalized = useMemo(() => {
     const jazzNorm = normalizePrompt(discoverTargetPrompt)
     return new Set(
@@ -57,7 +68,13 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
     )
   }, [])
 
-  const event = events[1]
+  const hardcodedJazzEvent = useMemo(() => {
+    const fromProps = events.find((e) => e.id === 'bluenote') ?? events[0]
+    if (fromProps) return fromProps
+    return (
+      demoEventsFallback.find((e) => e.id === 'bluenote') ?? demoEventsFallback[0] ?? null
+    )
+  }, [events])
   const [inputValue, setInputValue] = useState('')
   const [submittedPrompt, setSubmittedPrompt] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
@@ -211,9 +228,34 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
     const agentLoadingStartedAt = performance.now()
     const needsMinAgentLoading = discoverChipAgentPromptsNormalized.has(normalizePrompt(nextPrompt))
 
-    const openAiResult = await fetchOpenAIDiscoverResult(nextPrompt)
-    const fromDemoFallback = openAiResult === null
-    const resolvedAgentResult = openAiResult ?? getHardcodedAgentFallback(nextPrompt)
+    let resolvedAgentResult: DiscoverAgentResult | null = null
+
+    if (getAccessToken()) {
+      try {
+        resolvedAgentResult = await discoverMut.mutateAsync({
+          prompt: nextPrompt,
+          events: events.map((e) => ({
+            id: e.id,
+            title: e.title,
+            venue: e.venue,
+            district: e.district,
+            genre: e.genre,
+            time: e.time,
+            verified: e.verified,
+            vibeTags: e.vibeTags,
+          })),
+        })
+      } catch {
+        resolvedAgentResult = null
+      }
+    }
+
+    let fromDemoFallback = false
+    if (!resolvedAgentResult) {
+      const openAiResult = await fetchOpenAIDiscoverResult(nextPrompt, events)
+      fromDemoFallback = openAiResult === null
+      resolvedAgentResult = openAiResult ?? getHardcodedAgentFallback(nextPrompt)
+    }
 
     if (requestCounter.current !== requestId) {
       return
@@ -566,7 +608,7 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
               </div>
             )}
 
-            {status === 'done' && resultMode === 'hardcoded' && (
+            {status === 'done' && resultMode === 'hardcoded' && hardcodedJazzEvent && (
               <>
                 <div className="chat-bubble bot">
                   Tiong Bahru is swinging tonight. I found two spots with high credibility and
@@ -574,8 +616,8 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
                 </div>
                 <article className="event-card compact">
                   <img
-                    src={event.image}
-                    alt={event.title}
+                    src={hardcodedJazzEvent.image}
+                    alt={hardcodedJazzEvent.title}
                     loading="lazy"
                     decoding="async"
                   />
@@ -584,16 +626,21 @@ export function DiscoverTab({ onOpenEvent, prefillPrompt, onConsumePrefill }: Di
                     <span className="chip verified">94 Verified</span>
                   </div>
                   <div className="event-body">
-                    <h3>{event.title}</h3>
+                    <h3>{hardcodedJazzEvent.title}</h3>
                     <p>
-                      {event.venue}, {event.district} · {event.time}
+                      {hardcodedJazzEvent.venue}, {hardcodedJazzEvent.district} ·{' '}
+                      {hardcodedJazzEvent.time}
                     </p>
                     <div className="tags">
-                      {event.vibeTags.map((tag) => (
+                      {hardcodedJazzEvent.vibeTags.map((tag) => (
                         <span key={tag}>{tag}</span>
                       ))}
                     </div>
-                    <button className="cta-full" type="button" onClick={() => onOpenEvent(event.id)}>
+                    <button
+                      className="cta-full"
+                      type="button"
+                      onClick={() => onOpenEvent(hardcodedJazzEvent.id)}
+                    >
                       I'm Going
                     </button>
                   </div>
