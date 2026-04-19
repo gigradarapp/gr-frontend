@@ -135,7 +135,12 @@ export function ProfileTab({
             Lv.{buzzTier.level} {buzzTier.label}
           </span>
         </div>
-        <h2 className="profile-display-name">{headline}</h2>
+        <h2
+          className="profile-display-name"
+          data-profile-headline={userProfile.displayName.trim() !== '' ? 'display' : 'handle'}
+        >
+          {headline}
+        </h2>
         <span className="profile-handle-pill">@{userProfile.username}</span>
         <button
           type="button"

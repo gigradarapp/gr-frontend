@@ -2620,6 +2620,12 @@ body {
   padding: 0 12px;
 }
 
+/* When there is no display name, headline is the @handle — match pill (all-caps look). */
+.profile-display-name[data-profile-headline='handle'] {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .profile-handle-pill {
   display: inline-flex;
   align-items: center;
@@ -4962,25 +4968,28 @@ button.profile-stat-btn {
   background: transparent;
   flex: 1;
   min-width: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .edit-profile-input--username:focus {
   border: none;
 }
 
-.edit-profile-username-row {
+.edit-profile-username-stack {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
   gap: 10px;
 }
 
-.edit-profile-username-row .edit-profile-username-field {
-  flex: 1;
+.edit-profile-username-stack .edit-profile-username-field {
+  width: 100%;
   min-width: 0;
 }
 
 .edit-profile-verify-username {
-  flex-shrink: 0;
+  width: 100%;
   min-height: 40px;
   padding: 0 16px;
   border-radius: 10px;

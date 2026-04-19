@@ -41,7 +41,7 @@ export type UserProfile = {
 
 const defaultUserProfile: UserProfile = {
   displayName: 'Vincenzo K',
-  username: 'VINCENZO_K',
+  username: 'vincenzo_k',
   bio: '',
   avatarUrl:
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
@@ -222,11 +222,17 @@ export const useAppState = create<AppState>((set) => ({
       meta.name ||
       u.email?.split('@')[0] ||
       defaultUserProfile.displayName
-    const usernameRaw =
-      profile?.username?.trim() ||
-      meta.username ||
-      displayName.replace(/\s+/g, '_').toUpperCase()
-    const username = usernameRaw || defaultUserProfile.username
+    const usernameFromProfile = profile?.username?.trim().replace(/^@+/, '').toLowerCase() ?? ''
+    const usernameFromMeta = meta.username?.trim().replace(/^@+/, '').toLowerCase() ?? ''
+    const usernameFromDisplay = displayName
+      .replace(/\s+/g, '_')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '')
+    const username =
+      usernameFromProfile ||
+      usernameFromMeta ||
+      usernameFromDisplay ||
+      defaultUserProfile.username
     const avatarUrl =
       profile?.avatar_url?.trim() ||
       meta.avatar_url ||
@@ -238,7 +244,7 @@ export const useAppState = create<AppState>((set) => ({
       isAuthenticated: isRealUser,
       userProfile: {
         displayName,
-        username: username.replace(/^@/, ''),
+        username,
         bio,
         avatarUrl,
       },

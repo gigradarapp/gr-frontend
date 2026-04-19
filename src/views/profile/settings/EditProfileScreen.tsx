@@ -42,7 +42,9 @@ export function EditProfileScreen() {
   const [displayName, setDisplayName] = useState(
     () => useAppState.getState().userProfile.displayName,
   )
-  const [username, setUsername] = useState(() => useAppState.getState().userProfile.username)
+  const [username, setUsername] = useState(() =>
+    normalizeProfileUsername(useAppState.getState().userProfile.username),
+  )
   const [bio, setBio] = useState(() => useAppState.getState().userProfile.bio)
 
   useEffect(() => {
@@ -153,9 +155,7 @@ export function EditProfileScreen() {
       const data = await updateProfileMu.mutateAsync(payload)
       setUserProfile({
         displayName: String(data.display_name ?? '').trim() || displayName.trim(),
-        username: String(data.username ?? n)
-          .replace(/^@/, '')
-          .toUpperCase(),
+        username: normalizeProfileUsername(String(data.username ?? n)),
         bio: String(data.bio ?? '').trim(),
         avatarUrl: String(data.avatar_url ?? avatarUrl),
       })
@@ -255,7 +255,7 @@ export function EditProfileScreen() {
             <label className="edit-profile-label" htmlFor="edit-profile-username">
               Username
             </label>
-            <div className="edit-profile-username-row">
+            <div className="edit-profile-username-stack">
               <div className="edit-profile-username-field">
                 <span className="edit-profile-username-prefix" aria-hidden>
                   @
@@ -266,9 +266,9 @@ export function EditProfileScreen() {
                   aria-describedby="edit-profile-username-hint"
                   value={username}
                   onChange={(e) =>
-                    setUsername(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))
+                    setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))
                   }
-                  autoCapitalize="characters"
+                  autoCapitalize="off"
                   autoCorrect="off"
                   spellCheck={false}
                   maxLength={30}
