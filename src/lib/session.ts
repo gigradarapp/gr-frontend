@@ -1,6 +1,21 @@
 const AT = 'buzo_access_token'
 const RT = 'buzo_refresh_token'
 
+/**
+ * Set when OAuth / magic-link tokens are read from the URL hash.
+ * Survives React Strict Mode's remount (the hash is gone on the second mount).
+ * Cleared after a successful session sync that consumes the "fresh sign-in" flag in AuthSync.
+ */
+let oauthReturnPendingWelcome = false
+
+export function peekOAuthReturnPendingWelcome(): boolean {
+  return oauthReturnPendingWelcome
+}
+
+export function clearOAuthReturnPendingWelcome(): void {
+  oauthReturnPendingWelcome = false
+}
+
 export function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -38,6 +53,7 @@ export function clearSession() {
   } catch {
     /* ignore */
   }
+  clearOAuthReturnPendingWelcome()
   notifyAuthChanged()
 }
 
@@ -100,6 +116,7 @@ export function consumeOAuthHash(): boolean {
   }
 
   setTokens({ access_token, refresh_token })
+  oauthReturnPendingWelcome = true
   stripUrlToPathAndSearch()
   return true
 }

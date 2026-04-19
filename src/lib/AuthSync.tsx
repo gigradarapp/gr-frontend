@@ -1,7 +1,13 @@
 import { useEffect, type ReactNode } from 'react'
 import { useAppState } from '../store/appStore'
 import { fetchAuthSession, refreshAccessToken } from './auth-api'
-import { consumeOAuthHash, getRefreshToken, getAccessToken } from './session'
+import {
+  clearOAuthReturnPendingWelcome,
+  consumeOAuthHash,
+  getAccessToken,
+  getRefreshToken,
+  peekOAuthReturnPendingWelcome,
+} from './session'
 
 function prewarmImage(url: string | null | undefined) {
   if (!url) return
@@ -43,15 +49,28 @@ export function AuthSync({ children }: { children: ReactNode }) {
     }
     window.addEventListener('buzo-auth-hash-error', onHashError)
     consumeOAuthHash()
+    /**
+     * `peekOAuthReturnPendingWelcome`: true after hash consumed — including across Strict Mode remount
+     * (hash is stripped on first mount; latch clears only after session sync succeeds).
+     */
+    let markNextSessionSyncAsFreshSignIn = peekOAuthReturnPendingWelcome()
 
     let cancelled = false
     const sync = async () => {
+      const isFreshSignIn = markNextSessionSyncAsFreshSignIn
+      markNextSessionSyncAsFreshSignIn = false
       try {
         const { user, profile } = await fetchAuthSession()
         if (cancelled) return
         prewarmImage(profile?.avatar_url)
-        useAppState.getState().applySupabaseSession(user, profile)
+        useAppState.getState().applySupabaseSession(user, profile, { isFreshSignIn })
+        if (isFreshSignIn) {
+          clearOAuthReturnPendingWelcome()
+        }
       } catch {
+        if (isFreshSignIn) {
+          clearOAuthReturnPendingWelcome()
+        }
         if (!cancelled) {
           const state = useAppState.getState()
           // If user was on profile tab when session expired, redirect to discover

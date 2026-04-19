@@ -119,6 +119,7 @@ type AppState = {
       avatar_url?: string | null
       bio?: string | null
     } | null,
+    options?: { isFreshSignIn?: boolean },
   ) => void
   /** Sign out demo session and show the pre-login welcome again. */
   returnToLanding: () => void
@@ -204,7 +205,7 @@ export const useAppState = create<AppState>((set) => ({
       tab: 'discover',
     })
   },
-  applySupabaseSession: (user, profile) => {
+  applySupabaseSession: (user, profile, options) => {
     if (!user) {
       set({
         isAuthenticated: false,
@@ -215,6 +216,7 @@ export const useAppState = create<AppState>((set) => ({
 
     const u = user
     const isRealUser = !u.is_anonymous
+    const isFreshSignIn = options?.isFreshSignIn === true
     const meta = (u.user_metadata ?? {}) as Record<string, string | undefined>
     const displayName =
       profile?.display_name?.trim() ||
@@ -253,7 +255,8 @@ export const useAppState = create<AppState>((set) => ({
             showSignIn: false,
             signInRedirectError: null,
             welcomeDismissed: true,
-            showWelcomeBack: !wasAuthenticated, // Show welcome back on new sign-in
+            // Only set true here — do not set false on every session poll (Strict Mode 2nd mount / refresh sync).
+            ...(isFreshSignIn && !wasAuthenticated ? { showWelcomeBack: true } : {}),
             tab: 'discover' as Tab,
           }
         : {}),
