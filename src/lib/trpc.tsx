@@ -5,9 +5,10 @@ import { createTRPCReact } from '@trpc/react-query'
 import type { AppRouter } from '../trpc/app-router'
 import { apiBase } from './api-base'
 import { postAnonymousSession } from './auth-api'
-import { getAccessToken } from './session'
+import { consumeOAuthHash, getAccessToken } from './session'
 
 export const api = createTRPCReact<AppRouter>()
+let anonymousBootstrapAttempted = false
 
 export function TrpcProvider({
   children,
@@ -40,8 +41,14 @@ export function TrpcProvider({
 
     ;(async () => {
       try {
+        // TrpcProvider mounts before AuthSync. Consume OAuth hash here so callback tokens
+        // are available before deciding to create an anonymous session.
+        consumeOAuthHash()
         if (!getAccessToken()) {
-          await postAnonymousSession()
+          if (!anonymousBootstrapAttempted) {
+            anonymousBootstrapAttempted = true
+            await postAnonymousSession()
+          }
         }
       } catch (e) {
         console.warn(
