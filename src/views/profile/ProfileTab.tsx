@@ -60,7 +60,7 @@ export function ProfileTab({
 
   const tasteTagsShown = tasteIdentityItems
   const badgesPreview = reputationBadges.slice(0, PROFILE_REPUTATION_PREVIEW_COUNT)
-  const tasteCount = tasteIdentityItems.length
+  const tasteHighlightedCount = tasteIdentityItems.filter((t) => t.accent).length
   const badgeCount = reputationBadges.length
 
   // Redirect unauthenticated users to discover with sign-in prompt
@@ -208,7 +208,7 @@ export function ProfileTab({
         <div className="section-title-rule section-title-rule--with-action" id="profile-taste-heading">
           <span className="section-title-rule__text">
             {TASTE_AND_RECOMMENDATIONS_TITLE}{' '}
-            <span className="section-title-count">({tasteCount})</span>
+            <span className="section-title-count">({tasteHighlightedCount})</span>
           </span>
           <span className="section-title-rule__line" aria-hidden />
           <button
