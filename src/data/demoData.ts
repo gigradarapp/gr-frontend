@@ -211,7 +211,7 @@ export type WelcomeLandingPillar = {
 
 export const welcomeAllInOneCopy = {
   title: 'All-in-one AI nightlife planner',
-  body: `Looking for the right night — date, birthday, reunion, or “nothing planned yet”? You’re in the right place. Ask Buzo anything about where to go: venues, lineups, credibility, cover, and what people like you are leaning toward. Whether you’re rolling with friends, going out as a couple, or flying solo, we help you turn an idea into a plan you trust. Fewer tabs, fewer regrets — more of the good kind of nights.`,
+  subtitle: 'From "where tonight?" to a plan you trust — in under a minute.',
   ctaLabel: 'Create a new night',
 }
 
@@ -225,22 +225,22 @@ export const welcomeLandingPillars: WelcomeLandingPillar[] = [
   {
     icon: 'sparkles',
     title: 'Tailor-made',
-    body: 'Tell Buzo your vibe, budget, and neighborhood — get a plan that fits your night, not a one-size list of the usual suspects.',
+    body: 'Your vibe, budget, and neighbourhood — your plan.',
   },
   {
     icon: 'wallet',
     title: 'Cheaper',
-    body: 'See credible options with fair entry and less guesswork, so you don’t pay twice for the wrong door or dead room.',
+    body: 'Credible options, fair entry, no door surprises.',
   },
   {
     icon: 'compass',
     title: 'Hidden gems',
-    body: 'Dig past the obvious feed — off-path rooms, residencies, and pockets of the city that still feel like a find.',
+    body: 'Off-path rooms and residencies worth the detour.',
   },
   {
     icon: 'calendar',
     title: 'No surprises',
-    body: 'Verification context, timing, and what to expect — so your night runs on rhythm, not on “I hope this place is real.”',
+    body: 'Lineups, timing, and context — verified.',
   },
 ]
 
@@ -294,6 +294,11 @@ export const welcomeLandingFaq: WelcomeLandingFaqItem[] = [
       'Yes — say who’s coming and the mix of tastes. Buzo can bias toward meetup-friendly flow, cover-friendly options, and spots with room to breathe.',
   },
   {
+    question: 'Is it free to get started?',
+    answer:
+      'Yes — getting started is completely free. You can plan, discover, and explore without paying anything. Some premium features require an upgrade, but the core Buzo experience is yours from day one.',
+  },
+  {
     question: 'Is Buzo good for couples or solo?',
     answer:
       'Both. Couples get low-stress pacing and atmosphere-led picks; solo travelers get safer, flexible routing with neighborhoods that are easier to navigate late.',
@@ -301,7 +306,7 @@ export const welcomeLandingFaq: WelcomeLandingFaqItem[] = [
   {
     question: 'Is Buzo free to use?',
     answer:
-      'You can explore planning and discovery in the demo. When accounts go live, core discovery stays accessible — with optional upgrades for power users.',
+      'Planning and discovery are free to explore. Core features stay accessible — with optional upgrades for power users.',
   },
 ]
 
@@ -626,7 +631,7 @@ export function planDetailFromPast(p: PlanPastEvent): PlanPageEvent {
       emphasis: 'Memory',
       after: ' — open any night here for recap-style details.',
     },
-    audioPreviewLabel: 'RECAP (DEMO)',
+    audioPreviewLabel: 'RECAP',
     audioCurrent: '0:00',
     audioTotal: '0:00',
     friendsAttendingCount: 0,

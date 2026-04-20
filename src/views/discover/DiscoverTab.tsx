@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Maximize2,
   Minimize2,
   MoreHorizontal,
+  Pencil,
   Send,
   History,
   Trash2,
@@ -47,6 +49,8 @@ type DiscoverTabProps = {
 type Conversation = {
   id: string
   prompt: string
+  /** User-edited title; falls back to `prompt` when empty. */
+  title?: string
   status: 'idle' | 'loading' | 'done'
   resultMode: 'none' | 'hardcoded' | 'agent'
   agentReply: string
@@ -88,6 +92,10 @@ export function DiscoverTab({
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [editingConvId, setEditingConvId] = useState<string | null>(null)
+  const [editingTitleDraft, setEditingTitleDraft] = useState('')
+  const editingInputRef = useRef<HTMLInputElement | null>(null)
+  const [pendingDeleteConvId, setPendingDeleteConvId] = useState<string | null>(null)
   const [newChatMenuOpen, setNewChatMenuOpen] = useState(false)
   const [discoverMoreOpen, setDiscoverMoreOpen] = useState(false)
   /** Thread-mode composer: user can expand for more visible typing area */
@@ -159,10 +167,61 @@ export function DiscoverTab({
 
   const handleDeleteConversation = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    setPendingDeleteConvId(id)
+  }
+
+  const cancelPendingDelete = () => {
+    setPendingDeleteConvId(null)
+  }
+
+  const confirmPendingDelete = () => {
+    const id = pendingDeleteConvId
+    if (!id) return
     setConversations((prev) => prev.filter((conv) => conv.id !== id))
     if (currentConversationId === id) {
       handleNewChat()
     }
+    setPendingDeleteConvId(null)
+  }
+
+  const pendingDeleteConv = useMemo(
+    () => conversations.find((c) => c.id === pendingDeleteConvId) ?? null,
+    [conversations, pendingDeleteConvId],
+  )
+
+  useEffect(() => {
+    if (!pendingDeleteConvId) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPendingDeleteConvId(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [pendingDeleteConvId])
+
+  const handleStartRename = (conv: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingConvId(conv.id)
+    setEditingTitleDraft(conv.title?.trim() || conv.prompt)
+    window.setTimeout(() => {
+      editingInputRef.current?.focus()
+      editingInputRef.current?.select()
+    }, 0)
+  }
+
+  const handleCancelRename = () => {
+    setEditingConvId(null)
+    setEditingTitleDraft('')
+  }
+
+  const handleSaveRename = (id: string) => {
+    const nextTitle = editingTitleDraft.trim()
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === id ? { ...conv, title: nextTitle || undefined } : conv,
+      ),
+    )
+    setEditingConvId(null)
+    setEditingTitleDraft('')
   }
 
   useEffect(() => {
@@ -171,8 +230,9 @@ export function DiscoverTab({
     }
 
     handleNewChat()
-    setInputValue(prefillPrompt)
+    setInputValue('')
     onConsumePrefill()
+    void submitPrompt(prefillPrompt)
   }, [prefillPrompt, onConsumePrefill])
 
   useEffect(() => {
@@ -532,7 +592,7 @@ export function DiscoverTab({
               role="status"
               aria-live="polite"
             >
-              {usedDemoFallback ? 'Demo mode' : 'Live'}
+              {usedDemoFallback ? 'Offline' : 'Live'}
             </div>
           ) : null}
           <div className="discover-new-chat-wrap" ref={newChatMenuRef}>
@@ -617,30 +677,137 @@ export function DiscoverTab({
                   <p className="discover-drawer-empty">No past conversations.</p>
                 ) : (
                   <ul className="discover-drawer-list">
-                    {conversations.map((conv) => (
-                      <li
-                        key={conv.id}
-                        className={`discover-drawer-item ${currentConversationId === conv.id ? 'active' : ''}`}
-                        onClick={() => handleSelectConversation(conv)}
-                      >
-                        <div className="discover-drawer-item-text">
-                          {conv.prompt}
-                        </div>
-                        <button
-                          className="discover-drawer-item-delete"
-                          type="button"
-                          onClick={(e) => handleDeleteConversation(conv.id, e)}
-                          aria-label="Delete conversation"
+                    {conversations.map((conv) => {
+                      const displayTitle = conv.title?.trim() || conv.prompt
+                      const isEditing = editingConvId === conv.id
+                      return (
+                        <li
+                          key={conv.id}
+                          className={`discover-drawer-item ${currentConversationId === conv.id ? 'active' : ''}`}
+                          onClick={() => {
+                            if (isEditing) return
+                            handleSelectConversation(conv)
+                          }}
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </li>
-                    ))}
+                          {isEditing ? (
+                            <input
+                              ref={editingInputRef}
+                              className="discover-drawer-item-input"
+                              value={editingTitleDraft}
+                              onChange={(e) => setEditingTitleDraft(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  handleSaveRename(conv.id)
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault()
+                                  handleCancelRename()
+                                }
+                              }}
+                              onBlur={() => handleSaveRename(conv.id)}
+                              aria-label="Edit conversation title"
+                              maxLength={120}
+                            />
+                          ) : (
+                            <div
+                              className="discover-drawer-item-text"
+                              title={displayTitle}
+                            >
+                              {displayTitle}
+                            </div>
+                          )}
+                          <div className="discover-drawer-item-actions">
+                            {isEditing ? (
+                              <button
+                                className="discover-drawer-item-action discover-drawer-item-action--save"
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSaveRename(conv.id)
+                                }}
+                                aria-label="Save title"
+                              >
+                                <Check size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                className="discover-drawer-item-action"
+                                type="button"
+                                onClick={(e) => handleStartRename(conv, e)}
+                                aria-label="Rename conversation"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            <button
+                              className="discover-drawer-item-action discover-drawer-item-delete"
+                              type="button"
+                              onClick={(e) => handleDeleteConversation(conv.id, e)}
+                              aria-label="Delete conversation"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {pendingDeleteConv && (
+          <motion.div
+            key="discover-delete-confirm"
+            className="discover-confirm-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="discover-confirm-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={cancelPendingDelete}
+          >
+            <motion.div
+              className="discover-confirm-dialog"
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 id="discover-confirm-title" className="discover-confirm-title">
+                Delete this conversation?
+              </h3>
+              <p className="discover-confirm-body">
+                &ldquo;{pendingDeleteConv.title?.trim() || pendingDeleteConv.prompt}&rdquo; will be
+                removed from your chat history. This can&apos;t be undone.
+              </p>
+              <div className="discover-confirm-actions">
+                <button
+                  type="button"
+                  className="discover-confirm-btn discover-confirm-btn--ghost"
+                  onClick={cancelPendingDelete}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="discover-confirm-btn discover-confirm-btn--danger"
+                  onClick={confirmPendingDelete}
+                  autoFocus
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

@@ -90,7 +90,34 @@ function MainApp() {
     clearPendingPlanDetail,
     isDiscoverExpanded,
   } = useAppState()
-  const [discoverPrefill, setDiscoverPrefill] = useState('')
+  const [discoverPrefill, setDiscoverPrefill] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      return window.sessionStorage.getItem('buzo-pending-discover-prefill') ?? ''
+    } catch {
+      return ''
+    }
+  })
+  const stashDiscoverPrefill = useCallback((prefill: string) => {
+    setDiscoverPrefill(prefill)
+    try {
+      if (prefill) {
+        window.sessionStorage.setItem('buzo-pending-discover-prefill', prefill)
+      } else {
+        window.sessionStorage.removeItem('buzo-pending-discover-prefill')
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, [])
+  const consumeDiscoverPrefill = useCallback(() => {
+    setDiscoverPrefill('')
+    try {
+      window.sessionStorage.removeItem('buzo-pending-discover-prefill')
+    } catch {
+      /* storage unavailable */
+    }
+  }, [])
   const [sheetPlanOverlay, setSheetPlanOverlay] = useState<SheetPlanOverlay | null>(null)
   const [sheetPlanReturnTab, setSheetPlanReturnTab] = useState<Tab | null>(null)
 
@@ -178,10 +205,11 @@ function MainApp() {
       {!welcomeDismissed ? (
         <WelcomeScreen
           onEnterApp={(prefill, initialTab = 'discover') => {
-            setDiscoverPrefill(prefill)
+            stashDiscoverPrefill(prefill)
             setTab(initialTab)
             dismissWelcome()
           }}
+          onStashPrefill={stashDiscoverPrefill}
         />
       ) : (
         <main
@@ -254,7 +282,7 @@ function MainApp() {
                 <DiscoverTab
                   onOpenEvent={openEvent}
                   prefillPrompt={discoverPrefill}
-                  onConsumePrefill={() => setDiscoverPrefill('')}
+                  onConsumePrefill={consumeDiscoverPrefill}
                   events={mergedEvents}
                 />
               )}

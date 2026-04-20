@@ -9062,7 +9062,7 @@ button.taste-tag:focus-visible {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 0 16px 28px;
+  padding: 0 36px 36px;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -9070,7 +9070,7 @@ button.taste-tag:focus-visible {
 
 /* Layla-like hero + prompt stage (deep plum field, light composer card). */
 .welcome-layla-stage {
-  margin: 0 -16px;
+  margin: 0 -36px;
   padding: 22px clamp(20px, 5vw, 32px) 26px;
   border-radius: 0 0 22px 22px;
   background:
@@ -9146,7 +9146,8 @@ button.taste-tag:focus-visible {
   box-sizing: border-box;
   background: #fff;
   border-radius: 22px;
-  padding: 16px 18px 12px;
+  padding: 12px 14px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.65) inset,
     0 18px 40px rgba(0, 0, 0, 0.28);
@@ -9154,21 +9155,23 @@ button.taste-tag:focus-visible {
 
 .theme-dark .welcome-layla-composer {
   background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 18px 40px rgba(0, 0, 0, 0.38);
 }
 
 .theme-light .welcome-layla-composer {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 12px 32px rgba(20, 24, 35, 0.1);
+  border-color: rgba(28, 20, 36, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 0 #fff inset, 0 10px 36px rgba(28, 24, 40, 0.12);
 }
 
 .welcome-layla-textarea {
   display: block;
   width: 100%;
-  min-height: 92px;
+  min-height: 72px;
   margin: 0;
   padding: 6px 8px 4px;
   border: none;
@@ -9357,7 +9360,8 @@ button.taste-tag:focus-visible {
   place-items: center;
   border: none;
   border-radius: 999px;
-  background: #3f3f46;
+  background: linear-gradient(180deg, var(--primary-soft), var(--primary));
+  box-shadow: 0 2px 12px color-mix(in oklab, var(--primary) 42%, transparent);
   color: #fff;
   cursor: pointer;
   transition:
@@ -9372,6 +9376,24 @@ button.taste-tag:focus-visible {
 
 .welcome-layla-send:active {
   transform: scale(0.97);
+}
+
+.welcome-layla-send:disabled,
+.welcome-layla-send[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+  box-shadow: none;
+}
+
+.welcome-layla-send:disabled:hover,
+.welcome-layla-send[aria-disabled='true']:hover {
+  filter: grayscale(0.2);
+}
+
+.welcome-layla-send:disabled:active,
+.welcome-layla-send[aria-disabled='true']:active {
+  transform: none;
 }
 
 .welcome-chip-scroller {
@@ -9405,35 +9427,41 @@ button.taste-tag:focus-visible {
 .welcome-layla-shortcut {
   flex: 0 0 auto;
   scroll-snap-align: start;
-  border: none;
-  background: #fff;
-  color: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(8, 6, 12, 0.55);
+  color: rgba(255, 255, 255, 0.88);
   border-radius: 999px;
-  min-height: 40px;
-  padding: 0 16px;
-  font-size: 0.84rem;
-  font-weight: 650;
+  min-height: 36px;
+  padding: 8px 13px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.38;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+  box-shadow: none;
   transition:
     transform 0.1s,
+    border-color 0.12s,
     box-shadow 0.12s;
   -webkit-tap-highlight-color: transparent;
 }
 
-.theme-dark .welcome-layla-shortcut {
-  background: rgba(255, 255, 255, 0.09);
-  color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
 .theme-light .welcome-layla-shortcut {
-  box-shadow: 0 1px 3px rgba(20, 24, 35, 0.12);
+  border-color: rgba(28, 20, 36, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: #1c1424;
 }
 
 .welcome-layla-shortcut:hover {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  border-color: color-mix(in oklab, var(--primary) 55%, rgba(255, 255, 255, 0.2));
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.theme-light .welcome-layla-shortcut:hover {
+  border-color: color-mix(in oklab, var(--primary) 45%, rgba(28, 20, 36, 0.2));
+  background: #fff;
 }
 
 .welcome-layla-shortcut:active {
@@ -9725,8 +9753,9 @@ button.taste-tag:focus-visible {
 
 .discover-drawer-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
   padding: 12px;
   border-radius: 12px;
   background: color-mix(in oklab, var(--card) 60%, transparent);
@@ -9746,12 +9775,60 @@ button.taste-tag:focus-visible {
 
 .discover-drawer-item-text {
   flex: 1;
-  white-space: nowrap;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
   font-size: 0.9rem;
   font-weight: 500;
-  margin-right: 8px;
+  line-height: 1.35;
+}
+
+.discover-drawer-item-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.35;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.discover-drawer-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.discover-drawer-item-action {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.discover-drawer-item-action:hover {
+  background: color-mix(in oklab, var(--text) 10%, transparent);
+  color: var(--text);
+}
+
+.discover-drawer-item-action--save:hover {
+  background: color-mix(in oklab, var(--primary) 20%, transparent);
+  color: var(--primary);
 }
 
 .discover-drawer-item-delete {
@@ -9770,6 +9847,85 @@ button.taste-tag:focus-visible {
 .discover-drawer-item-delete:hover {
   background: rgba(255, 60, 60, 0.15);
   color: #ff4d4d;
+}
+
+.discover-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 200;
+}
+
+.discover-confirm-dialog {
+  width: 100%;
+  max-width: 360px;
+  background: var(--card);
+  border: 1px solid color-mix(in oklab, var(--text) 10%, transparent);
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+}
+
+.discover-confirm-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.discover-confirm-body {
+  margin: 0 0 18px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.discover-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.discover-confirm-btn {
+  appearance: none;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.discover-confirm-btn--ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid color-mix(in oklab, var(--text) 18%, transparent);
+}
+
+.discover-confirm-btn--ghost:hover {
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+}
+
+.discover-confirm-btn--danger {
+  background: #e03131;
+  color: #fff;
+}
+
+.discover-confirm-btn--danger:hover {
+  background: #c92a2a;
+}
+
+.discover-confirm-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Screen container becomes a flex column so the tab can fill it */
@@ -10347,7 +10503,7 @@ button.taste-tag:focus-visible {
 }
 
 .welcome-section-headline {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   font-size: clamp(1.2rem, 3.6vw, 1.45rem);
   font-weight: 800;
   line-height: 1.15;
@@ -10365,6 +10521,10 @@ button.taste-tag:focus-visible {
   padding-top: 0;
 }
 
+.welcome-every-step {
+  padding-bottom: 16px;
+}
+
 .welcome-prose {
   margin: 0 0 16px;
   font-size: 0.9rem;
@@ -10374,6 +10534,13 @@ button.taste-tag:focus-visible {
 
 .theme-light .welcome-prose {
   color: color-mix(in oklab, var(--text) 92%, var(--muted));
+}
+
+.welcome-all-in-one-sub {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .welcome-soft-cta {
@@ -10408,7 +10575,7 @@ button.taste-tag:focus-visible {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 36px;
 }
 
 .welcome-video-section {
@@ -10462,8 +10629,27 @@ button.taste-tag:focus-visible {
 }
 
 .welcome-pillars--layla {
-  gap: 18px;
-  padding: 18px 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.welcome-pillars--layla .welcome-pillar {
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  background: color-mix(in oklab, var(--bg-elev) 55%, transparent);
+}
+
+.welcome-pillars--layla .welcome-pillar-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
 }
 
 .welcome-pillar-copy--long {
@@ -10474,7 +10660,7 @@ button.taste-tag:focus-visible {
 .welcome-testimonial-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 28px;
 }
 
 .welcome-testimonial-card {
@@ -10525,7 +10711,7 @@ button.taste-tag:focus-visible {
 .welcome-faq-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
 }
 
 .welcome-faq-item {

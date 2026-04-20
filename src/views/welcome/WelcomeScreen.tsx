@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   CalendarCheck,
@@ -11,15 +11,12 @@ import {
   Wallet,
 } from 'lucide-react'
 import {
-  welcomeAllInOneCopy,
   welcomeEveryStepCopy,
   welcomeFinalCtaCopy,
   welcomeIntroShortcuts,
   welcomeLandingFaq,
   welcomeLandingPillars,
   welcomeLandingTestimonials,
-  welcomePlaceholderYoutube,
-  welcomeSpotlightNights,
   type WelcomeLandingPillar,
 } from '../../data/demoData'
 import type { Tab } from '../../types'
@@ -29,16 +26,9 @@ import { LaylaAttachDropdown } from '../../components/LaylaAttachDropdown'
 const SAMPLE_PLACEHOLDER =
   'Techno in Marina Bay tonight under $50, credible lineups only'
 
-function youtubeEmbedSrc(videoId: string) {
-  const u = new URL(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}`)
-  u.searchParams.set('rel', '0')
-  u.searchParams.set('modestbranding', '1')
-  // Main youtube.com embed works more reliably than youtube-nocookie in some browsers / previews.
-  return u.toString()
-}
-
 type WelcomeScreenProps = {
   onEnterApp: (discoverPrefill: string, initialTab?: Tab) => void
+  onStashPrefill?: (discoverPrefill: string) => void
 }
 
 function WelcomePillarIcon({ icon }: { icon: WelcomeLandingPillar['icon'] }) {
@@ -55,23 +45,29 @@ function WelcomePillarIcon({ icon }: { icon: WelcomeLandingPillar['icon'] }) {
   }
 }
 
-export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
-  const { theme, setTheme, openSignIn } = useAppState()
+export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps) {
+  const { theme, setTheme, openSignIn, isAuthenticated } = useAppState()
   const [inputValue, setInputValue] = useState('')
   const discoverMoreRef = useRef<HTMLElement | null>(null)
   const promptStackRef = useRef<HTMLDivElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-  const youtubeEmbedUrl = useMemo(
-    () => youtubeEmbedSrc(welcomePlaceholderYoutube.videoId),
-    [welcomePlaceholderYoutube.videoId],
-  )
+
+  const trimmedInput = inputValue.trim()
+  const hasMeaningfulText = trimmedInput.length >= 3
 
   const enterWithPrefill = (prefill: string) => {
-    onEnterApp(prefill.trim(), 'discover')
+    const clean = prefill.trim()
+    if (!isAuthenticated) {
+      if (clean) onStashPrefill?.(clean)
+      openSignIn()
+      return
+    }
+    onEnterApp(clean, 'discover')
   }
 
   const submitPrompt = () => {
-    enterWithPrefill(inputValue)
+    if (!hasMeaningfulText) return
+    enterWithPrefill(trimmedInput)
   }
 
   const scrollToDiscoverMore = () => {
@@ -135,6 +131,27 @@ export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
           </div>
 
           <div ref={promptStackRef} className="welcome-layla-prompt-stack">
+            <div
+              className="welcome-chip-scroller welcome-layla-chip-row"
+              role="list"
+              aria-label="Quick prompts"
+            >
+              {welcomeIntroShortcuts.map(({ label, prompt }) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="welcome-layla-shortcut"
+                  role="listitem"
+                  onClick={() => {
+                    setInputValue(prompt)
+                    textareaRef.current?.focus()
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             <div className="welcome-layla-composer" role="group" aria-label="Describe your night">
               <textarea
                 ref={textareaRef}
@@ -159,28 +176,12 @@ export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
                   className="welcome-layla-send"
                   aria-label="Plan with this prompt"
                   onClick={submitPrompt}
+                  disabled={!hasMeaningfulText}
+                  aria-disabled={!hasMeaningfulText}
                 >
                   <Send size={18} strokeWidth={2.25} aria-hidden />
                 </button>
               </div>
-            </div>
-
-            <div
-              className="welcome-chip-scroller welcome-layla-chip-row"
-              role="list"
-              aria-label="Quick prompts"
-            >
-              {welcomeIntroShortcuts.map(({ label, prompt }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="welcome-layla-shortcut"
-                  role="listitem"
-                  onClick={() => enterWithPrefill(prompt)}
-                >
-                  {label}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -191,64 +192,10 @@ export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
         </section>
 
         <div className="welcome-content-column">
-          <section className="welcome-video-section" aria-labelledby="welcome-video-heading">
-            <h2 id="welcome-video-heading" className="welcome-video-title">
-              {welcomePlaceholderYoutube.title}
-            </h2>
-            <div className="welcome-video-frame">
-              <iframe
-                title={welcomePlaceholderYoutube.embedTitle}
-                src={youtubeEmbedUrl}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-          </section>
-
-          <section
-            ref={discoverMoreRef}
-            className="welcome-spotlights welcome-below-fold"
-            id="welcome-discover-more"
-            aria-labelledby="welcome-spotlights-heading"
-          >
-            <h2 id="welcome-spotlights-heading" className="welcome-section-title welcome-section-title--large">
-              Where to go next
-            </h2>
-            <div className="welcome-spotlight-list">
-              {welcomeSpotlightNights.map((night) => (
-                <button
-                  key={night.title}
-                  type="button"
-                  className="welcome-spotlight-card"
-                  onClick={() => enterWithPrefill(night.prompt)}
-                >
-                  <img src={night.image} alt="" className="welcome-spotlight-img" loading="lazy" />
-                  <div className="welcome-spotlight-body">
-                    <span className="welcome-spotlight-title">{night.title}</span>
-                    <span className="welcome-spotlight-sub">{night.subtitle}</span>
-                    <span className="welcome-spotlight-cta">Start planning</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="welcome-all-in-one" aria-labelledby="welcome-all-in-one-heading">
-            <h2 id="welcome-all-in-one-heading" className="welcome-section-headline">
-              {welcomeAllInOneCopy.title}
-            </h2>
-            <p className="welcome-prose">{welcomeAllInOneCopy.body}</p>
-            <button type="button" className="welcome-soft-cta" onClick={scrollToComposer}>
-              {welcomeAllInOneCopy.ctaLabel}
-            </button>
-          </section>
-
-          <section className="welcome-every-step" aria-labelledby="welcome-every-step-heading">
+          <section ref={discoverMoreRef} className="welcome-every-step" id="welcome-discover-more" aria-labelledby="welcome-every-step-heading">
             <h2 id="welcome-every-step-heading" className="welcome-section-headline">
               {welcomeEveryStepCopy.title}
             </h2>
-            <p className="welcome-every-step-lead">{welcomeEveryStepCopy.lead}</p>
             <div className="welcome-pillars welcome-pillars--layla">
               {welcomeLandingPillars.map((pillar) => (
                 <div key={pillar.title} className="welcome-pillar">
@@ -269,7 +216,7 @@ export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
               What night owls say about Buzo
             </h2>
             <div className="welcome-testimonial-list">
-              {welcomeLandingTestimonials.map((t) => (
+              {welcomeLandingTestimonials.slice(0, 2).map((t) => (
                 <blockquote key={t.name} className="welcome-testimonial-card">
                   <p className="welcome-testimonial-quote">&ldquo;{t.quote}&rdquo;</p>
                   <footer className="welcome-testimonial-meta">
@@ -290,7 +237,7 @@ export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
               Frequently asked questions
             </h2>
             <div className="welcome-faq-list">
-              {welcomeLandingFaq.map((item) => (
+              {welcomeLandingFaq.slice(0, 4).map((item) => (
                 <details key={item.question} className="welcome-faq-item">
                   <summary className="welcome-faq-question">{item.question}</summary>
                   <p className="welcome-faq-answer">{item.answer}</p>
@@ -310,7 +257,7 @@ export function WelcomeScreen({ onEnterApp }: WelcomeScreenProps) {
           </section>
 
           <p className="welcome-footnote">
-            Planning is free to try in this demo. Sign in when you want saved taste and plans.
+            Getting started is free. Sign in to start planning your evenings.
           </p>
         </div>
       </motion.div>
