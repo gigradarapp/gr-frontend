@@ -165,10 +165,6 @@ export function PrivacyPolicyScreen() {
               Questions about this policy or your data? Reach us through <strong>Send feedback</strong> in
               Settings or at the contact address your team publishes for Buzo support.
             </p>
-            <p className="privacy-policy-note">
-              This policy is a template for a product in development. Have it reviewed by qualified legal counsel
-              before relying on it for compliance.
-            </p>
           </section>
         </article>
       </div>

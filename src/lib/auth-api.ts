@@ -7,6 +7,7 @@ type ProfileRow = {
   username?: string | null
   avatar_url?: string | null
   bio?: string | null
+  default_city_id?: string | null
   user_taste_categories?: Array<{ label: string; accent: string }> | null
 } | null
 
@@ -66,6 +67,31 @@ export async function postProfileTastePreferences(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ userTasteCategories }),
+  })
+  if (!r.ok) {
+    let msg = `HTTP ${r.status}`
+    try {
+      const j = (await r.json()) as { error?: string }
+      if (j.error) msg = j.error
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg)
+  }
+}
+
+export async function postProfileDefaultCity(defaultCityId: string | null): Promise<void> {
+  const token = getAccessToken()
+  if (!token) {
+    throw new Error('Not signed in')
+  }
+  const r = await fetch(`${apiBase()}/api/profile/default-city`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ defaultCityId }),
   })
   if (!r.ok) {
     let msg = `HTTP ${r.status}`

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ChevronRight,
   CreditCard,
-  Fingerprint,
   Globe,
   Info,
   MapPin,
@@ -15,7 +14,7 @@ import {
   Trash2,
   User,
 } from 'lucide-react'
-import { TASTE_AND_RECOMMENDATIONS_TITLE } from '../../../data/profileIdentity'
+import { getLocationCityById } from '../../../data/locationRegions'
 import { postDeleteAccount } from '../../../lib/auth-api'
 import { useAppState } from '../../../store/appStore'
 
@@ -78,15 +77,20 @@ export function SettingsScreen() {
     openFeedback,
     openEditProfile,
     openSubscription,
-    openProfileTasteAll,
+    openLocationSettings,
     returnToLanding,
+    feedLocationCityId,
+    isAuthenticated,
+    profileDefaultCityId,
+    locationPreferenceMode,
+    nearbyRadiusKm,
     theme,
     setTheme,
   } = useAppState()
-
-  const noop = () => {
-    window.alert('Demo: connect this row to your flow.')
-  }
+  const hasDefaultCity = !isAuthenticated || profileDefaultCityId != null
+  const cityName = hasDefaultCity ? (getLocationCityById(feedLocationCityId)?.name ?? 'Singapore') : 'Not set'
+  const locationSummary =
+    locationPreferenceMode === 'precise' ? `${cityName} • ${nearbyRadiusKm} km` : `${cityName} (default city)`
 
   const handleDeleteAccount = () => {
     const ok = window.confirm(
@@ -132,14 +136,11 @@ export function SettingsScreen() {
         </SettingsGroup>
 
         <SettingsGroup title="Preferences">
-          <SettingsRow icon={MapPin} label="Location & gigs near you" onClick={noop} />
           <SettingsRow
-            icon={Fingerprint}
-            label={TASTE_AND_RECOMMENDATIONS_TITLE}
-            onClick={() => {
-              closeSettings()
-              openProfileTasteAll()
-            }}
+            icon={MapPin}
+            label="Location & gigs near you"
+            value={locationSummary}
+            onClick={openLocationSettings}
           />
           <SettingsRow
             icon={theme === 'dark' ? Moon : Sun}

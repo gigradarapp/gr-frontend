@@ -20,6 +20,8 @@ import { ProfileStatsScreen } from './views/profile/ProfileStatsScreen'
 import { ProfileTasteIdentityScreen } from './views/profile/ProfileTasteIdentityScreen'
 import {
   SettingsScreen,
+  LocationSettingsScreen,
+  LocationCityPickerScreen,
   EditProfileScreen,
   LanguageScreen,
   PrivacySafetyScreen,
@@ -73,6 +75,8 @@ function MainApp() {
     showProfileReputationAll,
     showProfileStats,
     showSettings,
+    showLocationSettings,
+    showLocationCityPicker,
     showLanguage,
     showPrivacySafety,
     showPrivacyPolicy,
@@ -309,6 +313,8 @@ function MainApp() {
             {showProfileReputationAll && <ProfileReputationScreen key="profile-reputation-all" />}
             {showProfileStats && <ProfileStatsScreen key="profile-stats" />}
             {showSettings && <SettingsScreen key="settings" />}
+            {showLocationSettings && <LocationSettingsScreen key="location-settings" />}
+            {showLocationCityPicker && <LocationCityPickerScreen key="location-city-picker" />}
             {showEditProfile && <EditProfileScreen key="edit-profile" />}
             {showLanguage && <LanguageScreen key="language" />}
             {showPrivacySafety && <PrivacySafetyScreen key="privacy-safety" />}

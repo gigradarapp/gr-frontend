@@ -34,8 +34,8 @@ export function PrivacySafetyScreen() {
         <section className="privacy-safety-section">
           <h3 className="privacy-safety-section-title">Your data</h3>
           <p className="privacy-safety-copy">
-            You control what you share on Buzo. We use your taste and activity to improve gig
-            recommendations—never sold to third parties.
+            You control what you share on Buzo. Under Singapore PDPA principles, we collect only what
+            we need to improve recommendations and never sell personal data to third parties.
           </p>
           <div className="privacy-safety-card">
             <button type="button" className="privacy-safety-row" onClick={openPrivacyPolicy}>
@@ -48,8 +48,9 @@ export function PrivacySafetyScreen() {
         <section className="privacy-safety-section">
           <h3 className="privacy-safety-section-title">Location</h3>
           <p className="privacy-safety-copy">
-            Location is optional and used only to surface gigs and scenes near you. You can change this
-            anytime under Preferences in Settings.
+            GPS location is optional and used only in-session to surface gigs and scenes near you. We do
+            not store GPS history. We only store your default city selection (city/country) to curate your
+            Buzo experience. You can change this anytime under Preferences in Settings.
           </p>
         </section>
 

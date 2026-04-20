@@ -2483,6 +2483,18 @@ body {
       color-mix(in oklab, var(--primary) 22%, var(--bg)) 48%,
       color-mix(in oklab, var(--card) 68%, var(--bg)) 100%
     );
+  display: grid;
+  place-items: center;
+}
+
+.profile-avatar-initial {
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+  color: color-mix(in oklab, var(--primary) 80%, #fff);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .profile-avatar-img {
@@ -3847,6 +3859,368 @@ button.taste-tag:focus-visible {
   flex-shrink: 0;
   color: var(--muted);
   opacity: 0.7;
+}
+
+/* ── Location settings (from Settings) ── */
+
+.location-settings-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  z-index: 12;
+  border-radius: 32px;
+  overflow: hidden;
+}
+
+.location-settings-screen-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--stroke);
+  min-height: 58px;
+  flex-shrink: 0;
+}
+
+.location-settings-screen-back {
+  border: 1px solid var(--stroke);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.location-settings-screen-title {
+  flex: 1;
+  font-size: 0.94rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.location-settings-screen-save {
+  border: 1px solid color-mix(in oklab, var(--primary) 52%, var(--stroke));
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+  color: var(--primary);
+  border-radius: 999px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.theme-light .location-settings-screen-save {
+  color: var(--primary-soft);
+  border-color: color-mix(in oklab, var(--primary-soft) 52%, var(--stroke));
+  background: color-mix(in oklab, var(--primary-soft) 12%, transparent);
+}
+
+.location-settings-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.location-settings-body::-webkit-scrollbar {
+  display: none;
+}
+
+.location-settings-section {
+  margin-bottom: 18px;
+}
+
+.location-settings-section-title {
+  margin: 0 0 10px 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.location-settings-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.location-settings-mode-btn {
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  min-height: 52px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+  color: var(--text);
+  font-size: 0.83rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.location-settings-mode-btn.is-active {
+  border-color: color-mix(in oklab, var(--primary) 50%, var(--stroke));
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.theme-light .location-settings-mode-btn.is-active {
+  color: var(--primary-soft);
+}
+
+.location-settings-card {
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+}
+
+.location-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.location-settings-row-icon {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.location-settings-row-label {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.location-settings-row-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.location-settings-row-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.location-radius-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.location-radius-chip {
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 0 13px;
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.location-radius-chip.is-active {
+  border-color: color-mix(in oklab, var(--primary) 50%, var(--stroke));
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+
+.theme-light .location-radius-chip.is-active {
+  color: var(--primary-soft);
+}
+
+.location-settings-note {
+  margin: 10px 2px 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* ── Location city picker (from Location settings) ── */
+
+.location-city-picker-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  z-index: 13;
+  border-radius: 32px;
+  overflow: hidden;
+}
+
+.location-city-picker-screen-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--stroke);
+  min-height: 58px;
+  flex-shrink: 0;
+}
+
+.location-city-picker-screen-back {
+  border: 1px solid var(--stroke);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.location-city-picker-screen-title {
+  flex: 1;
+  font-size: 0.97rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.location-city-picker-screen-spacer {
+  width: 34px;
+  flex-shrink: 0;
+}
+
+.location-city-picker-search-wrap {
+  position: relative;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid color-mix(in oklab, var(--stroke) 75%, transparent);
+}
+
+.location-city-picker-search-icon {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.location-city-picker-search-input {
+  width: 100%;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: max(16px, 0.9rem);
+  padding: 11px 12px 11px 36px;
+}
+
+.location-city-picker-search-input::placeholder {
+  color: var(--muted);
+}
+
+.location-city-picker-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 16px 24px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.location-city-picker-body::-webkit-scrollbar {
+  display: none;
+}
+
+.location-city-picker-region {
+  margin-bottom: 14px;
+}
+
+.location-city-picker-region-title {
+  margin: 0;
+  padding: 8px 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.location-city-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+}
+
+.location-city-picker-item {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--stroke);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.location-city-picker-list li:last-child .location-city-picker-item {
+  border-bottom: none;
+}
+
+.location-city-picker-item.is-active {
+  color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 10%, transparent);
+}
+
+.theme-light .location-city-picker-item.is-active {
+  color: var(--primary-soft);
+}
+
+.location-city-picker-item-meta {
+  color: var(--muted);
+  font-size: 0.73rem;
+  font-weight: 650;
+}
+
+.location-city-picker-empty {
+  margin: 30px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 /* ── Subscription (from Settings) ── */

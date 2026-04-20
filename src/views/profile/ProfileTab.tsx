@@ -55,6 +55,7 @@ export function ProfileTab({
   const ringPercent = Math.round(ringFill * 100)
   const ringStyle = { '--ring-fill': ringFill } as CSSProperties
   const [avatarLoaded, setAvatarLoaded] = useState(false)
+  const [avatarFailed, setAvatarFailed] = useState(false)
   const [tasteEditMode, setTasteEditMode] = useState(false)
   const tasteEditBaselineRef = useRef<TasteIdentityItem[] | null>(null)
 
@@ -78,6 +79,7 @@ export function ProfileTab({
 
   useEffect(() => {
     setAvatarLoaded(false)
+    setAvatarFailed(false)
   }, [userProfile.avatarUrl])
 
   return (
@@ -120,18 +122,30 @@ export function ProfileTab({
             aria-label={`Experience toward next tier, ${ringPercent} percent`}
             style={ringStyle}
           >
-            <div className={`profile-avatar-inner${avatarLoaded ? ' is-loaded' : ''}`}>
-              <span className="profile-avatar-placeholder" aria-hidden />
-              <img
-                src={userProfile.avatarUrl}
-                alt={avatarLabel}
-                className="profile-avatar-img"
-                decoding="async"
-                fetchPriority="high"
-                loading="eager"
-                onLoad={() => setAvatarLoaded(true)}
-                onError={() => setAvatarLoaded(true)}
-              />
+            <div className={`profile-avatar-inner${avatarLoaded && !avatarFailed ? ' is-loaded' : ''}`}>
+              <span className="profile-avatar-placeholder" aria-hidden>
+                {avatarFailed ? (
+                  <span className="profile-avatar-initial">
+                    {avatarLabel.charAt(0).toUpperCase()}
+                  </span>
+                ) : null}
+              </span>
+              {!avatarFailed && userProfile.avatarUrl ? (
+                <img
+                  src={userProfile.avatarUrl}
+                  alt={avatarLabel}
+                  className="profile-avatar-img"
+                  decoding="async"
+                  fetchPriority="high"
+                  loading="eager"
+                  referrerPolicy="no-referrer"
+                  onLoad={() => setAvatarLoaded(true)}
+                  onError={() => {
+                    setAvatarFailed(true)
+                    setAvatarLoaded(false)
+                  }}
+                />
+              ) : null}
               <span className="profile-avatar-gloss" aria-hidden />
             </div>
           </div>

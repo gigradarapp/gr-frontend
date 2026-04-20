@@ -200,6 +200,7 @@ export function EditProfileScreen() {
                   alt=""
                   className="edit-profile-avatar"
                   decoding="async"
+                  referrerPolicy="no-referrer"
                 />
                 <span className="edit-profile-avatar-gloss" aria-hidden />
               </div>

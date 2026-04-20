@@ -6,11 +6,12 @@ import {
   type TasteCategoryRow,
   type TasteIdentityItem,
 } from '../data/profileIdentity'
-import { DEFAULT_LOCATION_CITY_ID } from '../data/locationRegions'
+import { DEFAULT_LOCATION_CITY_ID, getLocationCityById } from '../data/locationRegions'
 import { schedulePersistUserTasteCategories } from '../lib/persist-user-taste'
 import type { Tab, Theme } from '../types'
 
 const WELCOME_SESSION_KEY = 'buzo-welcome-dismissed'
+const DEFAULT_CITY_STORAGE_KEY = 'buzo-default-city-id'
 
 function readWelcomeDismissed(): boolean {
   if (typeof window === 'undefined') {
@@ -20,6 +21,35 @@ function readWelcomeDismissed(): boolean {
     return window.sessionStorage.getItem(WELCOME_SESSION_KEY) === '1'
   } catch {
     return false
+  }
+}
+
+function readPersistedDefaultCityId(): string {
+  if (typeof window === 'undefined') return DEFAULT_LOCATION_CITY_ID
+  try {
+    const cityId = window.localStorage.getItem(DEFAULT_CITY_STORAGE_KEY)
+    if (cityId && getLocationCityById(cityId)) return cityId
+  } catch {
+    /* ignore storage failure */
+  }
+  return DEFAULT_LOCATION_CITY_ID
+}
+
+function persistDefaultCityId(cityId: string) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(DEFAULT_CITY_STORAGE_KEY, cityId)
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function clearPersistedDefaultCityId() {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(DEFAULT_CITY_STORAGE_KEY)
+  } catch {
+    /* ignore quota / private mode */
   }
 }
 
@@ -63,6 +93,13 @@ export type PendingPlanDetail = {
 }
 
 export type SubscriptionTier = 'basic' | 'pro'
+export type LocationPreferenceMode = 'precise' | 'city'
+export type LocationPermissionState = 'unknown' | 'granted' | 'denied'
+export type LocationSettingsDraft = {
+  cityId: string
+  mode: LocationPreferenceMode
+  radiusKm: number
+}
 
 /** Section to scroll to when opening scene stats from profile. */
 export type ProfileStatsFocus = 'cities' | 'gigs' | 'genres'
@@ -94,6 +131,16 @@ type AppState = {
   pendingPlanDetail: PendingPlanDetail | null
   /** Feed location pill — Plan explore detail defaults country/city filter to this. */
   feedLocationCityId: string
+  /** Nullable profile-level default city preference from local storage / profiles.default_city_id. */
+  profileDefaultCityId: string | null
+  /** Location preference for discovery when precise position is available. */
+  locationPreferenceMode: LocationPreferenceMode
+  /** Radius used when locationPreferenceMode = 'precise'. */
+  nearbyRadiusKm: number
+  /** Browser location permission state tracked from settings flow. */
+  locationPermission: LocationPermissionState
+  /** Staged edits from Location settings; committed only when user taps Save. */
+  locationSettingsDraft: LocationSettingsDraft | null
   showBuzzPoints: boolean
   /** Editable copy of demo taste tags — profile + taste screen read this. */
   tasteIdentityItems: TasteIdentityItem[]
@@ -103,6 +150,8 @@ type AppState = {
   /** When non-null, stats screen scrolls to this block after open. */
   profileStatsFocus: ProfileStatsFocus | null
   showSettings: boolean
+  showLocationSettings: boolean
+  showLocationCityPicker: boolean
   showLanguage: boolean
   showPrivacySafety: boolean
   showPrivacyPolicy: boolean
@@ -131,6 +180,7 @@ type AppState = {
       username?: string | null
       avatar_url?: string | null
       bio?: string | null
+      default_city_id?: string | null
       user_taste_categories?: Array<{ label: string; accent: string }> | null
     } | null,
     options?: { isFreshSignIn?: boolean; tasteCategories?: TasteCategoryRow[] },
@@ -158,6 +208,12 @@ type AppState = {
   closeProfileStats: () => void
   openSettings: () => void
   closeSettings: () => void
+  openLocationSettings: () => void
+  closeLocationSettings: () => void
+  openLocationCityPicker: () => void
+  closeLocationCityPicker: () => void
+  updateLocationSettingsDraft: (patch: Partial<LocationSettingsDraft>) => void
+  commitLocationSettingsDraft: () => void
   openLanguage: () => void
   closeLanguage: () => void
   openPrivacySafety: () => void
@@ -175,6 +231,9 @@ type AppState = {
   setUserProfile: (patch: Partial<UserProfile>) => void
   setSubscriptionTier: (tier: SubscriptionTier) => void
   setFeedLocationCityId: (cityId: string) => void
+  setLocationPreferenceMode: (mode: LocationPreferenceMode) => void
+  setNearbyRadiusKm: (km: number) => void
+  setLocationPermission: (permission: LocationPermissionState) => void
   isDiscoverExpanded: boolean
   toggleDiscoverExpanded: () => void
 }
@@ -190,7 +249,12 @@ export const useAppState = create<AppState>((set) => ({
   subscriptionTier: 'pro',
   activeEventId: null,
   pendingPlanDetail: null,
-  feedLocationCityId: DEFAULT_LOCATION_CITY_ID,
+  feedLocationCityId: readPersistedDefaultCityId() ?? DEFAULT_LOCATION_CITY_ID,
+  profileDefaultCityId: readPersistedDefaultCityId(),
+  locationPreferenceMode: 'city',
+  nearbyRadiusKm: 3,
+  locationPermission: 'unknown',
+  locationSettingsDraft: null,
   showBuzzPoints: false,
   tasteIdentityItems: getDefaultTasteIdentityItems(),
   showProfileTasteAll: false,
@@ -198,6 +262,8 @@ export const useAppState = create<AppState>((set) => ({
   showProfileStats: false,
   profileStatsFocus: null,
   showSettings: false,
+  showLocationSettings: false,
+  showLocationCityPicker: false,
   showLanguage: false,
   showPrivacySafety: false,
   showPrivacyPolicy: false,
@@ -232,6 +298,7 @@ export const useAppState = create<AppState>((set) => ({
         userProfile: defaultUserProfile,
         authEmail: null,
         tasteIdentityItems: getDefaultTasteIdentityItems(),
+        profileDefaultCityId: readPersistedDefaultCityId(),
       })
       return
     }
@@ -263,6 +330,14 @@ export const useAppState = create<AppState>((set) => ({
       meta.avatar_url ||
       defaultUserProfile.avatarUrl
     const bio = profile?.bio?.trim() ?? ''
+    const sessionDefaultCityId = profile?.default_city_id?.trim() ?? ''
+    const resolvedDefaultCityId =
+      sessionDefaultCityId && getLocationCityById(sessionDefaultCityId) ? sessionDefaultCityId : null
+    if (resolvedDefaultCityId) {
+      persistDefaultCityId(resolvedDefaultCityId)
+    } else if (isRealUser) {
+      clearPersistedDefaultCityId()
+    }
 
     const catalog = options?.tasteCategories ?? []
     const tasteIdentityItems = buildTasteIdentityItemsFromSession(
@@ -281,6 +356,8 @@ export const useAppState = create<AppState>((set) => ({
         bio,
         avatarUrl,
       },
+      profileDefaultCityId: resolvedDefaultCityId,
+      ...(resolvedDefaultCityId ? { feedLocationCityId: resolvedDefaultCityId } : {}),
       tasteIdentityItems,
       ...(isRealUser
         ? {
@@ -316,6 +393,9 @@ export const useAppState = create<AppState>((set) => ({
       showProfileStats: false,
       profileStatsFocus: null,
       showSettings: false,
+      showLocationSettings: false,
+      showLocationCityPicker: false,
+      locationSettingsDraft: null,
       showLanguage: false,
       showPrivacySafety: false,
       showPrivacyPolicy: false,
@@ -323,6 +403,7 @@ export const useAppState = create<AppState>((set) => ({
       showEmailLogin: false,
       showEditProfile: false,
       showSubscription: false,
+      profileDefaultCityId: readPersistedDefaultCityId(),
     })
   },
   setTab: (tab) => set({ tab }),
@@ -363,6 +444,53 @@ export const useAppState = create<AppState>((set) => ({
   closeProfileStats: () => set({ showProfileStats: false, profileStatsFocus: null }),
   openSettings: () => set({ showSettings: true }),
   closeSettings: () => set({ showSettings: false }),
+  openLocationSettings: () =>
+    set((state) => ({
+      showLocationSettings: true,
+      locationSettingsDraft: {
+        cityId: state.feedLocationCityId,
+        mode: state.locationPreferenceMode,
+        radiusKm: state.nearbyRadiusKm,
+      },
+    })),
+  closeLocationSettings: () =>
+    set({
+      showLocationSettings: false,
+      showLocationCityPicker: false,
+      locationSettingsDraft: null,
+    }),
+  openLocationCityPicker: () => set({ showLocationCityPicker: true }),
+  closeLocationCityPicker: () => set({ showLocationCityPicker: false }),
+  updateLocationSettingsDraft: (patch) =>
+    set((state) => {
+      const current =
+        state.locationSettingsDraft ?? {
+          cityId: state.feedLocationCityId,
+          mode: state.locationPreferenceMode,
+          radiusKm: state.nearbyRadiusKm,
+        }
+      return { locationSettingsDraft: { ...current, ...patch } }
+    }),
+  commitLocationSettingsDraft: () =>
+    set((state) => {
+      const draft = state.locationSettingsDraft
+      if (!draft) {
+        return {
+          showLocationSettings: false,
+          showLocationCityPicker: false,
+        }
+      }
+      persistDefaultCityId(draft.cityId)
+      return {
+        profileDefaultCityId: draft.cityId,
+        feedLocationCityId: draft.cityId,
+        locationPreferenceMode: draft.mode,
+        nearbyRadiusKm: draft.radiusKm,
+        showLocationSettings: false,
+        showLocationCityPicker: false,
+        locationSettingsDraft: null,
+      }
+    }),
   openLanguage: () => set({ showLanguage: true }),
   closeLanguage: () => set({ showLanguage: false }),
   openPrivacySafety: () => set({ showPrivacySafety: true }),
@@ -380,6 +508,17 @@ export const useAppState = create<AppState>((set) => ({
   setUserProfile: (patch) =>
     set((s) => ({ userProfile: { ...s.userProfile, ...patch } })),
   setSubscriptionTier: (subscriptionTier) => set({ subscriptionTier }),
-  setFeedLocationCityId: (feedLocationCityId) => set({ feedLocationCityId }),
+  setFeedLocationCityId: (feedLocationCityId) => {
+    persistDefaultCityId(feedLocationCityId)
+    set({ feedLocationCityId })
+  },
+  setLocationPreferenceMode: (locationPreferenceMode) => set({ locationPreferenceMode }),
+  setNearbyRadiusKm: (nearbyRadiusKm) => set({ nearbyRadiusKm }),
+  setLocationPermission: (locationPermission) =>
+    set((state) => ({
+      locationPermission,
+      locationPreferenceMode:
+        locationPermission === 'denied' ? 'city' : state.locationPreferenceMode,
+    })),
   toggleDiscoverExpanded: () => set((s) => ({ isDiscoverExpanded: !s.isDiscoverExpanded })),
 }))

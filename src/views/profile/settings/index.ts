@@ -1,4 +1,6 @@
 export { SettingsScreen } from './SettingsScreen'
+export { LocationSettingsScreen } from './LocationSettingsScreen'
+export { LocationCityPickerScreen } from './LocationCityPickerScreen'
 export { EditProfileScreen } from './EditProfileScreen'
 export { LanguageScreen } from './LanguageScreen'
 export { PrivacySafetyScreen } from './PrivacySafetyScreen'
