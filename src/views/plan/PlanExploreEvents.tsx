@@ -28,14 +28,9 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 type PlanExploreEventsProps = {
   onBack: () => void
   onSelectCategory: (categoryId: string) => void
-  onSelectCity: (cityId: string) => void
 }
 
-export function PlanExploreEvents({
-  onBack,
-  onSelectCategory,
-  onSelectCity,
-}: PlanExploreEventsProps) {
+export function PlanExploreEvents({ onBack, onSelectCategory }: PlanExploreEventsProps) {
   return (
     <motion.div
       className="screen-content plan-page plan-explore-events"
