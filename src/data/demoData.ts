@@ -20,6 +20,8 @@ export const events: EventItem[] = [
     ticketPrice: '42.00 SGD',
     bpReward: 15,
     buzzPct: 98,
+    lat: 1.2834,
+    lng: 103.8607,
   },
   {
     id: 'neon-noir',
@@ -39,6 +41,8 @@ export const events: EventItem[] = [
     vibeTags: ['Speakeasy', 'Smoked Negroni'],
     ticketPrice: '28.00 SGD',
     bpReward: 12,
+    lat: 1.2840,
+    lng: 103.8513,
   },
   {
     id: 'bluenote',
@@ -57,6 +61,8 @@ export const events: EventItem[] = [
     friendsGoing: 3,
     vibeTags: ['Intimate', 'Vinyl Audio'],
     ticketPrice: '35.00 SGD',
+    lat: 1.2847,
+    lng: 103.8270,
   },
   {
     id: 'neonpulse',
@@ -75,6 +81,8 @@ export const events: EventItem[] = [
     friendsGoing: 4,
     vibeTags: ['Live Visuals', 'Hard Groove'],
     ticketPrice: '45.00 SGD',
+    lat: 1.2789,
+    lng: 103.8536,
   },
 ]
 

@@ -14,10 +14,10 @@ import type { Tab } from './types'
 import { PlanEventDetail } from './views/plan/PlanEventDetail'
 import { tabNavItems } from './config/tabNavigation'
 import { EventCardFeed } from './views/discover/EventCardFeed'
+import { MapView } from './views/discover/MapView'
 import { FavoritesTab } from './views/favorites/FavoritesTab'
 import { BuzzPointsScreen } from './views/profile/BuzzPointsScreen'
 import { ProfileReputationScreen } from './views/profile/ProfileReputationScreen'
-import { ProfileStatsScreen } from './views/profile/ProfileStatsScreen'
 import { ProfileTasteIdentityScreen } from './views/profile/ProfileTasteIdentityScreen'
 import {
   SettingsScreen,
@@ -76,7 +76,6 @@ function MainApp() {
     showBuzzPoints,
     showProfileTasteAll,
     showProfileReputationAll,
-    showProfileStats,
     showSettings,
     showLocationSettings,
     showLocationCityPicker,
@@ -129,6 +128,7 @@ function MainApp() {
   }, [])
   const [sheetPlanOverlay, setSheetPlanOverlay] = useState<SheetPlanOverlay | null>(null)
   const [sheetPlanReturnTab, setSheetPlanReturnTab] = useState<Tab | null>(null)
+  const [discoverMapMode, setDiscoverMapMode] = useState(false)
 
   const eventsQuery = api.events.list.useQuery(
     {},
@@ -316,11 +316,19 @@ function MainApp() {
           <section className="screen">
             <Suspense fallback={<div className="tab-suspense-fallback" aria-hidden />}>
               {tab === 'discover' && (
-                <EventCardFeed
-                  events={mergedEvents}
-                  onMoreDetails={(id) => requestPlanDetail(id, 'upcoming', 'discover')}
-                  onMapView={() => setTab('plan')}
-                />
+                discoverMapMode ? (
+                  <MapView
+                    events={mergedEvents}
+                    onBackToFeed={() => setDiscoverMapMode(false)}
+                    onMoreDetails={(id) => requestPlanDetail(id, 'upcoming', 'discover')}
+                  />
+                ) : (
+                  <EventCardFeed
+                    events={mergedEvents}
+                    onMoreDetails={(id) => requestPlanDetail(id, 'upcoming', 'discover')}
+                    onMapView={() => setDiscoverMapMode(true)}
+                  />
+                )
               )}
               {tab === 'ask' && (
                 <DiscoverTab
@@ -359,7 +367,6 @@ function MainApp() {
             {showBuzzPoints && <BuzzPointsScreen key="buzz-points" />}
             {showProfileTasteAll && <ProfileTasteIdentityScreen key="profile-taste-all" />}
             {showProfileReputationAll && <ProfileReputationScreen key="profile-reputation-all" />}
-            {showProfileStats && <ProfileStatsScreen key="profile-stats" />}
             {showSettings && <SettingsScreen key="settings" />}
             {showLocationSettings && <LocationSettingsScreen key="location-settings" />}
             {showLocationCityPicker && <LocationCityPickerScreen key="location-city-picker" />}

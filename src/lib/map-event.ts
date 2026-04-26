@@ -26,5 +26,7 @@ export function mapDbEventToEventItem(row: Record<string, unknown>): EventItem {
     ticketPrice: String(row.ticket_price ?? ''),
     bpReward: row.bp_reward != null ? Number(row.bp_reward) : undefined,
     buzzPct: row.buzz_pct != null ? Number(row.buzz_pct) : undefined,
+    lat: row.lat != null ? Number(row.lat) : undefined,
+    lng: row.lng != null ? Number(row.lng) : undefined,
   }
 }

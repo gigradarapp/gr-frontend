@@ -146,9 +146,6 @@ export type LocationSettingsDraft = {
   radiusKm: number
 }
 
-/** Section to scroll to when opening scene stats from profile. */
-export type ProfileStatsFocus = 'cities' | 'gigs' | 'genres'
-
 /** Auth user from `GET /api/auth/session` (no Supabase client in the browser). */
 export type AuthUserPayload = {
   id: string
@@ -192,9 +189,6 @@ type AppState = {
   tasteIdentityItems: TasteIdentityItem[]
   showProfileTasteAll: boolean
   showProfileReputationAll: boolean
-  showProfileStats: boolean
-  /** When non-null, stats screen scrolls to this block after open. */
-  profileStatsFocus: ProfileStatsFocus | null
   showSettings: boolean
   showLocationSettings: boolean
   showLocationCityPicker: boolean
@@ -252,8 +246,6 @@ type AppState = {
   cycleTasteIdentityTag: (label: string) => void
   openProfileReputationAll: () => void
   closeProfileReputationAll: () => void
-  openProfileStats: (focus?: ProfileStatsFocus | null) => void
-  closeProfileStats: () => void
   openSettings: () => void
   closeSettings: () => void
   openLocationSettings: () => void
@@ -308,8 +300,6 @@ export const useAppState = create<AppState>((set, get) => ({
   tasteIdentityItems: getDefaultTasteIdentityItems(),
   showProfileTasteAll: false,
   showProfileReputationAll: false,
-  showProfileStats: false,
-  profileStatsFocus: null,
   showSettings: false,
   showLocationSettings: false,
   showLocationCityPicker: false,
@@ -439,8 +429,6 @@ export const useAppState = create<AppState>((set, get) => ({
       tasteIdentityItems: getDefaultTasteIdentityItems(),
       showProfileTasteAll: false,
       showProfileReputationAll: false,
-      showProfileStats: false,
-      profileStatsFocus: null,
       showSettings: false,
       showLocationSettings: false,
       showLocationCityPicker: false,
@@ -495,12 +483,6 @@ export const useAppState = create<AppState>((set, get) => ({
   },
   openProfileReputationAll: () => set({ showProfileReputationAll: true }),
   closeProfileReputationAll: () => set({ showProfileReputationAll: false }),
-  openProfileStats: (focus) =>
-    set({
-      showProfileStats: true,
-      profileStatsFocus: focus === undefined ? null : focus,
-    }),
-  closeProfileStats: () => set({ showProfileStats: false, profileStatsFocus: null }),
   openSettings: () => set({ showSettings: true }),
   closeSettings: () => set({ showSettings: false }),
   openLocationSettings: () =>

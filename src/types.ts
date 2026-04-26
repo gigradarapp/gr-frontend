@@ -32,6 +32,10 @@ export type EventItem = {
   bpReward?: number
   /** Top-right BUZZ % badge on event sheet hero (optional). */
   buzzPct?: number
+  /** Venue latitude (optional — falls back to district centroid). */
+  lat?: number
+  /** Venue longitude (optional — falls back to district centroid). */
+  lng?: number
 }
 
 /** Rich mock for the Plan tab event-detail layout (wireframe). */

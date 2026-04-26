@@ -9,11 +9,6 @@ import {
   TASTE_AND_RECOMMENDATIONS_TITLE,
   type TasteIdentityItem,
 } from '../../data/profileIdentity'
-import {
-  PROFILE_CITIES_COUNT,
-  PROFILE_GENRES_TRACKED,
-  PROFILE_GIGS_TOTAL,
-} from '../../data/profileStats'
 import { postSignOut } from '../../lib/auth-api'
 import { flushPersistUserTasteCategories } from '../../lib/persist-user-taste'
 import { api } from '../../lib/trpc'
@@ -36,11 +31,12 @@ export function ProfileTab({
   const {
     openSettings,
     openProfileReputationAll,
-    openProfileStats,
+    openSubscription,
     returnToLanding,
     userProfile,
     isAuthenticated,
     setTab,
+    subscriptionTier,
     tasteIdentityItems,
     cycleTasteIdentityTag,
   } = useAppState()
@@ -183,44 +179,6 @@ export function ProfileTab({
           {headline}
         </h2>
         <span className="profile-handle-pill">@{userProfile.username}</span>
-        <div className="profile-stats-row" role="group" aria-label="Scene stats">
-          <button
-            type="button"
-            className="profile-stat profile-stat-btn"
-            onClick={() => openProfileStats('cities')}
-            aria-label={`Open cities: ${PROFILE_CITIES_COUNT} cities visited`}
-          >
-            <strong>{PROFILE_CITIES_COUNT}</strong>
-            <span>CITIES</span>
-          </button>
-          <div className="profile-stat-divider" aria-hidden />
-          <button
-            type="button"
-            className="profile-stat profile-stat-btn"
-            onClick={() => openProfileStats('gigs')}
-            aria-label={`Open gigs: ${PROFILE_GIGS_TOTAL} gigs attended`}
-          >
-            <strong>{PROFILE_GIGS_TOTAL}</strong>
-            <span>GIGS</span>
-          </button>
-          <div className="profile-stat-divider" aria-hidden />
-          <button
-            type="button"
-            className="profile-stat profile-stat-btn"
-            onClick={() => openProfileStats('genres')}
-            aria-label={`Open genres: ${PROFILE_GENRES_TRACKED} genres tracked`}
-          >
-            <strong>{PROFILE_GENRES_TRACKED}</strong>
-            <span>GENRES</span>
-          </button>
-        </div>
-        <button
-          type="button"
-          className="profile-stats-overview-link"
-          onClick={() => openProfileStats()}
-        >
-          View full breakdown
-        </button>
       </div>
 
       {/* Taste & recommendations */}
@@ -341,19 +299,21 @@ export function ProfileTab({
         <p className="profile-reputation-preview-note">{reputationPreviewCopy}</p>
       </section>
 
-      {/* Go Pro upsell */}
-      <div className="gopro-card">
-        <div className="gopro-lock">
-          <Lock size={22} />
+      {subscriptionTier === 'basic' ? (
+        <div className="gopro-card">
+          <div className="gopro-lock">
+            <Lock size={22} />
+          </div>
+          <h3 className="gopro-title">LEVEL UP YOUR LEGEND</h3>
+          <p className="gopro-desc">
+            Unlock your full 3-year history, deep data analytics, and early access to buzzed
+            guestlists.
+          </p>
+          <button type="button" className="gopro-btn" onClick={openSubscription}>
+            {BUZO_PRO_UPSELL_CTA}
+          </button>
         </div>
-        <h3 className="gopro-title">LEVEL UP YOUR LEGEND</h3>
-        <p className="gopro-desc">
-          Unlock your full 3-year history, deep data analytics, and early access to buzzed guestlists.
-        </p>
-        <button type="button" className="gopro-btn">
-          {BUZO_PRO_UPSELL_CTA}
-        </button>
-      </div>
+      ) : null}
     </motion.div>
   )
 }

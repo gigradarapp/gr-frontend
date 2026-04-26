@@ -7,6 +7,7 @@ import {
   getPlanDetailUpcoming,
   planPastEvents,
 } from '../../data/demoData'
+import { PROFILE_GIGS_TOTAL } from '../../data/profileStats'
 import { useAppState, type FavoriteEvent } from '../../store/appStore'
 import type { Tab } from '../../types'
 import { PlanEventDetail } from './PlanEventDetail'
@@ -158,6 +159,7 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
           onClick={() => setSegment('upcoming')}
         >
           Upcoming
+          <span className="plan-seg-count">{events.length}</span>
         </button>
         <button
           type="button"
@@ -167,6 +169,7 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
           onClick={() => setSegment('past')}
         >
           Past
+          <span className="plan-seg-count">{PROFILE_GIGS_TOTAL}</span>
         </button>
       </div>
 

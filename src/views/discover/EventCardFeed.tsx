@@ -294,13 +294,15 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
 const FILTER_SECTIONS = ['Category', 'Date', 'Time', 'Area', 'Price'] as const
 type FilterSectionName = (typeof FILTER_SECTIONS)[number]
 
-type FilterSheetProps = {
+export type FilterSheetProps = {
   applied: EventFeedFilters
   onApply: (next: EventFeedFilters) => void
   onClose: () => void
 }
 
-function FilterSheet({ applied, onApply, onClose }: FilterSheetProps) {
+export { DEFAULT_FILTERS }
+
+export function FilterSheet({ applied, onApply, onClose }: FilterSheetProps) {
   const [draft, setDraft] = useState<EventFeedFilters>(applied)
   const [activeSection, setActiveSection] = useState<FilterSectionName>('Category')
   const bodyRef = useRef<HTMLDivElement>(null)
