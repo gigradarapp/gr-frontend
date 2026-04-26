@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Check,
@@ -101,6 +109,7 @@ export function DiscoverTab({
   /** Thread-mode composer: user can expand for more visible typing area */
   const [composerExpanded, setComposerExpanded] = useState(false)
 
+  const tryAskingLabelId = useId()
   const requestCounter = useRef(0)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const chipScrollerRef = useRef<HTMLDivElement | null>(null)
@@ -379,8 +388,9 @@ export function DiscoverTab({
       return
     }
 
-    if (!hasThread && !composerExpanded) {
+    if (composerExpanded) {
       el.style.height = ''
+      el.style.minHeight = ''
       return
     }
 
@@ -388,33 +398,19 @@ export function DiscoverTab({
     const lineHeight = parseFloat(cs.lineHeight)
     const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
 
-    if (!hasThread && composerExpanded) {
-      const minPx = Number.isFinite(lineHeight)
-        ? Math.ceil(lineHeight * 4 + padY)
-        : 80
-      const maxPx = Math.min(window.innerHeight * 0.5, 480)
-      el.style.height = 'auto'
-      const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
-      el.style.height = `${next}px`
+    const minLines = 1
+    const minPx = Number.isFinite(lineHeight)
+      ? Math.ceil(lineHeight * minLines + padY)
+      : 44
+    const maxPx = Math.min(window.innerHeight * 0.34, 140)
+    el.style.height = 'auto'
+    if (el.value === '') {
+      el.style.height = `${minPx}px`
       return
     }
-
-    if (hasThread) {
-      if (composerExpanded) {
-        el.style.height = ''
-        el.style.minHeight = ''
-        return
-      }
-      const minLines = 2
-      const minPx = Number.isFinite(lineHeight)
-        ? Math.ceil(lineHeight * minLines + padY)
-        : 52
-      const maxPx = Math.min(window.innerHeight * 0.34, 140)
-      el.style.height = 'auto'
-      const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
-      el.style.height = `${next}px`
-    }
-  }, [hasThread, inputValue, composerExpanded])
+    const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
+    el.style.height = `${next}px`
+  }, [inputValue, composerExpanded])
 
   useLayoutEffect(() => {
     syncTextareaHeight()
@@ -920,66 +916,74 @@ export function DiscoverTab({
       <div className="discover-layla-footer">
         <div className="welcome-layla-prompt-stack discover-layla-prompt-stack">
           {!hasThread && (
-            <div className="discover-layla-chip-row-wrap">
-              {chipScrollHints.overflow && (
-                <button
-                  type="button"
-                  className="discover-layla-chip-scroll-btn"
-                  aria-label="Scroll quick prompts to the start"
-                  disabled={!chipScrollHints.canLeft}
-                  onClick={scrollChipsToStart}
-                >
-                  <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
-                </button>
-              )}
+            <div className="discover-layla-chip-section">
+              <p className="discover-layla-try-asking" id={tryAskingLabelId}>
+                Try asking
+              </p>
               <div
-                ref={chipScrollerRef}
-                className="welcome-chip-scroller welcome-layla-chip-row"
-                role="list"
-                aria-label="Quick prompts"
+                className="discover-layla-chip-row-wrap"
+                role="group"
+                aria-labelledby={tryAskingLabelId}
               >
-                {discoverSuggestedPrompts.map((prompt) => (
+                {chipScrollHints.overflow && (
                   <button
-                    key={prompt}
                     type="button"
-                    className="welcome-layla-shortcut"
-                    role="listitem"
-                    onClick={() => {
-                      setInputValue(prompt)
-                      void submitPrompt(prompt)
-                    }}
+                    className="discover-layla-chip-scroll-btn"
+                    aria-label="Scroll quick prompts to the start"
+                    disabled={!chipScrollHints.canLeft}
+                    onClick={scrollChipsToStart}
                   >
-                    {prompt}
+                    <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
                   </button>
-                ))}
-              </div>
-              {chipScrollHints.overflow && (
-                <button
-                  type="button"
-                  className="discover-layla-chip-scroll-btn"
-                  aria-label="Scroll quick prompts to the end"
-                  disabled={!chipScrollHints.canRight}
-                  onClick={scrollChipsToEnd}
+                )}
+                <div
+                  ref={chipScrollerRef}
+                  className="welcome-chip-scroller welcome-layla-chip-row"
+                  role="list"
+                  aria-label="Quick prompts"
                 >
-                  <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
-                </button>
-              )}
+                  {discoverSuggestedPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      className="welcome-layla-shortcut"
+                      role="listitem"
+                      onClick={() => {
+                        setInputValue(prompt)
+                        void submitPrompt(prompt)
+                      }}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+                {chipScrollHints.overflow && (
+                  <button
+                    type="button"
+                    className="discover-layla-chip-scroll-btn"
+                    aria-label="Scroll quick prompts to the end"
+                    disabled={!chipScrollHints.canRight}
+                    onClick={scrollChipsToEnd}
+                  >
+                    <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
           <div
             className={[
               'welcome-layla-composer',
-              hasThread && 'welcome-layla-composer--compact',
-              hasThread && composerExpanded && 'welcome-layla-composer--compact-expanded',
-              !hasThread && composerExpanded && 'welcome-layla-composer--expanded',
+              'welcome-layla-composer--compact',
+              composerExpanded && 'welcome-layla-composer--compact-expanded',
             ]
               .filter(Boolean)
               .join(' ')}
             role="group"
             aria-label="Describe your night"
           >
-            {hasThread && <LaylaAttachDropdown variant="icon" />}
+            <LaylaAttachDropdown variant="icon" />
             <textarea
               ref={textareaRef}
               className="welcome-layla-textarea"
@@ -987,17 +991,15 @@ export function DiscoverTab({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
                   e.preventDefault()
                   handleSend()
                 }
               }}
-              rows={2}
+              rows={1}
               aria-label="What do you want to do tonight?"
             />
             <div className="welcome-layla-toolbar">
-              {!hasThread && <LaylaAttachDropdown variant="toolbar" />}
-              {!hasThread && <span className="welcome-layla-toolbar-spacer" aria-hidden />}
               <button
                 type="button"
                 className="welcome-layla-expand-composer"

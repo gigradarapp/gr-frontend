@@ -9644,6 +9644,165 @@ button.taste-tag:focus-visible {
   box-sizing: border-box;
 }
 
+/* Landing (welcome-layla-stage): align with Ask Buzo — “Try asking”, compact composer */
+.welcome-layla-stage .welcome-layla-prompt-stack {
+  gap: 10px;
+}
+
+.welcome-layla-stage .welcome-layla-chip-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.welcome-layla-stage .welcome-layla-try-asking {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.theme-light .welcome-layla-stage .welcome-layla-try-asking {
+  color: color-mix(in oklab, #1c1424 50%, var(--muted));
+}
+
+.welcome-layla-stage .welcome-layla-composer.welcome-layla-composer--compact {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px 8px 4px;
+  gap: 4px;
+  border-radius: 20px;
+  background: rgba(16, 12, 20, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 12px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.theme-light .welcome-layla-stage .welcome-layla-composer.welcome-layla-composer--compact {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(28, 20, 36, 0.12);
+  box-shadow: 0 1px 0 #fff inset, 0 10px 36px rgba(28, 24, 40, 0.12);
+}
+
+.welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-textarea {
+  min-height: calc(1.45em + 16px);
+  max-height: min(34vh, 8.75rem);
+  height: auto;
+  padding: 6px 10px;
+  flex: 1;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-size: max(16px, 0.94rem);
+  line-height: 1.45;
+}
+
+.welcome-layla-stage
+  .welcome-layla-composer--compact.welcome-layla-composer--compact-expanded {
+  min-height: min(26dvh, 26vh);
+  height: min(26dvh, 26vh);
+  max-height: min(26dvh, 26vh);
+  align-items: stretch;
+}
+
+.welcome-layla-stage
+  .welcome-layla-composer--compact.welcome-layla-composer--compact-expanded
+  .welcome-layla-attach-icon {
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+.welcome-layla-stage
+  .welcome-layla-composer--compact.welcome-layla-composer--compact-expanded
+  .welcome-layla-toolbar {
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+.welcome-layla-stage
+  .welcome-layla-composer--compact.welcome-layla-composer--compact-expanded
+  .welcome-layla-textarea {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  align-self: stretch;
+  overflow-y: auto;
+}
+
+.welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-toolbar {
+  margin-top: 0;
+  padding-top: 0;
+  border: none;
+  align-items: center;
+  margin-bottom: 0;
+  gap: 6px;
+}
+
+.welcome-layla-stage .welcome-layla-attach-icon {
+  height: 38px;
+  width: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.welcome-layla-stage .welcome-layla-attach-icon:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-light .welcome-layla-stage .welcome-layla-attach-icon {
+  color: rgba(28, 20, 36, 0.5);
+}
+
+.theme-light .welcome-layla-stage .welcome-layla-attach-icon:hover {
+  color: rgba(28, 20, 36, 0.9);
+}
+
+.theme-dark .welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-expand-composer {
+  width: 34px;
+  height: 34px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.theme-light .welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-expand-composer {
+  color: color-mix(in oklab, #1c1424 78%, var(--muted));
+}
+
+.theme-light .welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-expand-composer:hover {
+  background: rgba(28, 20, 36, 0.08);
+  color: #1c1424;
+}
+
+.theme-light
+  .welcome-layla-stage
+  .welcome-layla-composer--compact
+  .welcome-layla-expand-composer[aria-pressed='true'] {
+  background: rgba(28, 20, 36, 0.12);
+  color: #141018;
+}
+
+.welcome-layla-stage .welcome-layla-composer--compact .welcome-layla-send {
+  width: 38px;
+  height: 38px;
+}
+
 .welcome-layla-composer {
   width: 100%;
   box-sizing: border-box;
@@ -10464,7 +10623,7 @@ button.taste-tag:focus-visible {
     linear-gradient(to bottom, #ebe4f0 0%, #e2dbe8 40%, var(--bg) 100%);
 }
 
-/* Scroll area — fills remaining space, scrolls chat content */
+/* Scroll area — fills remaining space, scrolls chat content (16px insets = discover secondary header) */
 .discover-layla-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -10473,16 +10632,18 @@ button.taste-tag:focus-visible {
   padding: 16px 16px 8px;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .discover-layla-scroll-inner {
   width: 100%;
-  max-width: min(100%, 42rem);
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding-bottom: 24px;
+  box-sizing: border-box;
 }
 
 /* Empty state: shrink so composer sits in the middle of the screen */
@@ -10499,7 +10660,7 @@ button.taste-tag:focus-visible {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 0 20px 24px;
+  padding: 0 0 24px;
   gap: 0;
 }
 
@@ -10545,7 +10706,7 @@ button.taste-tag:focus-visible {
   max-width: fit-content;
 }
 
-/* Footer: composer + chips, pinned at bottom */
+/* Footer: align with .discover-secondary-header (8px 16px) */
 .discover-layla-footer {
   flex-shrink: 0;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
@@ -10554,14 +10715,46 @@ button.taste-tag:focus-visible {
   gap: 10px;
   background: transparent;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
 }
 
 .theme-light .discover-layla-footer {
   border-top-color: rgba(28, 20, 36, 0.08);
 }
 
+/* Override welcome stack cap — chips + composer should span the shell, not 42rem. */
+.discover-layla-prompt-stack.welcome-layla-prompt-stack {
+  max-width: 100%;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
 .discover-layla-prompt-stack {
   gap: 10px;
+}
+
+.discover-layla-chip-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.discover-layla-try-asking {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.theme-light .discover-layla-try-asking {
+  color: color-mix(in oklab, #1c1424 50%, var(--muted));
 }
 
 /* Composer box */
@@ -10581,30 +10774,30 @@ button.taste-tag:focus-visible {
   box-shadow: 0 1px 0 #fff inset, 0 10px 36px rgba(28, 24, 40, 0.12);
 }
 
-/* Compact Composer (when thread has started) */
+/* Discover composer: single-row bar (empty + in-thread) */
 .discover-tab.discover-layla .welcome-layla-composer--compact {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   padding: 8px 8px 8px 4px;
   gap: 4px;
 }
 
 .discover-tab.discover-layla .welcome-layla-composer--compact .welcome-layla-textarea {
-  min-height: calc(2 * 1.45em + 10px);
+  min-height: calc(1.45em + 16px);
   max-height: min(34vh, 8.75rem);
   height: auto;
-  padding: 8px 10px;
+  padding: 6px 10px;
   flex: 1;
   overflow-y: auto;
   box-sizing: border-box;
 }
 
-/* Compact thread composer expanded: ~half the viewport for typing & reading */
+/* Compact composer expanded: ~1/4 viewport for typing (landing + ask buzo) */
 .discover-tab.discover-layla
   .welcome-layla-composer--compact.welcome-layla-composer--compact-expanded {
-  min-height: min(50dvh, 50vh);
-  height: min(50dvh, 50vh);
-  max-height: min(50dvh, 50vh);
+  min-height: min(26dvh, 26vh);
+  height: min(26dvh, 26vh);
+  max-height: min(26dvh, 26vh);
   align-items: stretch;
 }
 
@@ -10673,15 +10866,6 @@ button.taste-tag:focus-visible {
   padding: 4px 6px 2px;
   font-size: max(16px, 0.94rem);
   line-height: 1.45;
-}
-
-/* Empty-state composer: taller box when expanded (mic removed — same control as thread mode) */
-.discover-tab.discover-layla
-  .welcome-layla-composer:not(.welcome-layla-composer--compact).welcome-layla-composer--expanded
-  .welcome-layla-textarea {
-  min-height: calc(4 * 1.45em + 12px);
-  max-height: min(50dvh, 50vh);
-  overflow-y: auto;
 }
 
 .theme-dark .discover-tab.discover-layla .welcome-layla-textarea::placeholder {
@@ -12247,4 +12431,94 @@ button.taste-tag:focus-visible {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   flex-shrink: 0;
+}
+
+/* ─── EventCardFeed – light mode overrides ────────────────────────────────── */
+
+/* No gradient bleed — header is fully transparent, chips carry themselves */
+.theme-light .ecf-header {
+  background: transparent;
+}
+
+/* Chips: frosted pill so they stay readable on the fading gradient */
+.theme-light .ecf-chip-btn {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(20, 24, 35, 0.18);
+  color: #141823;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.theme-light .ecf-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.theme-light .ecf-chip-btn--active {
+  background: rgba(197, 59, 31, 0.1);
+  border-color: rgba(197, 59, 31, 0.32);
+  color: var(--primary);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Much more vivid images in light mode */
+.theme-light .ecf-bg-img--loaded {
+  opacity: 0.78;
+  filter: brightness(1.15) saturate(1.1);
+}
+
+/* Pull back the dark overlay so the photo reads through it */
+.theme-light .ecf-overlay {
+  opacity: 0.55;
+}
+
+/* End-of-feed card: match theme bg instead of hardcoded #080808 */
+.theme-light .ecf-end-card {
+  background: var(--bg);
+}
+
+.theme-light .ecf-end-text {
+  color: var(--muted);
+}
+
+.theme-light .ecf-end-text span {
+  color: var(--text);
+}
+
+/* Empty state */
+.theme-light .ecf-empty-text {
+  color: var(--muted);
+}
+
+.theme-light .ecf-empty-text span {
+  color: var(--text);
+}
+
+/* Filter bottom sheet */
+.theme-light .ecf-filter-sheet {
+  background: var(--card);
+  border-color: var(--stroke);
+}
+
+.theme-light .ecf-filter-handle {
+  background: var(--stroke);
+}
+
+.theme-light .ecf-filter-title {
+  color: var(--text);
+}
+
+.theme-light .ecf-filter-section-label {
+  color: var(--muted);
+}
+
+.theme-light .ecf-filter-chip {
+  background: var(--bg);
+  border-color: var(--stroke);
+  color: var(--muted);
+}
+
+.theme-light .ecf-filter-chip:hover {
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--stroke));
+  color: var(--text);
 }

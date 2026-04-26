@@ -1,9 +1,11 @@
-import { useRef, useState } from 'react'
+import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   CalendarCheck,
   ChevronDown,
   Compass,
+  Maximize2,
+  Minimize2,
   Moon,
   Send,
   Sparkles,
@@ -48,6 +50,8 @@ function WelcomePillarIcon({ icon }: { icon: WelcomeLandingPillar['icon'] }) {
 export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps) {
   const { theme, setTheme, openSignIn, isAuthenticated } = useAppState()
   const [inputValue, setInputValue] = useState('')
+  const [composerExpanded, setComposerExpanded] = useState(false)
+  const tryAskingLabelId = useId()
   const discoverMoreRef = useRef<HTMLElement | null>(null)
   const promptStackRef = useRef<HTMLDivElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -78,6 +82,35 @@ export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps
     promptStackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     window.setTimeout(() => textareaRef.current?.focus(), 380)
   }
+
+  const syncTextareaHeight = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) {
+      return
+    }
+    if (composerExpanded) {
+      el.style.height = ''
+      el.style.minHeight = ''
+      return
+    }
+    const cs = getComputedStyle(el)
+    const lineHeight = parseFloat(cs.lineHeight)
+    const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
+    const minLines = 1
+    const minPx = Number.isFinite(lineHeight) ? Math.ceil(lineHeight * minLines + padY) : 44
+    const maxPx = Math.min(window.innerHeight * 0.34, 140)
+    el.style.height = 'auto'
+    if (el.value === '') {
+      el.style.height = `${minPx}px`
+      return
+    }
+    const next = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
+    el.style.height = `${next}px`
+  }, [inputValue, composerExpanded])
+
+  useLayoutEffect(() => {
+    syncTextareaHeight()
+  }, [syncTextareaHeight])
 
   return (
     <div className="welcome-root">
@@ -132,27 +165,47 @@ export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps
 
           <div ref={promptStackRef} className="welcome-layla-prompt-stack">
             <div
-              className="welcome-chip-scroller welcome-layla-chip-row"
-              role="list"
-              aria-label="Quick prompts"
+              className="welcome-layla-chip-section"
+              role="region"
+              aria-labelledby={tryAskingLabelId}
             >
-              {welcomeIntroShortcuts.map(({ label, prompt }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="welcome-layla-shortcut"
-                  role="listitem"
-                  onClick={() => {
-                    setInputValue(prompt)
-                    textareaRef.current?.focus()
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+              <p className="welcome-layla-try-asking" id={tryAskingLabelId}>
+                Try asking
+              </p>
+              <div
+                className="welcome-chip-scroller welcome-layla-chip-row"
+                role="list"
+                aria-label="Quick prompts"
+              >
+                {welcomeIntroShortcuts.map(({ label, prompt }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="welcome-layla-shortcut"
+                    role="listitem"
+                    onClick={() => {
+                      setInputValue(prompt)
+                      textareaRef.current?.focus()
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="welcome-layla-composer" role="group" aria-label="Describe your night">
+            <div
+              className={[
+                'welcome-layla-composer',
+                'welcome-layla-composer--compact',
+                composerExpanded && 'welcome-layla-composer--compact-expanded',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              role="group"
+              aria-label="Describe your night"
+            >
+              <LaylaAttachDropdown variant="icon" />
               <textarea
                 ref={textareaRef}
                 className="welcome-layla-textarea"
@@ -160,17 +213,28 @@ export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
                     e.preventDefault()
                     submitPrompt()
                   }
                 }}
-                rows={3}
+                rows={1}
                 aria-label="What do you want to do tonight?"
               />
               <div className="welcome-layla-toolbar">
-                <LaylaAttachDropdown variant="toolbar" />
-                <span className="welcome-layla-toolbar-spacer" aria-hidden />
+                <button
+                  type="button"
+                  className="welcome-layla-expand-composer"
+                  aria-label={composerExpanded ? 'Collapse composer' : 'Expand composer'}
+                  aria-pressed={composerExpanded}
+                  onClick={() => setComposerExpanded((v) => !v)}
+                >
+                  {composerExpanded ? (
+                    <Minimize2 size={18} strokeWidth={2} aria-hidden />
+                  ) : (
+                    <Maximize2 size={18} strokeWidth={2} aria-hidden />
+                  )}
+                </button>
                 <button
                   type="button"
                   className="welcome-layla-send"
