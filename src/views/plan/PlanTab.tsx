@@ -8,6 +8,7 @@ import {
   planPastEvents,
 } from '../../data/demoData'
 import { PROFILE_GIGS_TOTAL } from '../../data/profileStats'
+import { navigateShellToTab } from '../../lib/tabRoutes'
 import { useAppState, type FavoriteEvent } from '../../store/appStore'
 import type { Tab } from '../../types'
 import { PlanEventDetail } from './PlanEventDetail'
@@ -39,7 +40,6 @@ function tabReturnAriaLabel(t: Tab): string {
 export function PlanTab({ onOpenEvent }: PlanTabProps) {
   const pendingPlanDetail = useAppState((s) => s.pendingPlanDetail)
   const clearPendingPlanDetail = useAppState((s) => s.clearPendingPlanDetail)
-  const setTab = useAppState((s) => s.setTab)
   const toggleFavoriteEvent = useAppState((s) => s.toggleFavoriteEvent)
   const isEventFavorited = useAppState((s) => s.isEventFavorited)
 
@@ -53,7 +53,7 @@ export function PlanTab({ onOpenEvent }: PlanTabProps) {
     setDetail(null)
     const go = detailReturnTab
     setDetailReturnTab(null)
-    if (go) setTab(go)
+    if (go) navigateShellToTab(go)
   }
 
   const toFavoriteEvent = (

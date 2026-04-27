@@ -1,6 +1,18 @@
 const AT = 'buzo_access_token'
 const RT = 'buzo_refresh_token'
 
+/** Homepage composer prompt stashed before OAuth; opens Ask Buzo after sign-in when non-empty. */
+export const SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY = 'buzo-pending-discover-prefill'
+
+export function peekPendingHomeComposerPrefill(): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    return (window.sessionStorage.getItem(SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY) ?? '').trim()
+  } catch {
+    return ''
+  }
+}
+
 /**
  * Set when OAuth / magic-link tokens are read from the URL hash.
  * Survives React Strict Mode's remount (the hash is gone on the second mount).

@@ -7,6 +7,7 @@ import {
 } from '../data/profileIdentity'
 import { DEFAULT_LOCATION_CITY_ID, getLocationCityById } from '../data/locationRegions'
 import { postProfileDefaultCity } from '../lib/auth-api'
+import { navigateShellToPath } from '../lib/tabRoutes'
 import { persistSignupOnboardingDismissed, readSignupOnboardingDismissed } from '../lib/signup-onboarding-flag'
 import type { Tab, Theme } from '../types'
 
@@ -158,6 +159,11 @@ type AppState = {
   showWelcomeBack: boolean
   /** Demo flag — replace with real session. */
   isAuthenticated: boolean
+  /**
+   * True after the first `AuthSync` session fetch attempt finishes (success or failure).
+   * Used to avoid treating the initial `isAuthenticated: false` as “logged out” before hydration.
+   */
+  authSessionHydrated: boolean
   /** Email from auth session for signed-in (non-anonymous) users; null otherwise. */
   authEmail: string | null
   tab: Tab
@@ -284,6 +290,7 @@ export const useAppState = create<AppState>((set, get) => ({
   welcomeDismissed: readWelcomeDismissed(),
   showWelcomeBack: false,
   isAuthenticated: false,
+  authSessionHydrated: false,
   authEmail: null,
   tab: 'discover',
   theme: 'dark',
@@ -330,6 +337,7 @@ export const useAppState = create<AppState>((set, get) => ({
       signInRedirectError: null,
       tab: 'discover',
     })
+    queueMicrotask(() => navigateShellToPath('/discover', { replace: true }))
   },
   applySupabaseSession: (user, profile, options) => {
     if (!user) {
@@ -391,6 +399,7 @@ export const useAppState = create<AppState>((set, get) => ({
     const savedTasteLabels = new Set<string>(tasteSelections)
 
     const wasAuthenticated = get().isAuthenticated
+    const freshSignIn = isFreshSignIn && !wasAuthenticated
     set({
       isAuthenticated: isRealUser,
       authEmail,
@@ -410,7 +419,7 @@ export const useAppState = create<AppState>((set, get) => ({
             signInRedirectError: null,
             welcomeDismissed: true,
             // Fresh sign-in: signup onboarding OR welcome-back (mutually exclusive). Do not set on session poll.
-            ...(isFreshSignIn && !wasAuthenticated
+            ...(freshSignIn
               ? readSignupOnboardingDismissed()
                 ? { showWelcomeBack: true }
                 : {
@@ -419,7 +428,6 @@ export const useAppState = create<AppState>((set, get) => ({
                     showWelcomeBack: false,
                   }
               : {}),
-            tab: 'discover' as Tab,
           }
         : {}),
     })
@@ -456,6 +464,7 @@ export const useAppState = create<AppState>((set, get) => ({
       showWelcomeBack: false,
       profileDefaultCityId: readPersistedDefaultCityId(),
     })
+    queueMicrotask(() => navigateShellToPath('/', { replace: true }))
   },
   setTab: (tab) => set({ tab }),
   setTheme: (theme) => set({ theme }),

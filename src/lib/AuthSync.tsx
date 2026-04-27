@@ -8,7 +8,9 @@ import {
   getAccessToken,
   getRefreshToken,
   peekOAuthReturnPendingWelcome,
+  peekPendingHomeComposerPrefill,
 } from './session'
+import { navigateShellToTab } from './tabRoutes'
 
 function prewarmImage(url: string | null | undefined) {
   if (!url) return
@@ -68,6 +70,7 @@ export function AuthSync({ children }: { children: ReactNode }) {
           prewarmImage(avatarRemote)
           void warmAvatarCacheIfEmpty(avatarRemote)
         }
+        const openAskAfterOAuth = isFreshSignIn && peekPendingHomeComposerPrefill().length > 0
         useAppState.getState().applySupabaseSession(user, profile, {
           isFreshSignIn,
           tasteCategories: taste_categories,
@@ -75,6 +78,9 @@ export function AuthSync({ children }: { children: ReactNode }) {
         })
         if (isFreshSignIn) {
           clearOAuthReturnPendingWelcome()
+          queueMicrotask(() =>
+            navigateShellToTab(openAskAfterOAuth ? 'ask' : 'discover', { replace: true }),
+          )
         }
       } catch {
         if (isFreshSignIn) {
@@ -84,7 +90,7 @@ export function AuthSync({ children }: { children: ReactNode }) {
           const state = useAppState.getState()
           // If user was on profile tab when session expired, redirect to discover
           if (state.tab === 'profile' && state.isAuthenticated) {
-            state.setTab('discover')
+            queueMicrotask(() => navigateShellToTab('discover', { replace: true }))
             state.applySupabaseSession(null, null)
             // Show sign-in sheet with logout message
             setTimeout(() => {
@@ -96,6 +102,10 @@ export function AuthSync({ children }: { children: ReactNode }) {
           } else {
             state.applySupabaseSession(null, null)
           }
+        }
+      } finally {
+        if (!cancelled) {
+          useAppState.setState({ authSessionHydrated: true })
         }
       }
     }

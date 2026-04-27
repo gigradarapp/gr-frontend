@@ -1,5 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { navigateShellToTab, pathToTab, setShellNavigate } from './lib/tabRoutes'
+import { SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY } from './lib/session'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Info, Moon, Sun, User, X, Zap } from 'lucide-react'
 import {
@@ -94,10 +96,35 @@ function MainApp() {
     clearPendingPlanDetail,
     isDiscoverExpanded,
   } = useAppState()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useLayoutEffect(() => {
+    setShellNavigate(navigate)
+    return () => setShellNavigate(null)
+  }, [navigate])
+
+  useLayoutEffect(() => {
+    if (!welcomeDismissed) return
+    const { pathname } = location
+    if (pathname === '/' || pathname === '') {
+      navigate('/discover', { replace: true })
+      return
+    }
+    const pathTab = pathToTab(pathname)
+    if (pathTab === null) {
+      navigate('/discover', { replace: true })
+      return
+    }
+    if (pathTab !== tab) {
+      setTab(pathTab)
+    }
+  }, [welcomeDismissed, location.pathname, navigate, tab, setTab])
+
   const [discoverPrefill, setDiscoverPrefill] = useState<string>(() => {
     if (typeof window === 'undefined') return ''
     try {
-      return window.sessionStorage.getItem('buzo-pending-discover-prefill') ?? ''
+      return window.sessionStorage.getItem(SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY) ?? ''
     } catch {
       return ''
     }
@@ -106,9 +133,9 @@ function MainApp() {
     setDiscoverPrefill(prefill)
     try {
       if (prefill) {
-        window.sessionStorage.setItem('buzo-pending-discover-prefill', prefill)
+        window.sessionStorage.setItem(SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY, prefill)
       } else {
-        window.sessionStorage.removeItem('buzo-pending-discover-prefill')
+        window.sessionStorage.removeItem(SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY)
       }
     } catch {
       /* storage unavailable */
@@ -117,7 +144,7 @@ function MainApp() {
   const consumeDiscoverPrefill = useCallback(() => {
     setDiscoverPrefill('')
     try {
-      window.sessionStorage.removeItem('buzo-pending-discover-prefill')
+      window.sessionStorage.removeItem(SESSION_PENDING_HOME_COMPOSER_PREFILL_KEY)
     } catch {
       /* storage unavailable */
     }
@@ -228,10 +255,10 @@ function MainApp() {
 
       {!welcomeDismissed ? (
         <WelcomeScreen
-          onEnterApp={(prefill, initialTab = 'ask') => {
+          onEnterApp={(prefill, initialTab = 'discover') => {
             stashDiscoverPrefill(prefill)
-            setTab(initialTab)
             dismissWelcome()
+            queueMicrotask(() => navigateShellToTab(initialTab, { replace: true }))
           }}
           onStashPrefill={stashDiscoverPrefill}
         />
@@ -282,7 +309,7 @@ function MainApp() {
                     <button
                       className={`icon-btn${tab === 'favorites' ? ' icon-btn--active' : ''}`}
                       type="button"
-                      onClick={() => setTab('favorites')}
+                      onClick={() => navigateShellToTab('favorites')}
                       aria-label="Saved events"
                       aria-current={tab === 'favorites' ? 'page' : undefined}
                     >
@@ -291,7 +318,7 @@ function MainApp() {
                     <button
                       className={`icon-btn${tab === 'profile' ? ' icon-btn--active' : ''}`}
                       type="button"
-                      onClick={() => setTab('profile')}
+                      onClick={() => navigateShellToTab('profile')}
                       aria-label="Profile"
                       aria-current={tab === 'profile' ? 'page' : undefined}
                     >
@@ -332,7 +359,7 @@ function MainApp() {
                 <FavoritesTab
                   onOpenFavorite={(event) => {
                     requestPlanDetail(event.id, event.variant, 'favorites')
-                    setTab('plan')
+                    navigateShellToTab('plan')
                   }}
                 />
               )}
@@ -386,7 +413,7 @@ function MainApp() {
                         className={isActive ? 'nav-item active' : 'nav-item'}
                         key={item.key}
                         type="button"
-                        onClick={() => setTab(item.key)}
+                        onClick={() => navigateShellToTab(item.key)}
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <span className={item.iconDot ? 'nav-item-icon nav-item-icon--plan' : 'nav-item-icon'}>
@@ -502,17 +529,16 @@ function MainApp() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/event-list" element={<EventListPage />} />
-        {/* Nested so /design-theme/purple never competes with the /design-theme index */}
-        <Route path="/design-theme" element={<Outlet />}>
-          <Route index element={<DesignThemePage />} />
-          <Route path="orange" element={<DesignThemeOrangePage />} />
-          <Route path="purple" element={<DesignThemePurplePage />} />
-        </Route>
-        <Route path="*" element={<MainApp />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/event-list" element={<EventListPage />} />
+      {/* Nested so /design-theme/purple never competes with the /design-theme index */}
+      <Route path="/design-theme" element={<Outlet />}>
+        <Route index element={<DesignThemePage />} />
+        <Route path="orange" element={<DesignThemeOrangePage />} />
+        <Route path="purple" element={<DesignThemePurplePage />} />
+      </Route>
+      {/* One route so MainApp does not remount when switching tabs (preserves local UI state). */}
+      <Route path="*" element={<MainApp />} />
+    </Routes>
   )
 }

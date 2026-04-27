@@ -2035,6 +2035,141 @@ body {
   gap: 0;
 }
 
+/* Full-layout skeleton (session + reputation fetch) */
+.profile-screen--skeleton {
+  min-height: 70vh;
+  pointer-events: none;
+}
+
+.profile-toolbar--skeleton {
+  justify-content: flex-end;
+}
+
+.profile-skel {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--stroke) 55%, transparent) 0%,
+    color-mix(in oklab, var(--stroke) 28%, transparent) 42%,
+    color-mix(in oklab, var(--stroke) 55%, transparent) 84%
+  );
+  background-size: 220% 100%;
+  animation: profile-skel-shimmer 1.35s ease-in-out infinite;
+}
+
+.profile-skel--icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  animation-delay: 0.05s;
+}
+
+.profile-hero-new--skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 30px 0;
+  gap: 14px;
+}
+
+.profile-skel--avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  animation-delay: 0.08s;
+}
+
+.profile-skel--title {
+  width: min(220px, 72%);
+  height: 22px;
+  border-radius: 10px;
+  animation-delay: 0.12s;
+}
+
+.profile-skel--pill {
+  width: 100px;
+  height: 26px;
+  border-radius: 999px;
+  animation-delay: 0.16s;
+}
+
+.profile-section--skeleton {
+  padding-top: 28px;
+  gap: 20px;
+}
+
+.profile-skel--section-rule {
+  width: 72%;
+  max-width: 240px;
+  height: 11px;
+  border-radius: 6px;
+  opacity: 0.9;
+}
+
+.profile-skel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: center;
+}
+
+.profile-skel--chip {
+  width: 72px;
+  height: 32px;
+  border-radius: 999px;
+}
+
+.profile-skel--chip-wide {
+  width: 108px;
+}
+
+.profile-skel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 18px 12px;
+  padding: 4px 0 0;
+}
+
+.profile-skel-badge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 56px;
+}
+
+.profile-skel--badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+
+.profile-skel--badge-label {
+  width: 44px;
+  height: 9px;
+  border-radius: 4px;
+}
+
+.profile-skel--note {
+  width: 88%;
+  max-width: 320px;
+  height: 10px;
+  border-radius: 5px;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+@keyframes profile-skel-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 .profile-toolbar {
   display: flex;
   justify-content: flex-end;

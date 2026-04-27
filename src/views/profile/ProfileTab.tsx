@@ -14,10 +14,52 @@ import {
   warmAvatarCacheIfEmpty,
 } from '../../lib/avatar-image-cache.ts'
 import { postProfileTastePreferences, postSignOut } from '../../lib/auth-api'
+import { navigateShellToTab } from '../../lib/tabRoutes'
 import { api } from '../../lib/trpc'
 import { useAppState } from '../../store/appStore'
 
 export const PROFILE_EXPERIENCE_RING_FALLBACK = 0.75
+
+function ProfileScreenSkeleton({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <div
+      className="screen-content profile-screen profile-screen--skeleton"
+      aria-busy="true"
+      aria-label={ariaLabel}
+    >
+      <div className="profile-toolbar profile-toolbar--skeleton">
+        <span className="profile-skel profile-skel--icon" />
+        <span className="profile-skel profile-skel--icon" />
+      </div>
+      <div className="profile-hero-new profile-hero-new--skeleton">
+        <div className="profile-skel profile-skel--avatar" />
+        <div className="profile-skel profile-skel--title" />
+        <div className="profile-skel profile-skel--pill" />
+      </div>
+      <section className="profile-section profile-section--skeleton" aria-hidden>
+        <div className="profile-skel profile-skel--section-rule" />
+        <div className="profile-skel-chips">
+          <span className="profile-skel profile-skel--chip" />
+          <span className="profile-skel profile-skel--chip" />
+          <span className="profile-skel profile-skel--chip profile-skel--chip-wide" />
+          <span className="profile-skel profile-skel--chip" />
+        </div>
+      </section>
+      <section className="profile-section profile-section--skeleton" aria-hidden>
+        <div className="profile-skel profile-skel--section-rule" />
+        <div className="profile-skel-badges">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="profile-skel-badge-wrap">
+              <span className="profile-skel profile-skel--badge" />
+              <span className="profile-skel profile-skel--badge-label" />
+            </div>
+          ))}
+        </div>
+        <div className="profile-skel profile-skel--note" />
+      </section>
+    </div>
+  )
+}
 
 export function ProfileTab() {
   const {
@@ -27,7 +69,7 @@ export function ProfileTab() {
     returnToLanding,
     userProfile,
     isAuthenticated,
-    setTab,
+    authSessionHydrated,
     subscriptionTier,
     tasteIdentityItems,
     savedTasteLabels,
@@ -126,18 +168,18 @@ export function ProfileTab() {
       ? `Showing latest ${badgesPreview.length} earned badge${badgesPreview.length === 1 ? '' : 's'} (up to 5).`
       : 'No earned badges yet. Showing starter badges.'
 
-  // Redirect unauthenticated users to discover with sign-in prompt
+  // Redirect guests away from profile — only after session sync so refresh does not flash sign-in.
   useEffect(() => {
-    if (!isAuthenticated) {
-      setTab('discover')
-      setTimeout(() => {
-        useAppState.setState({
-          showSignIn: true,
-          signInRedirectError: 'Please sign in to view your profile.',
-        })
-      }, 300)
-    }
-  }, [isAuthenticated, setTab])
+    if (!authSessionHydrated || isAuthenticated) return
+    navigateShellToTab('discover', { replace: true })
+    const t = window.setTimeout(() => {
+      useAppState.setState({
+        showSignIn: true,
+        signInRedirectError: 'Please sign in to view your profile.',
+      })
+    }, 300)
+    return () => window.clearTimeout(t)
+  }, [authSessionHydrated, isAuthenticated])
 
   useEffect(() => {
     setAvatarLoaded(false)
@@ -154,6 +196,17 @@ export function ProfileTab() {
       cancelled = true
     }
   }, [isAuthenticated, remoteAvatarUrl])
+
+  const showProfileSkeleton =
+    !authSessionHydrated ||
+    !isAuthenticated ||
+    (isAuthenticated && reputationQuery.isPending)
+
+  if (showProfileSkeleton) {
+    const skeletonAria =
+      !authSessionHydrated ? 'Loading profile' : !isAuthenticated ? 'Redirecting' : 'Loading profile'
+    return <ProfileScreenSkeleton ariaLabel={skeletonAria} />
+  }
 
   return (
     <motion.div

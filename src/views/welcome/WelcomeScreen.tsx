@@ -66,7 +66,7 @@ export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps
       openSignIn()
       return
     }
-    onEnterApp(clean, 'discover')
+    onEnterApp(clean, 'ask')
   }
 
   const submitPrompt = () => {
