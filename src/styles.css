@@ -69,8 +69,7 @@ body {
   max-width: 100%;
   height: 100%;
   min-height: 0;
-  /* svh: iOS Safari URL bar visible — avoids layout taller than the visible viewport */
-  max-height: min(100dvh, 100svh);
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -12674,10 +12673,12 @@ button.taste-tag:focus-visible {
   border-radius: 4px;
 }
 
-/* Bottom content — fills from tag badge area down to nav, spacer pushes content to bottom */
+/* Bottom content — fills from tag badge area down to nav, spacer pushes content to bottom.
+   Do not add safe-area-inset-bottom here: .app already pads the shell; double-counting shrinks
+   this box and clips the action row (especially with filters + long copy). */
 .ecf-body {
   position: absolute;
-  bottom: max(32px, calc(10px + env(safe-area-inset-bottom, 0px)));
+  bottom: 28px;
   top: max(140px, calc(100px + env(safe-area-inset-top, 0px)));
   left: 0;
   right: 0;
@@ -12685,11 +12686,6 @@ button.taste-tag:focus-visible {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* Extra chip row (Clear all) + count badge — slightly taller header; iOS needs more lift above tab bar */
-.ecf-root[data-filters-active='true'] .ecf-body {
-  bottom: max(52px, calc(22px + env(safe-area-inset-bottom, 0px)));
 }
 
 .ecf-buzz-row {
