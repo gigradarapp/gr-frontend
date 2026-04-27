@@ -6,7 +6,12 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { CheckCircle, ChevronLeft, Funnel, Heart, Info, Pause, Play, Share2 } from 'lucide-react'
 import { LocationCityPickerControl, CityPickerSheet } from '../../components/LocationCityPickerControl'
-import { FilterSheet, DEFAULT_FILTERS } from './EventCardFeed'
+import {
+  FilterSheet,
+  DEFAULT_FILTERS,
+  countActiveFilters,
+  eventMatchesFilters,
+} from './EventCardFeed'
 import type { EventFeedFilters } from './EventCardFeed'
 import { useAppState } from '../../store/appStore'
 import { LOCATION_REGIONS } from '../../data/locationRegions'
@@ -248,15 +253,16 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
   const cycleIdxRef = useRef(0)
   const carouselRef = useRef<HTMLDivElement>(null)
 
-  const activeFilterCount = Object.values(filters).filter((v) => v !== 'All').length
+  const activeFilterCount = countActiveFilters(filters)
 
   const cityEvents = useMemo(() => {
     const raw = events
       .filter((e) => e.locationCityId === locationCityId)
+      .filter((e) => eventMatchesFilters(e, filters))
       .map((e) => ({ event: e, pos: eventLatLng(e) }))
       .filter((r): r is { event: EventItem; pos: [number, number] } => r.pos != null)
     return spreadOverlappingPositions(raw)
-  }, [events, locationCityId])
+  }, [events, locationCityId, filters])
 
   const cityCenter = getCityCenter(locationCityId)
   const cityName = getCityName(locationCityId)

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { ChevronDown, MapPin, Search, X } from 'lucide-react'
 import {
   filterLocationRegionsByQuery,
+  formatLocationRegionHeading,
   getLocationCityById,
 } from '../data/locationRegions'
 import { useAppState } from '../store/appStore'
@@ -29,6 +30,7 @@ export function LocationCityPickerControl({
         className={triggerClassName}
         aria-haspopup="dialog"
         aria-label={`Location: ${locationLabel}. Choose city`}
+        title={`Currently showing ${locationLabel} — tap to change city`}
         onClick={onOpen}
       >
         <MapPin className="feed-filter-pill-icon feed-filter-pill-icon--pin" size={16} strokeWidth={2.25} aria-hidden />
@@ -43,13 +45,9 @@ export function LocationCityPickerControl({
 /** ── Sheet content — rendered by parent via createPortal inside AnimatePresence ── */
 const PICKER_DOM_ID = 'discover'
 
-function displayRegionHeading(label: string) {
-  return label.replace(/\s*&\s*/g, ' ').trim()
-}
-
 /** Short version used in the dot-nav so long names fit comfortably */
 function shortRegionLabel(label: string): string {
-  const full = displayRegionHeading(label)
+  const full = formatLocationRegionHeading(label)
   return full
     .replace(/^North\s+/i, 'N. ')
     .replace(/^South\s+/i, 'S. ')
@@ -193,7 +191,7 @@ export function CityPickerSheet({ onClose }: CityPickerSheetProps) {
                 className="lcp-region-heading"
                 id={`${PICKER_DOM_ID}-region-${region.id}`}
               >
-                {displayRegionHeading(region.label)}
+                {formatLocationRegionHeading(region.label)}
               </h3>
               <ul className="lcp-chip-row">
                 {region.cities.map((city) => (

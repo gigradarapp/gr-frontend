@@ -1,6 +1,6 @@
 import type { EventItem } from '../types'
 
-/** Row from `events.list` (PostgREST snake_case + optional `event_rsvps` embed). */
+/** Row from `events.list` (PostgREST snake_case). */
 export function mapDbEventToEventItem(row: Record<string, unknown>): EventItem {
   const timeRaw = row.event_time as string
   const d = new Date(timeRaw)

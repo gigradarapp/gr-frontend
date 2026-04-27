@@ -6,10 +6,10 @@ import {
   CreditCard,
   Globe,
   Info,
-  MapPin,
   MessageSquare,
   Moon,
   Shield,
+  Sparkles,
   Sun,
   Trash2,
   User,
@@ -77,19 +77,16 @@ export function SettingsScreen() {
     openFeedback,
     openEditProfile,
     openSubscription,
-    openLocationSettings,
+    openOnboarding,
     returnToLanding,
     feedLocationCityId,
     isAuthenticated,
     profileDefaultCityId,
-    locationPreferenceMode,
     theme,
     setTheme,
   } = useAppState()
   const hasDefaultCity = !isAuthenticated || profileDefaultCityId != null
   const cityName = hasDefaultCity ? (getLocationCityById(feedLocationCityId)?.name ?? 'Singapore') : 'Not set'
-  const locationSummary =
-    locationPreferenceMode === 'precise' ? `Auto-detect · ${cityName}` : `Manual · ${cityName}`
 
   const handleDeleteAccount = () => {
     const ok = window.confirm(
@@ -136,10 +133,10 @@ export function SettingsScreen() {
 
         <SettingsGroup title="Preferences">
           <SettingsRow
-            icon={MapPin}
-            label="Location & gigs near you"
-            value={locationSummary}
-            onClick={openLocationSettings}
+            icon={Sparkles}
+            label="Update City & Category"
+            value={cityName}
+            onClick={() => openOnboarding('settings')}
           />
           <SettingsRow
             icon={theme === 'dark' ? Moon : Sun}

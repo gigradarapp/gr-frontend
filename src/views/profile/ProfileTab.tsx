@@ -13,7 +13,7 @@ import {
   getCachedAvatarDataUrl,
   persistAvatarToLocalCache,
   warmAvatarCacheIfEmpty,
-} from '../../lib/avatar-image-cache'
+} from '../../lib/avatar-image-cache.ts'
 import { postSignOut } from '../../lib/auth-api'
 import { flushPersistUserTasteCategories } from '../../lib/persist-user-taste'
 import { api } from '../../lib/trpc'
@@ -57,7 +57,8 @@ export function ProfileTab({
   const ringStyle = { '--ring-fill': ringFill } as CSSProperties
   const [avatarLoaded, setAvatarLoaded] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
-  const [avatarCacheTick, setAvatarCacheTick] = useState(0)
+  /** Bumps when `warmAvatarCacheIfEmpty` writes so the `<img>` remounts with the cached data URL. */
+  const [avatarCacheRevision, setAvatarCacheRevision] = useState(0)
   const remoteAvatarUrl = userProfile.avatarUrl
   const cachedAvatarSrc = getCachedAvatarDataUrl(remoteAvatarUrl)
   const avatarDisplaySrc = cachedAvatarSrc ?? remoteAvatarUrl
@@ -113,8 +114,8 @@ export function ProfileTab({
   useEffect(() => {
     if (!isAuthenticated || !remoteAvatarUrl?.trim()) return
     let cancelled = false
-    void warmAvatarCacheIfEmpty(remoteAvatarUrl.trim()).then((wrote) => {
-      if (!cancelled && wrote) setAvatarCacheTick((t) => t + 1)
+    void warmAvatarCacheIfEmpty(remoteAvatarUrl.trim()).then((wrote: boolean) => {
+      if (!cancelled && wrote) setAvatarCacheRevision((t) => t + 1)
     })
     return () => {
       cancelled = true
@@ -171,6 +172,7 @@ export function ProfileTab({
               </span>
               {!avatarFailed && avatarDisplaySrc ? (
                 <img
+                  key={`${avatarDisplaySrc}:${avatarCacheRevision}`}
                   src={avatarDisplaySrc}
                   alt={avatarLabel}
                   className="profile-avatar-img"

@@ -21,16 +21,14 @@ import { ProfileReputationScreen } from './views/profile/ProfileReputationScreen
 import { ProfileTasteIdentityScreen } from './views/profile/ProfileTasteIdentityScreen'
 import {
   SettingsScreen,
-  LocationSettingsScreen,
-  LocationCityPickerScreen,
   EditProfileScreen,
   LanguageScreen,
   PrivacySafetyScreen,
-  PrivacyPolicyScreen,
   FeedbackScreen,
   EmailLoginScreen,
   SubscriptionScreen,
 } from './views/profile/settings'
+import { OnboardingScreen } from './views/onboarding'
 import { WelcomeScreen, SignInSheet, WelcomeBackScreen } from './views/welcome'
 import { DesignThemePage } from './views/design-theme/DesignThemePage'
 import { DesignThemeOrangePage } from './views/design-theme/DesignThemeOrangePage'
@@ -77,15 +75,14 @@ function MainApp() {
     showProfileTasteAll,
     showProfileReputationAll,
     showSettings,
-    showLocationSettings,
-    showLocationCityPicker,
     showLanguage,
     showPrivacySafety,
-    showPrivacyPolicy,
     showFeedback,
     showEmailLogin,
     showEditProfile,
     showSubscription,
+    showOnboarding,
+    onboardingMountKey,
     dismissWelcome,
     setTab,
     setTheme,
@@ -250,15 +247,18 @@ function MainApp() {
         />
       ) : (
         <main
-          className={
+          className={[
             activeEvent
-                  ? 'phone-shell phone-shell--behind-event-sheet'
-                  : sheetPlanOverlay
-                    ? 'phone-shell phone-shell--behind-plan-overlay'
-                    : tab === 'ask'
-                      ? `phone-shell phone-shell--discover ${isDiscoverExpanded ? 'phone-shell--expanded' : ''}`
-                      : 'phone-shell'
-          }
+              ? 'phone-shell phone-shell--behind-event-sheet'
+              : sheetPlanOverlay
+                ? 'phone-shell phone-shell--behind-plan-overlay'
+                : tab === 'ask'
+                  ? `phone-shell phone-shell--discover ${isDiscoverExpanded ? 'phone-shell--expanded' : ''}`
+                  : 'phone-shell',
+            showOnboarding ? 'phone-shell--onboarding' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
         >
           <AnimatePresence initial={false}>
             {!(isDiscoverExpanded && tab === 'ask') && (
@@ -368,15 +368,13 @@ function MainApp() {
             {showProfileTasteAll && <ProfileTasteIdentityScreen key="profile-taste-all" />}
             {showProfileReputationAll && <ProfileReputationScreen key="profile-reputation-all" />}
             {showSettings && <SettingsScreen key="settings" />}
-            {showLocationSettings && <LocationSettingsScreen key="location-settings" />}
-            {showLocationCityPicker && <LocationCityPickerScreen key="location-city-picker" />}
             {showEditProfile && <EditProfileScreen key="edit-profile" />}
             {showLanguage && <LanguageScreen key="language" />}
             {showPrivacySafety && <PrivacySafetyScreen key="privacy-safety" />}
-            {showPrivacyPolicy && <PrivacyPolicyScreen key="privacy-policy" />}
             {showFeedback && <FeedbackScreen key="feedback" />}
             {showEmailLogin && <EmailLoginScreen key="email-login" />}
             {showSubscription && <SubscriptionScreen key="subscription" />}
+            {showOnboarding && <OnboardingScreen key={onboardingMountKey} />}
           </AnimatePresence>
 
           <AnimatePresence initial={false}>

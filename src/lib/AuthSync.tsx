@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { useAppState } from '../store/appStore'
-import { warmAvatarCacheIfEmpty } from './avatar-image-cache'
+import { warmAvatarCacheIfEmpty } from './avatar-image-cache.ts'
 import { fetchAuthSession, refreshAccessToken } from './auth-api'
 import {
   clearOAuthReturnPendingWelcome,

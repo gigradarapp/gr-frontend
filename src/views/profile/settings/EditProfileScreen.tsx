@@ -14,7 +14,7 @@ import {
   getCachedAvatarDataUrl,
   persistAvatarToLocalCache,
   warmAvatarCacheIfEmpty,
-} from '../../../lib/avatar-image-cache'
+} from '../../../lib/avatar-image-cache.ts'
 import { postProfileAvatar } from '../../../lib/auth-api'
 import { resizeImageForAvatar } from '../../../lib/resizeImageForAvatar'
 import { api } from '../../../lib/trpc'

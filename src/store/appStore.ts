@@ -7,6 +7,8 @@ import {
   type TasteIdentityItem,
 } from '../data/profileIdentity'
 import { DEFAULT_LOCATION_CITY_ID, getLocationCityById } from '../data/locationRegions'
+import { postProfileDefaultCity } from '../lib/auth-api'
+import { persistSignupOnboardingDismissed, readSignupOnboardingDismissed } from '../lib/signup-onboarding-flag'
 import { schedulePersistUserTasteCategories } from '../lib/persist-user-taste'
 import type { Tab, Theme } from '../types'
 
@@ -140,11 +142,7 @@ export type PendingPlanDetail = {
 export type SubscriptionTier = 'basic' | 'pro'
 export type LocationPreferenceMode = 'precise' | 'city'
 export type LocationPermissionState = 'unknown' | 'granted' | 'denied'
-export type LocationSettingsDraft = {
-  cityId: string
-  mode: LocationPreferenceMode
-  radiusKm: number
-}
+export type OnboardingSource = 'signup' | 'settings'
 
 /** Auth user from `GET /api/auth/session` (no Supabase client in the browser). */
 export type AuthUserPayload = {
@@ -182,19 +180,14 @@ type AppState = {
   nearbyRadiusKm: number
   /** Browser location permission state tracked from settings flow. */
   locationPermission: LocationPermissionState
-  /** Staged edits from Location settings; committed only when user taps Save. */
-  locationSettingsDraft: LocationSettingsDraft | null
   showBuzzPoints: boolean
   /** Editable copy of demo taste tags — profile + taste screen read this. */
   tasteIdentityItems: TasteIdentityItem[]
   showProfileTasteAll: boolean
   showProfileReputationAll: boolean
   showSettings: boolean
-  showLocationSettings: boolean
-  showLocationCityPicker: boolean
   showLanguage: boolean
   showPrivacySafety: boolean
-  showPrivacyPolicy: boolean
   showFeedback: boolean
   showEmailLogin: boolean
   /** Pre-app sign-in sheet from the welcome screen. */
@@ -203,6 +196,11 @@ type AppState = {
   signInRedirectError: string | null
   showEditProfile: boolean
   showSubscription: boolean
+  /** Quick setup: city + genre picks (matches gr-frontend-new onboarding). */
+  showOnboarding: boolean
+  onboardingSource: OnboardingSource | null
+  /** Bumps when onboarding opens so the screen remounts with fresh local state. */
+  onboardingMountKey: number
   dismissWelcome: () => void
   dismissWelcomeBack: () => void
   openSignIn: () => void
@@ -248,18 +246,10 @@ type AppState = {
   closeProfileReputationAll: () => void
   openSettings: () => void
   closeSettings: () => void
-  openLocationSettings: () => void
-  closeLocationSettings: () => void
-  openLocationCityPicker: () => void
-  closeLocationCityPicker: () => void
-  updateLocationSettingsDraft: (patch: Partial<LocationSettingsDraft>) => void
-  commitLocationSettingsDraft: () => void
   openLanguage: () => void
   closeLanguage: () => void
   openPrivacySafety: () => void
   closePrivacySafety: () => void
-  openPrivacyPolicy: () => void
-  closePrivacyPolicy: () => void
   openFeedback: () => void
   closeFeedback: () => void
   openEmailLogin: () => void
@@ -268,6 +258,10 @@ type AppState = {
   closeEditProfile: () => void
   openSubscription: () => void
   closeSubscription: () => void
+  openOnboarding: (source: OnboardingSource) => void
+  closeOnboarding: () => void
+  /** Persist city from onboarding (local + profile when signed in). */
+  applyOnboardingCity: (cityId: string) => void
   setUserProfile: (patch: Partial<UserProfile>) => void
   setSubscriptionTier: (tier: SubscriptionTier) => void
   setFeedLocationCityId: (cityId: string) => void
@@ -295,23 +289,22 @@ export const useAppState = create<AppState>((set, get) => ({
   locationPreferenceMode: 'city',
   nearbyRadiusKm: 3,
   locationPermission: 'unknown',
-  locationSettingsDraft: null,
   showBuzzPoints: false,
   tasteIdentityItems: getDefaultTasteIdentityItems(),
   showProfileTasteAll: false,
   showProfileReputationAll: false,
   showSettings: false,
-  showLocationSettings: false,
-  showLocationCityPicker: false,
   showLanguage: false,
   showPrivacySafety: false,
-  showPrivacyPolicy: false,
   showFeedback: false,
   showEmailLogin: false,
   showSignIn: false,
   signInRedirectError: null,
   showEditProfile: false,
   showSubscription: false,
+  showOnboarding: false,
+  onboardingSource: null,
+  onboardingMountKey: 0,
   isDiscoverExpanded: false,
   dismissWelcome: () => {
     persistWelcomeDismissed()
@@ -403,8 +396,16 @@ export const useAppState = create<AppState>((set, get) => ({
             showSignIn: false,
             signInRedirectError: null,
             welcomeDismissed: true,
-            // Only set true here — do not set false on every session poll (Strict Mode 2nd mount / refresh sync).
-            ...(isFreshSignIn && !wasAuthenticated ? { showWelcomeBack: true } : {}),
+            // Fresh sign-in: signup onboarding OR welcome-back (mutually exclusive). Do not set on session poll.
+            ...(isFreshSignIn && !wasAuthenticated
+              ? readSignupOnboardingDismissed()
+                ? { showWelcomeBack: true }
+                : {
+                    showOnboarding: true,
+                    onboardingSource: 'signup' as OnboardingSource,
+                    showWelcomeBack: false,
+                  }
+              : {}),
             tab: 'discover' as Tab,
           }
         : {}),
@@ -430,16 +431,15 @@ export const useAppState = create<AppState>((set, get) => ({
       showProfileTasteAll: false,
       showProfileReputationAll: false,
       showSettings: false,
-      showLocationSettings: false,
-      showLocationCityPicker: false,
-      locationSettingsDraft: null,
       showLanguage: false,
       showPrivacySafety: false,
-      showPrivacyPolicy: false,
       showFeedback: false,
       showEmailLogin: false,
       showEditProfile: false,
       showSubscription: false,
+      showOnboarding: false,
+      onboardingSource: null,
+      showWelcomeBack: false,
       profileDefaultCityId: readPersistedDefaultCityId(),
     })
   },
@@ -485,59 +485,10 @@ export const useAppState = create<AppState>((set, get) => ({
   closeProfileReputationAll: () => set({ showProfileReputationAll: false }),
   openSettings: () => set({ showSettings: true }),
   closeSettings: () => set({ showSettings: false }),
-  openLocationSettings: () =>
-    set((state) => ({
-      showLocationSettings: true,
-      locationSettingsDraft: {
-        cityId: state.feedLocationCityId,
-        mode: state.locationPreferenceMode,
-        radiusKm: state.nearbyRadiusKm,
-      },
-    })),
-  closeLocationSettings: () =>
-    set({
-      showLocationSettings: false,
-      showLocationCityPicker: false,
-      locationSettingsDraft: null,
-    }),
-  openLocationCityPicker: () => set({ showLocationCityPicker: true }),
-  closeLocationCityPicker: () => set({ showLocationCityPicker: false }),
-  updateLocationSettingsDraft: (patch) =>
-    set((state) => {
-      const current =
-        state.locationSettingsDraft ?? {
-          cityId: state.feedLocationCityId,
-          mode: state.locationPreferenceMode,
-          radiusKm: state.nearbyRadiusKm,
-        }
-      return { locationSettingsDraft: { ...current, ...patch } }
-    }),
-  commitLocationSettingsDraft: () =>
-    set((state) => {
-      const draft = state.locationSettingsDraft
-      if (!draft) {
-        return {
-          showLocationSettings: false,
-          showLocationCityPicker: false,
-        }
-      }
-      persistDefaultCityId(draft.cityId)
-      return {
-        profileDefaultCityId: draft.cityId,
-        feedLocationCityId: draft.cityId,
-        locationPreferenceMode: draft.mode,
-        nearbyRadiusKm: draft.radiusKm,
-        showLocationSettings: false,
-        showLocationCityPicker: false,
-        locationSettingsDraft: null,
-      }
-    }),
   openLanguage: () => set({ showLanguage: true }),
   closeLanguage: () => set({ showLanguage: false }),
   openPrivacySafety: () => set({ showPrivacySafety: true }),
-  closePrivacySafety: () => set({ showPrivacySafety: false, showPrivacyPolicy: false }),
-  openPrivacyPolicy: () => set({ showPrivacyPolicy: true }),
-  closePrivacyPolicy: () => set({ showPrivacyPolicy: false }),
+  closePrivacySafety: () => set({ showPrivacySafety: false }),
   openFeedback: () => set({ showFeedback: true }),
   closeFeedback: () => set({ showFeedback: false }),
   openEmailLogin: () => set({ showEmailLogin: true }),
@@ -546,6 +497,32 @@ export const useAppState = create<AppState>((set, get) => ({
   closeEditProfile: () => set({ showEditProfile: false }),
   openSubscription: () => set({ showSubscription: true }),
   closeSubscription: () => set({ showSubscription: false }),
+  openOnboarding: (source) =>
+    set((s) => ({
+      showOnboarding: true,
+      onboardingSource: source,
+      onboardingMountKey: s.onboardingMountKey + 1,
+    })),
+  closeOnboarding: () => {
+    const src = get().onboardingSource
+    if (src === 'signup') {
+      persistSignupOnboardingDismissed()
+    }
+    set({
+      showOnboarding: false,
+      onboardingSource: null,
+      ...(src === 'signup' ? { showWelcomeBack: true } : {}),
+    })
+  },
+  applyOnboardingCity: (cityId) => {
+    persistDefaultCityId(cityId)
+    set({ feedLocationCityId: cityId, profileDefaultCityId: cityId })
+    if (get().isAuthenticated) {
+      void postProfileDefaultCity(cityId).catch((e) => {
+        console.error('[buzo] onboarding default city:', e)
+      })
+    }
+  },
   setUserProfile: (patch) =>
     set((s) => ({ userProfile: { ...s.userProfile, ...patch } })),
   setSubscriptionTier: (subscriptionTier) => set({ subscriptionTier }),

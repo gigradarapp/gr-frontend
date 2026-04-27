@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircle, Funnel, Heart, Info, Map, Share2, X } from 'lucide-react'
 import { LocationCityPickerControl, CityPickerSheet } from '../../components/LocationCityPickerControl'
+import { DISCOVER_FEED_CATEGORY_FILTER_OPTIONS } from '../../data/exploreCategories'
 import { useAppState } from '../../store/appStore'
+import { deriveOnboardingGenreIdsFromTastes } from '../../data/onboarding'
 import type { EventItem } from '../../types'
 
 // ─── Category → visual accent mapping (keyed by exploreCategoryId) ───────────
@@ -41,18 +43,6 @@ const GENRE_TO_CATEGORY: Record<string, string> = {
   'Cocktail Bar':'food',
 }
 
-const CATEGORIES_FILTER = [
-  { id: 'All',         label: 'All' },
-  { id: 'live-music',  label: 'Live Music' },
-  { id: 'club-nights', label: 'Club Nights' },
-  { id: 'jazz-blues',  label: 'Jazz & Blues' },
-  { id: 'underground', label: 'Underground' },
-  { id: 'arts',        label: 'Arts & Culture' },
-  { id: 'food',        label: 'Food & Drink' },
-  { id: 'popups',      label: 'Pop-ups' },
-  { id: 'festivals',   label: 'Festivals' },
-]
-
 const DATE_FILTER = ['All', 'Tonight', 'Tomorrow', 'This Week', 'This Month', 'Next 90 Days'] as const
 const TIME_FILTER = ['All', 'Before 9PM', '9PM-11PM', 'After 11PM'] as const
 const AREA_FILTER = [
@@ -66,7 +56,11 @@ const AREA_FILTER = [
 const PRICE_FILTER = ['All', 'Free', 'Under $20', '$20-$50', '$50+'] as const
 
 export type EventFeedFilters = {
-  category: string
+  /**
+   * Category filter: `All`, or one or more `exploreCategoryId` values (multi-select).
+   * When not `All`, events must match any selected category.
+   */
+  categories: 'All' | string[]
   date: (typeof DATE_FILTER)[number]
   time: (typeof TIME_FILTER)[number]
   area: (typeof AREA_FILTER)[number]
@@ -74,7 +68,7 @@ export type EventFeedFilters = {
 }
 
 const DEFAULT_FILTERS: EventFeedFilters = {
-  category: 'All',
+  categories: 'All',
   date: 'All',
   time: 'All',
   area: 'All',
@@ -95,8 +89,8 @@ function parsePriceAmount(ticketPrice: string): number | null {
   return Number.parseFloat(m[1])
 }
 
-function eventMatchesFilters(event: EventItem, f: EventFeedFilters): boolean {
-  if (f.category !== 'All' && event.exploreCategoryId !== f.category) return false
+export function eventMatchesFilters(event: EventItem, f: EventFeedFilters): boolean {
+  if (f.categories !== 'All' && !f.categories.includes(event.exploreCategoryId)) return false
 
   if (f.area !== 'All' && event.district !== f.area) return false
 
@@ -133,9 +127,9 @@ function eventMatchesFilters(event: EventItem, f: EventFeedFilters): boolean {
   return true
 }
 
-function countActiveFilters(f: EventFeedFilters): number {
+export function countActiveFilters(f: EventFeedFilters): number {
   let n = 0
-  if (f.category !== 'All') n += 1
+  if (f.categories !== 'All' && f.categories.length > 0) n += 1
   if (f.date !== 'All') n += 1
   if (f.time !== 'All') n += 1
   if (f.area !== 'All') n += 1
@@ -207,7 +201,8 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
 
       {/* Bottom content block */}
       <div className="ecf-body">
-        {/* Buzz bar */}
+        {/* Spacer pushes content down, buzz bar sits at top of body */}
+        <div className="ecf-body-spacer" />
         <div className="ecf-buzz-row">
           <div className="ecf-buzz-track">
             <div
@@ -219,13 +214,13 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
             {buzz}% BUZZ
           </span>
         </div>
-
         <div className="ecf-headline">
           <p className="ecf-genre" style={{ color: accent }}>
             {event.genre.toUpperCase()}
           </p>
           <h2 className="ecf-title">{event.title.toUpperCase()}</h2>
         </div>
+
         <div className="ecf-lede">
           <p className="ecf-lede-primary">{event.venue}</p>
           {event.vibeTags.length > 0 || event.hostPrompt ? (
@@ -245,15 +240,16 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
           role="group"
           aria-label={`${event.district}, ${event.time}, ${event.ticketPrice}`}
         >
-          <span>{event.district}</span>
-          <span className="ecf-meta-sep" aria-hidden>
-            ·
-          </span>
-          <span>{event.time}</span>
-          <span className="ecf-meta-sep" aria-hidden>
-            ·
-          </span>
-          <span>{event.ticketPrice}</span>
+          {[
+            { label: 'WHERE', value: event.district },
+            { label: 'WHEN',  value: event.time },
+            { label: 'PRICE', value: event.ticketPrice },
+          ].map((m) => (
+            <div key={m.label} className="ecf-meta-col">
+              <span className="ecf-meta-label">{m.label}</span>
+              <strong className="ecf-meta-value">{m.value}</strong>
+            </div>
+          ))}
         </div>
 
         {/* Actions */}
@@ -263,6 +259,7 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
             className={`ecf-going-btn${isGoing ? ' ecf-going-btn--active' : ''}`}
             style={isGoing ? { background: accent, borderColor: accent } : undefined}
             onClick={onGoing}
+            title={isGoing ? "You're going — tap to undo" : "Mark yourself as going"}
           >
             {isGoing ? '✓ I\'m Going' : 'I\'m Going'}
           </button>
@@ -270,6 +267,7 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
             type="button"
             className="ecf-details-btn"
             aria-label={`More details for ${event.title}`}
+            title="See full event details"
             onClick={onMoreDetails}
           >
             <Info size={16} strokeWidth={2} aria-hidden />
@@ -279,6 +277,7 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
             type="button"
             className="ecf-icon-btn"
             aria-label="Save event"
+            title={isSaved ? 'Remove from saved' : 'Save event'}
             onClick={onSave}
             style={isSaved ? { color: accent, borderColor: accent } : undefined}
           >
@@ -293,6 +292,7 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
             type="button"
             className="ecf-icon-btn"
             aria-label="Share event"
+            title="Share this event"
           >
             <Share2 size={18} strokeWidth={2} aria-hidden />
           </button>
@@ -439,9 +439,27 @@ export function FilterSheet({ applied, onApply, onClose }: FilterSheetProps) {
           >
             <p className="ecf-filter-section-label">Category</p>
             <div className="ecf-filter-chips">
-              {CATEGORIES_FILTER.map((c) =>
-                chip(draft.category === c.id, c.label, () => setDraft((d) => ({ ...d, category: c.id }))),
-              )}
+              {DISCOVER_FEED_CATEGORY_FILTER_OPTIONS.map((c) => {
+                const isAll = c.id === 'All'
+                const active = isAll
+                  ? draft.categories === 'All'
+                  : draft.categories !== 'All' && draft.categories.includes(c.id)
+                const onCategoryClick = () => {
+                  setDraft((d) => {
+                    if (isAll) {
+                      return { ...d, categories: 'All' }
+                    }
+                    if (d.categories === 'All') {
+                      return { ...d, categories: [c.id] }
+                    }
+                    const list = d.categories
+                    const has = list.includes(c.id)
+                    const next = has ? list.filter((x) => x !== c.id) : [...list, c.id]
+                    return { ...d, categories: next.length === 0 ? 'All' : next }
+                  })
+                }
+                return chip(active, c.label, onCategoryClick)
+              })}
             </div>
           </section>
 
@@ -519,15 +537,35 @@ type EventCardFeedProps = {
 
 export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFeedProps) {
   const locationCityId = useAppState((s) => s.feedLocationCityId)
-  const [filters, setFilters] = useState<EventFeedFilters>(DEFAULT_FILTERS)
+  const tasteIdentityItems = useAppState((s) => s.tasteIdentityItems)
+
+  const initialCategories = useMemo(() => {
+    // Prefer localStorage override (set when user changes filter — survives refresh for anon users)
+    try {
+      const raw = window.localStorage.getItem('buzo-feed-category-ids')
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[]
+        if (Array.isArray(parsed) && parsed.length === 0) return 'All' as const
+      }
+    } catch { /* ignore */ }
+    const ids = deriveOnboardingGenreIdsFromTastes(tasteIdentityItems)
+    return ids.length > 0 ? ids : ('All' as const)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // intentionally run once on mount only
+
+  const [filters, setFilters] = useState<EventFeedFilters>(() => ({
+    ...DEFAULT_FILTERS,
+    categories: initialCategories,
+  }))
   const [showFilter, setShowFilter] = useState(false)
   const [showCityPicker, setShowCityPicker] = useState(false)
   const [going, setGoing] = useState<string[]>([])
   const [saved, setSaved] = useState<string[]>([])
   const [cardIdx, setCardIdx] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollElRef = useRef<HTMLDivElement | null>(null)
 
-  const activeCount = countActiveFilters(filters)
   const filtered = useMemo(
     () =>
       events
@@ -536,20 +574,53 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
     [events, locationCityId, filters],
   )
 
-  // Track which card is visible via scroll position
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const onScroll = () => {
-      setCardIdx(Math.round(el.scrollTop / el.clientHeight))
+  const activeCount = countActiveFilters(filters)
+
+  // Callback ref — attaches scroll listener the instant the div mounts
+  const setScrollEl = useCallback((el: HTMLDivElement | null) => {
+    if (scrollElRef.current) {
+      scrollElRef.current.removeEventListener('scroll', onScrollRef.current!)
     }
-    el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
+    scrollElRef.current = el
+    ;(scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el
+    if (el) {
+      el.addEventListener('scroll', onScrollRef.current!, { passive: true })
+    }
   }, [])
+
+  const onScrollRef = useRef<() => void>()
+  onScrollRef.current = () => {
+    const el = scrollElRef.current
+    if (!el) return
+    setCardIdx(Math.round(el.scrollTop / el.clientHeight))
+  }
+
+  // When onboarding finishes, pick up the newly written localStorage categories
+  const showOnboarding = useAppState((s) => s.showOnboarding)
+  const prevShowOnboarding = useRef(showOnboarding)
+  useEffect(() => {
+    if (prevShowOnboarding.current && !showOnboarding) {
+      // Onboarding just closed — re-read localStorage
+      try {
+        const raw = window.localStorage.getItem('buzo-feed-category-ids')
+        if (raw) {
+          const parsed = JSON.parse(raw) as unknown
+          if (Array.isArray(parsed)) {
+            setFilters((prev) => ({
+              ...prev,
+              categories: parsed.length > 0 ? (parsed as string[]) : 'All',
+            }))
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    prevShowOnboarding.current = showOnboarding
+  }, [showOnboarding])
 
   // Reset scroll position when city or filters change
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    const el = scrollElRef.current
+    if (el) el.scrollTop = 0
     setCardIdx(0)
   }, [filters, locationCityId])
 
@@ -568,12 +639,13 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
       {/* Header */}
       <div className="ecf-header">
         <div className="ecf-header-inner">
-          {/* Left: filter chips */}
           <div className="ecf-chip-row">
             <button
               type="button"
               className={`ecf-chip-btn ecf-chip-btn--filter${activeCount > 0 ? ' ecf-chip-btn--active' : ''}`}
               onClick={() => setShowFilter(true)}
+              title={activeCount > 0 ? `Filters active (${activeCount}) — click to edit` : 'Filter events'}
+              aria-label={activeCount > 0 ? `Filter · ${activeCount} active` : 'Filter events'}
             >
               <span className="ecf-chip-filter-icon-wrap">
                 <Funnel className="ecf-chip-filter-icon" size={14} strokeWidth={2.25} aria-hidden />
@@ -581,9 +653,7 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
                   <CheckCircle className="ecf-chip-filter-badge" size={9} strokeWidth={2.5} aria-hidden />
                 )}
               </span>
-              <span>
-                Filter{activeCount > 0 ? ` · ${activeCount}` : ''}
-              </span>
+              <span>Filter{activeCount > 0 ? ` · ${activeCount}` : ''}</span>
             </button>
             <LocationCityPickerControl
               triggerClassName="ecf-chip-btn ecf-chip-btn--location"
@@ -594,20 +664,24 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
               <button
                 type="button"
                 className="ecf-chip-btn ecf-chip-btn--active ecf-chip-btn--clear"
-                onClick={() => setFilters(DEFAULT_FILTERS)}
+                onClick={() => {
+                  setFilters(DEFAULT_FILTERS)
+                  try { window.localStorage.setItem('buzo-feed-category-ids', JSON.stringify([])) } catch { /* ignore */ }
+                }}
+                title="Clear all filters"
+                aria-label="Clear all filters"
               >
                 <X size={13} strokeWidth={2.5} aria-hidden className="ecf-chip-clear-icon" />
                 <span>Clear all</span>
               </button>
             )}
           </div>
-
-          {/* Right: Map View */}
           <button
             type="button"
             className="ecf-map-view-btn"
             onClick={onMapView}
             aria-label="Switch to map view"
+            title="Switch to map view"
           >
             <Map size={14} strokeWidth={2.25} aria-hidden />
             <span>Map</span>
@@ -615,9 +689,21 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
         </div>
       </div>
 
+      {/* Scroll progress indicator */}
+      {filtered.length > 0 && (
+        <div className="ecf-progress" aria-hidden>
+          {filtered.map((_, i) => (
+            <div
+              key={i}
+              className={`ecf-progress-dot${i === cardIdx ? ' ecf-progress-dot--active' : ''}`}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Scroll container */}
       <div
-        ref={scrollRef}
+        ref={setScrollEl}
         className="ecf-scroll"
         role="feed"
         aria-label="Event cards"
@@ -683,6 +769,16 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
               onApply={(next) => {
                 setFilters(next)
                 setShowFilter(false)
+                // Persist category selection to localStorage so it survives refresh
+                if (next.categories !== filters.categories) {
+                  const categoryIds = next.categories === 'All' ? [] : next.categories
+                  try {
+                    window.localStorage.setItem(
+                      'buzo-feed-category-ids',
+                      JSON.stringify(categoryIds),
+                    )
+                  } catch { /* ignore */ }
+                }
               }}
               onClose={() => setShowFilter(false)}
             />
