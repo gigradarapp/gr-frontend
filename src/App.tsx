@@ -7,8 +7,6 @@ import {
   getPlanDetailPast,
   getPlanDetailUpcoming,
 } from './data/demoData'
-import { mapDbEventToEventItem } from './lib/map-event'
-import { api } from './lib/trpc'
 import { useAppState, type FavoriteEvent } from './store/appStore'
 import type { Tab } from './types'
 import { PlanEventDetail } from './views/plan/PlanEventDetail'
@@ -33,6 +31,7 @@ import { WelcomeScreen, SignInSheet, WelcomeBackScreen } from './views/welcome'
 import { DesignThemePage } from './views/design-theme/DesignThemePage'
 import { DesignThemeOrangePage } from './views/design-theme/DesignThemeOrangePage'
 import { DesignThemePurplePage } from './views/design-theme/DesignThemePurplePage'
+import { EventListPage } from './views/event-list/EventListPage'
 
 const DiscoverTab = lazy(() =>
   import('./views/discover/DiscoverTab').then((m) => ({ default: m.DiscoverTab })),
@@ -127,17 +126,8 @@ function MainApp() {
   const [sheetPlanReturnTab, setSheetPlanReturnTab] = useState<Tab | null>(null)
   const [discoverMapMode, setDiscoverMapMode] = useState(false)
 
-  const eventsQuery = api.events.list.useQuery(
-    {},
-    { staleTime: 60_000, retry: 1 },
-  )
-  const mergedEvents = useMemo(() => {
-    const rows = eventsQuery.data
-    if (rows?.length) {
-      return rows.map((row) => mapDbEventToEventItem(row as Record<string, unknown>))
-    }
-    return demoEvents
-  }, [eventsQuery.data])
+  /** Discover / map / sheet: local demo data only. Live `/api/events` (e.g. `/event-list`) is separate. */
+  const discoverEvents = demoEvents
 
   useEffect(() => {
     if (!pendingPlanDetail) return
@@ -182,8 +172,8 @@ function MainApp() {
   )
 
   const activeEvent = useMemo(
-    () => mergedEvents.find((event) => event.id === activeEventId) ?? null,
-    [activeEventId, mergedEvents],
+    () => discoverEvents.find((event) => event.id === activeEventId) ?? null,
+    [activeEventId, discoverEvents],
   )
 
   const sheetPlanOverlayBody = useMemo(() => {
@@ -318,13 +308,13 @@ function MainApp() {
               {tab === 'discover' && (
                 discoverMapMode ? (
                   <MapView
-                    events={mergedEvents}
+                    events={discoverEvents}
                     onBackToFeed={() => setDiscoverMapMode(false)}
                     onMoreDetails={(id) => requestPlanDetail(id, 'upcoming', 'discover')}
                   />
                 ) : (
                   <EventCardFeed
-                    events={mergedEvents}
+                    events={discoverEvents}
                     onMoreDetails={(id) => requestPlanDetail(id, 'upcoming', 'discover')}
                     onMapView={() => setDiscoverMapMode(true)}
                   />
@@ -335,7 +325,7 @@ function MainApp() {
                   onOpenEvent={openEvent}
                   prefillPrompt={discoverPrefill}
                   onConsumePrefill={consumeDiscoverPrefill}
-                  events={mergedEvents}
+                  events={discoverEvents}
                 />
               )}
               {tab === 'favorites' && (
@@ -514,6 +504,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/event-list" element={<EventListPage />} />
         {/* Nested so /design-theme/purple never competes with the /design-theme index */}
         <Route path="/design-theme" element={<Outlet />}>
           <Route index element={<DesignThemePage />} />

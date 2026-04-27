@@ -27,6 +27,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/trpc': toBackend,
+      '/api/events': toBackend,
       '/api/geocode': toBackend,
       '/api/auth': toBackend,
       '/api/profile/taste': toBackend,
