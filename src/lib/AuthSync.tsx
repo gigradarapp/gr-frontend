@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { useAppState } from '../store/appStore'
+import { warmAvatarCacheIfEmpty } from './avatar-image-cache'
 import { fetchAuthSession, refreshAccessToken } from './auth-api'
 import {
   clearOAuthReturnPendingWelcome,
@@ -62,7 +63,11 @@ export function AuthSync({ children }: { children: ReactNode }) {
       try {
         const { user, profile, taste_categories } = await fetchAuthSession()
         if (cancelled) return
-        prewarmImage(profile?.avatar_url)
+        const avatarRemote = profile?.avatar_url?.trim()
+        if (avatarRemote) {
+          prewarmImage(avatarRemote)
+          void warmAvatarCacheIfEmpty(avatarRemote)
+        }
         useAppState.getState().applySupabaseSession(user, profile, {
           isFreshSignIn,
           tasteCategories: taste_categories,

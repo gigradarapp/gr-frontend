@@ -83,14 +83,13 @@ export function SettingsScreen() {
     isAuthenticated,
     profileDefaultCityId,
     locationPreferenceMode,
-    nearbyRadiusKm,
     theme,
     setTheme,
   } = useAppState()
   const hasDefaultCity = !isAuthenticated || profileDefaultCityId != null
   const cityName = hasDefaultCity ? (getLocationCityById(feedLocationCityId)?.name ?? 'Singapore') : 'Not set'
   const locationSummary =
-    locationPreferenceMode === 'precise' ? `${cityName} • ${nearbyRadiusKm} km` : `${cityName} (default city)`
+    locationPreferenceMode === 'precise' ? `Auto-detect · ${cityName}` : `Manual · ${cityName}`
 
   const handleDeleteAccount = () => {
     const ok = window.confirm(

@@ -6,8 +6,6 @@ import { getLocationCityById } from '../../../data/locationRegions'
 import { postProfileDefaultCity } from '../../../lib/auth-api'
 import { useAppState } from '../../../store/appStore'
 
-const RADIUS_OPTIONS_KM = [1, 3, 5, 8, 12, 25] as const
-
 export function LocationSettingsScreen() {
   const {
     closeLocationSettings,
@@ -16,7 +14,6 @@ export function LocationSettingsScreen() {
     feedLocationCityId,
     locationPreferenceMode,
     nearbyRadiusKm,
-    locationPermission,
     locationSettingsDraft,
     updateLocationSettingsDraft,
     setLocationPermission,
@@ -135,8 +132,12 @@ export function LocationSettingsScreen() {
 
       <div className="location-settings-body">
         <section className="location-settings-section">
-          <h3 className="location-settings-section-title">Discovery scope</h3>
-          <div className="location-settings-mode-grid" role="radiogroup" aria-label="Location mode">
+          <h3 className="location-settings-section-title">Current city</h3>
+          <div
+            className="location-settings-mode-grid"
+            role="radiogroup"
+            aria-label="How to set your city"
+          >
             <button
               type="button"
               className={
@@ -149,7 +150,7 @@ export function LocationSettingsScreen() {
               onClick={requestPreciseLocation}
             >
               <Crosshair size={16} aria-hidden />
-              <span>Precise location</span>
+              <span>Auto-detect</span>
             </button>
             <button
               type="button"
@@ -163,59 +164,26 @@ export function LocationSettingsScreen() {
               onClick={() => updateLocationSettingsDraft({ mode: 'city' })}
             >
               <MapPin size={16} aria-hidden />
-              <span>Default city</span>
+              <span>Manual select</span>
             </button>
           </div>
-          <p className="location-settings-note">
-            If precise location is unavailable, Buzo uses your default city.
-          </p>
-        </section>
-
-        <section className="location-settings-section">
-          <h3 className="location-settings-section-title">Current city</h3>
-          <div className="location-settings-card">
-            <button
-              type="button"
-              className="location-settings-row"
-              onClick={openLocationCityPicker}
-              aria-label={`Choose city, currently ${cityName}`}
-            >
-              <span className="location-settings-row-icon" aria-hidden>
-                <MapPin size={16} />
-              </span>
-              <span className="location-settings-row-label">Selected city</span>
-              <span className="location-settings-row-value">{cityName}</span>
-              <Navigation size={16} className="location-settings-row-chevron" aria-hidden />
-            </button>
-          </div>
-        </section>
-
-        <section className="location-settings-section">
-          <h3 className="location-settings-section-title">Radius in {cityName}</h3>
-          <div className="location-radius-grid" role="listbox" aria-label="Nearby radius">
-            {RADIUS_OPTIONS_KM.map((radius) => (
+          {draft.mode === 'city' ? (
+            <div className="location-settings-card">
               <button
-                key={radius}
                 type="button"
-                className={
-                  draft.radiusKm === radius
-                    ? 'location-radius-chip is-active'
-                    : 'location-radius-chip'
-                }
-                role="option"
-                aria-selected={draft.radiusKm === radius}
-                onClick={() => {
-                  updateLocationSettingsDraft({ radiusKm: radius, mode: 'precise' })
-                }}
+                className="location-settings-row"
+                onClick={openLocationCityPicker}
+                aria-label={`Choose city, currently ${cityName}`}
               >
-                {radius} km
+                <span className="location-settings-row-icon" aria-hidden>
+                  <MapPin size={16} />
+                </span>
+                <span className="location-settings-row-label">Selected city</span>
+                <span className="location-settings-row-value">{cityName}</span>
+                <Navigation size={16} className="location-settings-row-chevron" aria-hidden />
               </button>
-            ))}
-          </div>
-          <p className="location-settings-note">
-            Permission: <strong>{locationPermission}</strong>
-            {locationPermission !== 'granted' ? ' · default city mode remains available.' : ''}
-          </p>
+            </div>
+          ) : null}
         </section>
 
         <section className="location-settings-section">

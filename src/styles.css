@@ -4038,6 +4038,20 @@ button.taste-tag:focus-visible {
   gap: 8px;
 }
 
+/* Space the mode buttons away from the selected-city row and PDPA block */
+.location-settings-mode-grid + .location-settings-card {
+  margin-top: 20px;
+}
+
+.location-settings-body > .location-settings-section:has(> h3 + .location-settings-mode-grid) {
+  margin-bottom: 24px;
+}
+
+.location-settings-body
+  > .location-settings-section:has(> p.location-settings-note:only-child) {
+  padding-top: 8px;
+}
+
 .location-settings-mode-btn {
   border: 1px solid var(--stroke);
   border-radius: 12px;
@@ -4076,7 +4090,8 @@ button.taste-tag:focus-visible {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 14px;
+  min-height: 48px;
+  padding: 16px 14px;
   border: none;
   background: transparent;
   color: var(--text);
@@ -4137,9 +4152,10 @@ button.taste-tag:focus-visible {
 }
 
 .location-settings-note {
-  margin: 10px 2px 0;
+  margin: 0 2px;
+  margin-top: 4px;
   font-size: 0.76rem;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--muted);
 }
 
@@ -12040,6 +12056,7 @@ button.taste-tag:focus-visible {
   scrollbar-width: none;
   flex: 1 1 auto;
   min-width: 0;
+  container-type: inline-size;
 }
 
 .ecf-chip-row::-webkit-scrollbar {
@@ -12073,6 +12090,14 @@ button.taste-tag:focus-visible {
   gap: 6px;
 }
 
+.ecf-chip-filter-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .ecf-chip-filter-icon {
   flex-shrink: 0;
   opacity: 0.92;
@@ -12080,6 +12105,15 @@ button.taste-tag:focus-visible {
 
 .ecf-chip-btn--active .ecf-chip-filter-icon {
   opacity: 1;
+}
+
+.ecf-chip-filter-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -4px;
+  background: var(--bg, #0a0a0a);
+  border-radius: 50%;
+  color: var(--primary);
 }
 
 .ecf-chip-wrap {
@@ -12107,6 +12141,48 @@ button.taste-tag:focus-visible {
 .ecf-chip-btn.ecf-chip-btn--location .feed-filter-pill-chevron {
   flex-shrink: 0;
   opacity: 0.75;
+}
+
+.ecf-chip-btn--clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ecf-chip-clear-icon {
+  flex-shrink: 0;
+}
+
+/* ── Icon-only collapse via CSS container queries ─────────────────────────────
+   Fires when the chip row (ecf-chip-row / mv-chip-row) is ≤ 185 px wide.
+   Typically triggers in the Map View header (back-btn + tonight-badge eat space)
+   and in the List View when 3+ chips + a long city name are present.
+   The Map View button and Feed back button sit OUTSIDE the container, so they
+   are unaffected and always show their full label.
+─────────────────────────────────────────────────────────────────────────────── */
+@container (max-width: 300px) {
+  /* Hide only plain text-label spans (no class); keeps icon-wrapper spans visible */
+  .ecf-chip-btn > span:not([class]) {
+    display: none;
+  }
+  /* Hide the extra icons on the location chip (search hint + chevron) */
+  .ecf-chip-btn .feed-filter-pill-search-hint,
+  .ecf-chip-btn .feed-filter-pill-chevron {
+    display: none;
+  }
+  /* Square up padding so the chip looks like an icon button */
+  .ecf-chip-btn {
+    padding: 8px 10px;
+  }
+  /* Collapse internal gaps now that text is gone */
+  .ecf-chip-btn--filter,
+  .ecf-chip-btn--clear {
+    gap: 0;
+  }
+  .ecf-chip-btn.ecf-chip-btn--location {
+    gap: 0;
+    max-width: unset;
+  }
 }
 
 /* Progress dots */
@@ -12209,7 +12285,7 @@ button.taste-tag:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .ecf-buzz-track {
@@ -12233,83 +12309,103 @@ button.taste-tag:focus-visible {
   white-space: nowrap;
 }
 
+.ecf-headline {
+  margin-bottom: 14px;
+}
+
 .ecf-genre {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  margin: 0 0 5px;
+  margin: 0 0 8px;
 }
 
 .ecf-title {
   color: #fff;
-  margin: 0 0 3px;
-  font-size: clamp(34px, 13vw, 50px);
-  line-height: 0.92;
+  margin: 0;
+  font-size: clamp(30px, 11.5vw, 46px);
+  line-height: 1.02;
   font-weight: 900;
-  letter-spacing: -1.5px;
+  letter-spacing: -1.2px;
 }
 
-.ecf-subtitle {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 16px;
-  margin: 0 0 8px;
-  font-style: italic;
-}
-
-.ecf-desc {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
+/* Two intentional lines: venue, then tags + hook (no awkward mid-sentence wrap) */
+.ecf-lede {
   margin: 0 0 14px;
-  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Meta row */
+.ecf-lede-primary {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 600;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.82);
+  text-wrap: pretty;
+}
+
+.ecf-lede-secondary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.48);
+  text-wrap: pretty;
+}
+
+.ecf-lede-hook {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Meta: single line, no stacked label/value columns */
 .ecf-meta-row {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
   margin-bottom: 14px;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #d0d0d0;
 }
 
-.ecf-meta-col {
-  flex: 1;
+.ecf-meta-sep {
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 500;
+  user-select: none;
 }
 
-.ecf-meta-label {
-  color: #999;
-  font-size: 10px;
-  margin: 0 0 4px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.theme-light .ecf-meta-row {
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.theme-light .ecf-meta-label {
-  color: rgba(255, 255, 255, 0.65);
+.theme-light .ecf-meta-sep {
+  color: rgba(255, 255, 255, 0.45);
 }
 
-.ecf-meta-value {
-  color: #c8c8c8;
-  font-size: 14px;
-  margin: 0;
-  font-weight: 700;
-}
-
-/* Action buttons — primary pair equal width; icon buttons fixed */
+/* Action buttons — "I'm Going" takes remaining width; details sizes to content (avoids cramped hyphenation) */
 .ecf-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr auto auto;
+  grid-template-columns: 1fr auto auto;
   gap: 8px;
   align-items: stretch;
 }
 
 .ecf-going-btn {
-  min-width: 0;
+  grid-column: 1 / -1;
+  white-space: nowrap;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  padding: 14px 0;
+  padding: 14px 12px;
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -12343,12 +12439,12 @@ button.taste-tag:focus-visible {
 }
 
 .ecf-details-btn {
-  min-width: 0;
+  width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 8px;
+  padding: 0 12px;
   min-height: 46px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -12374,9 +12470,10 @@ button.taste-tag:focus-visible {
 }
 
 .ecf-details-btn-label {
-  line-height: 1.15;
+  line-height: 1.25;
   text-align: center;
-  hyphens: auto;
+  hyphens: none;
+  white-space: nowrap;
 }
 
 .ecf-icon-btn {
@@ -12869,6 +12966,7 @@ vite-error-overlay::part(window) {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 .mv-back-btn {
@@ -12909,6 +13007,32 @@ vite-error-overlay::part(window) {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.mv-cycle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.mv-cycle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.mv-cycle-btn--active {
+  background: color-mix(in oklab, var(--primary) 20%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .mv-header-city {
@@ -13052,6 +13176,8 @@ vite-error-overlay::part(window) {
   scrollbar-width: none;
   pointer-events: auto;
   -webkit-overflow-scrolling: touch;
+  /* Let cards know the available width so they can size responsively */
+  container-type: inline-size;
 }
 
 .mv-carousel::-webkit-scrollbar {
@@ -13060,7 +13186,10 @@ vite-error-overlay::part(window) {
 
 .mv-card {
   flex-shrink: 0;
-  width: 320px;
+  /* Fill the carousel width minus its own horizontal padding (2 × 16 px) */
+  width: calc(100cqi - 32px);
+  max-width: 420px;
+  min-height: 200px;
   scroll-snap-align: center;
   display: flex;
   background: rgba(15, 16, 20, 0.94);
@@ -13080,8 +13209,8 @@ vite-error-overlay::part(window) {
 }
 
 .mv-card-img {
-  width: 104px;
-  height: auto;
+  width: 118px;
+  height: 100%;
   object-fit: cover;
   flex-shrink: 0;
   filter: brightness(0.7);
@@ -13090,10 +13219,10 @@ vite-error-overlay::part(window) {
 .mv-card-body {
   flex: 1;
   min-width: 0;
-  padding: 12px 14px;
+  padding: 14px 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .mv-card-meta-row {
@@ -13121,7 +13250,7 @@ vite-error-overlay::part(window) {
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  margin: 2px 0 0;
+  margin: 4px 0 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -13132,21 +13261,27 @@ vite-error-overlay::part(window) {
   font-size: 11px;
   font-weight: 500;
   margin: 0 0 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.mv-card-price {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0 0 10px;
 }
 
 .mv-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 36px 36px;
+  gap: 7px;
   margin-top: auto;
+  container-type: inline-size;
 }
 
 .mv-card-going {
-  flex: 1;
-  padding: 8px 12px;
+  grid-column: 1 / -1;
+  white-space: nowrap;
+  padding: 9px 12px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
@@ -13159,14 +13294,49 @@ vite-error-overlay::part(window) {
   transition: background 0.15s, border-color 0.15s;
 }
 
+.mv-card-details-btn {
+  grid-column: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.mv-card-details-btn:hover {
+  border-color: var(--card-accent);
+  color: var(--card-accent);
+}
+
+/* When actions row is too narrow for text, collapse details to icon-only */
+@container (max-width: 200px) {
+  .mv-card-details-btn > span {
+    display: none;
+  }
+  .mv-card-details-btn {
+    gap: 0;
+  }
+}
+
 .mv-card-going--active {
   background: var(--card-accent);
   border-color: var(--card-accent);
 }
 
 .mv-card-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -13187,8 +13357,7 @@ vite-error-overlay::part(window) {
 .mv-zoom-controls {
   position: absolute;
   right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 100px;
   z-index: 1000;
   display: flex;
   flex-direction: column;

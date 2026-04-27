@@ -9,6 +9,11 @@ import {
   TASTE_AND_RECOMMENDATIONS_TITLE,
   type TasteIdentityItem,
 } from '../../data/profileIdentity'
+import {
+  getCachedAvatarDataUrl,
+  persistAvatarToLocalCache,
+  warmAvatarCacheIfEmpty,
+} from '../../lib/avatar-image-cache'
 import { postSignOut } from '../../lib/auth-api'
 import { flushPersistUserTasteCategories } from '../../lib/persist-user-taste'
 import { api } from '../../lib/trpc'
@@ -52,6 +57,10 @@ export function ProfileTab({
   const ringStyle = { '--ring-fill': ringFill } as CSSProperties
   const [avatarLoaded, setAvatarLoaded] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
+  const [avatarCacheTick, setAvatarCacheTick] = useState(0)
+  const remoteAvatarUrl = userProfile.avatarUrl
+  const cachedAvatarSrc = getCachedAvatarDataUrl(remoteAvatarUrl)
+  const avatarDisplaySrc = cachedAvatarSrc ?? remoteAvatarUrl
   const [tasteEditMode, setTasteEditMode] = useState(false)
   const [tooltipBadgeId, setTooltipBadgeId] = useState<string | null>(null)
   const tasteEditBaselineRef = useRef<TasteIdentityItem[] | null>(null)
@@ -99,7 +108,18 @@ export function ProfileTab({
   useEffect(() => {
     setAvatarLoaded(false)
     setAvatarFailed(false)
-  }, [userProfile.avatarUrl])
+  }, [avatarDisplaySrc])
+
+  useEffect(() => {
+    if (!isAuthenticated || !remoteAvatarUrl?.trim()) return
+    let cancelled = false
+    void warmAvatarCacheIfEmpty(remoteAvatarUrl.trim()).then((wrote) => {
+      if (!cancelled && wrote) setAvatarCacheTick((t) => t + 1)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated, remoteAvatarUrl])
 
   return (
     <motion.div
@@ -149,16 +169,19 @@ export function ProfileTab({
                   </span>
                 ) : null}
               </span>
-              {!avatarFailed && userProfile.avatarUrl ? (
+              {!avatarFailed && avatarDisplaySrc ? (
                 <img
-                  src={userProfile.avatarUrl}
+                  src={avatarDisplaySrc}
                   alt={avatarLabel}
                   className="profile-avatar-img"
                   decoding="async"
                   fetchPriority="high"
                   loading="eager"
                   referrerPolicy="no-referrer"
-                  onLoad={() => setAvatarLoaded(true)}
+                  onLoad={(e) => {
+                    setAvatarLoaded(true)
+                    if (remoteAvatarUrl) persistAvatarToLocalCache(remoteAvatarUrl, e.currentTarget)
+                  }}
                   onError={() => {
                     setAvatarFailed(true)
                     setAvatarLoaded(false)

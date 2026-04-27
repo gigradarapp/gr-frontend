@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { ChevronLeft, Heart, Info, SlidersHorizontal } from 'lucide-react'
+import { CheckCircle, ChevronLeft, Funnel, Heart, Info, Pause, Play, Share2 } from 'lucide-react'
 import { LocationCityPickerControl, CityPickerSheet } from '../../components/LocationCityPickerControl'
 import { FilterSheet, DEFAULT_FILTERS } from './EventCardFeed'
 import type { EventFeedFilters } from './EventCardFeed'
@@ -73,6 +73,45 @@ function eventLatLng(event: EventItem): [number, number] | null {
   const d = DISTRICT_CENTERS[event.district]
   if (d) return d
   return null
+}
+
+/**
+ * When several events share the exact same coordinates (district fallback or identical venue),
+ * fan them out in a small circle so their pins don't stack on top of each other.
+ * ~80 m radius at typical zoom — invisible at city scale, obvious at venue zoom.
+ */
+function spreadOverlappingPositions(
+  items: { event: EventItem; pos: [number, number] }[],
+): { event: EventItem; pos: [number, number] }[] {
+  const RADIUS_DEG = 0.003 // ≈ 333 m — visible at city zoom (zoom 12-13)
+
+  // Group by rounded position (6 dp ≈ 0.1 m precision)
+  const groups = new Map<string, { event: EventItem; pos: [number, number] }[]>()
+  for (const item of items) {
+    const key = `${item.pos[0].toFixed(6)},${item.pos[1].toFixed(6)}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(item)
+  }
+
+  const result: { event: EventItem; pos: [number, number] }[] = []
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      result.push(group[0]!)
+      continue
+    }
+    // Rotate each pin evenly around the original point, starting from the top
+    group.forEach((item, i) => {
+      const angle = (2 * Math.PI * i) / group.length - Math.PI / 2
+      result.push({
+        ...item,
+        pos: [
+          item.pos[0] + RADIUS_DEG * Math.cos(angle),
+          item.pos[1] + RADIUS_DEG * Math.sin(angle),
+        ],
+      })
+    })
+  }
+  return result
 }
 
 function getCityCenter(cityId: string): [number, number] {
@@ -205,18 +244,19 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
   const [filters, setFilters] = useState<EventFeedFilters>(DEFAULT_FILTERS)
   const [showFilter, setShowFilter] = useState(false)
   const [showCityPicker, setShowCityPicker] = useState(false)
+  const [isCycling, setIsCycling] = useState(false)
+  const cycleIdxRef = useRef(0)
   const carouselRef = useRef<HTMLDivElement>(null)
 
   const activeFilterCount = Object.values(filters).filter((v) => v !== 'All').length
 
-  const cityEvents = useMemo(
-    () =>
-      events
-        .filter((e) => e.locationCityId === locationCityId)
-        .map((e) => ({ event: e, pos: eventLatLng(e) }))
-        .filter((r): r is { event: EventItem; pos: [number, number] } => r.pos != null),
-    [events, locationCityId],
-  )
+  const cityEvents = useMemo(() => {
+    const raw = events
+      .filter((e) => e.locationCityId === locationCityId)
+      .map((e) => ({ event: e, pos: eventLatLng(e) }))
+      .filter((r): r is { event: EventItem; pos: [number, number] } => r.pos != null)
+    return spreadOverlappingPositions(raw)
+  }, [events, locationCityId])
 
   const cityCenter = getCityCenter(locationCityId)
   const cityName = getCityName(locationCityId)
@@ -242,6 +282,33 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
     setter: React.Dispatch<React.SetStateAction<string[]>>,
   ) => setter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
+  // Auto-cycle through events
+  useEffect(() => {
+    if (!isCycling || cityEvents.length === 0) return
+    // Seed the index from the currently selected card (or start at 0)
+    const startIdx = cityEvents.findIndex((r) => r.event.id === selectedId)
+    cycleIdxRef.current = startIdx >= 0 ? startIdx : 0
+    // Immediately show the first card so the user sees something right away
+    const first = cityEvents[cycleIdxRef.current]
+    if (first) selectAndScroll(first.event.id)
+
+    const interval = setInterval(() => {
+      cycleIdxRef.current = (cycleIdxRef.current + 1) % cityEvents.length
+      const next = cityEvents[cycleIdxRef.current]
+      if (next) selectAndScroll(next.event.id)
+    }, 3500)
+
+    return () => clearInterval(interval)
+  // selectAndScroll is defined inside the component; list only the primitives that
+  // should restart the cycle (toggling isCycling or changing cities).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCycling, cityEvents])
+
+  // Stop cycling when the user changes city
+  useEffect(() => {
+    setIsCycling(false)
+  }, [locationCityId])
+
   return (
     <div className="mv-root">
       {/* Header */}
@@ -264,7 +331,12 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
               className={`ecf-chip-btn ecf-chip-btn--filter${activeFilterCount > 0 ? ' ecf-chip-btn--active' : ''}`}
               onClick={() => setShowFilter(true)}
             >
-              <SlidersHorizontal className="ecf-chip-filter-icon" size={14} strokeWidth={2.25} aria-hidden />
+              <span className="ecf-chip-filter-icon-wrap">
+                <Funnel className="ecf-chip-filter-icon" size={14} strokeWidth={2.25} aria-hidden />
+                {activeFilterCount > 0 && (
+                  <CheckCircle className="ecf-chip-filter-badge" size={9} strokeWidth={2.5} aria-hidden />
+                )}
+              </span>
               <span>Filter{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}</span>
             </button>
             <LocationCityPickerControl
@@ -275,6 +347,16 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
           </div>
 
           <div className="mv-header-meta">
+            <button
+              type="button"
+              className={`mv-cycle-btn${isCycling ? ' mv-cycle-btn--active' : ''}`}
+              aria-label={isCycling ? 'Stop cycling' : 'Cycle through events'}
+              onClick={() => setIsCycling((v) => !v)}
+            >
+              {isCycling
+                ? <Pause size={12} strokeWidth={2.5} aria-hidden />
+                : <Play size={12} strokeWidth={2.5} aria-hidden />}
+            </button>
             <span className="mv-header-count">{cityEvents.length} tonight</span>
           </div>
         </div>
@@ -351,8 +433,9 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
                       </div>
                       <p className="mv-card-title">{event.title}</p>
                       <p className="mv-card-sub">
-                        {event.district} · {event.time} · {event.ticketPrice}
+                        {event.district} · {event.time}
                       </p>
+                      <p className="mv-card-price">{event.ticketPrice}</p>
                       <div className="mv-card-actions">
                         <button
                           type="button"
@@ -362,7 +445,19 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
                             toggle(event.id, setGoing)
                           }}
                         >
-                          {isGoing ? "✓ Going" : "I'm In"}
+                          {isGoing ? "✓ I'm Going" : "I'm Going"}
+                        </button>
+                        <button
+                          type="button"
+                          className="mv-card-details-btn"
+                          aria-label="More details"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onMoreDetails(event.id)
+                          }}
+                        >
+                          <Info size={13} strokeWidth={2} aria-hidden />
+                          <span>More Details</span>
                         </button>
                         <button
                           type="button"
@@ -374,7 +469,7 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
                           }}
                         >
                           <Heart
-                            size={14}
+                            size={13}
                             strokeWidth={isSaved ? 2.5 : 2}
                             fill={isSaved ? accent : 'none'}
                             color={isSaved ? accent : undefined}
@@ -384,13 +479,10 @@ export function MapView({ events, onBackToFeed, onMoreDetails }: MapViewProps) {
                         <button
                           type="button"
                           className="mv-card-icon-btn"
-                          aria-label="More details"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onMoreDetails(event.id)
-                          }}
+                          aria-label="Share event"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Info size={14} strokeWidth={2} aria-hidden />
+                          <Share2 size={13} strokeWidth={2} aria-hidden />
                         </button>
                       </div>
                     </div>

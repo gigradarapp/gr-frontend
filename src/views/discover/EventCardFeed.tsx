@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, Info, Map, Share2, SlidersHorizontal } from 'lucide-react'
+import { CheckCircle, Funnel, Heart, Info, Map, Share2, X } from 'lucide-react'
 import { LocationCityPickerControl, CityPickerSheet } from '../../components/LocationCityPickerControl'
 import { useAppState } from '../../store/appStore'
 import type { EventItem } from '../../types'
@@ -220,28 +220,40 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
           </span>
         </div>
 
-        <p className="ecf-genre" style={{ color: accent }}>
-          {event.genre.toUpperCase()}
-        </p>
-        <h2 className="ecf-title">{event.title.toUpperCase()}</h2>
-        <p className="ecf-subtitle">{event.venue}</p>
-        <p className="ecf-desc">
-          {event.vibeTags.join(' · ')}
-          {event.hostPrompt ? <> &mdash; <em>{event.hostPrompt}</em></> : null}
-        </p>
+        <div className="ecf-headline">
+          <p className="ecf-genre" style={{ color: accent }}>
+            {event.genre.toUpperCase()}
+          </p>
+          <h2 className="ecf-title">{event.title.toUpperCase()}</h2>
+        </div>
+        <div className="ecf-lede">
+          <p className="ecf-lede-primary">{event.venue}</p>
+          {event.vibeTags.length > 0 || event.hostPrompt ? (
+            <p className="ecf-lede-secondary">
+              {event.vibeTags.length > 0 ? event.vibeTags.join(' · ') : null}
+              {event.hostPrompt ? (
+                <span className="ecf-lede-hook">
+                  {event.vibeTags.length > 0 ? ' ' : null}&mdash; {event.hostPrompt}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
 
-        {/* Meta row: WHERE / WHEN / PRICE */}
-        <div className="ecf-meta-row">
-          {[
-            { label: 'WHERE', value: event.district },
-            { label: 'WHEN', value: event.time },
-            { label: 'PRICE', value: event.ticketPrice },
-          ].map((m) => (
-            <div key={m.label} className="ecf-meta-col">
-              <p className="ecf-meta-label">{m.label}</p>
-              <p className="ecf-meta-value">{m.value}</p>
-            </div>
-          ))}
+        <div
+          className="ecf-meta-row"
+          role="group"
+          aria-label={`${event.district}, ${event.time}, ${event.ticketPrice}`}
+        >
+          <span>{event.district}</span>
+          <span className="ecf-meta-sep" aria-hidden>
+            ·
+          </span>
+          <span>{event.time}</span>
+          <span className="ecf-meta-sep" aria-hidden>
+            ·
+          </span>
+          <span>{event.ticketPrice}</span>
         </div>
 
         {/* Actions */}
@@ -563,7 +575,12 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
               className={`ecf-chip-btn ecf-chip-btn--filter${activeCount > 0 ? ' ecf-chip-btn--active' : ''}`}
               onClick={() => setShowFilter(true)}
             >
-              <SlidersHorizontal className="ecf-chip-filter-icon" size={14} strokeWidth={2.25} aria-hidden />
+              <span className="ecf-chip-filter-icon-wrap">
+                <Funnel className="ecf-chip-filter-icon" size={14} strokeWidth={2.25} aria-hidden />
+                {activeCount > 0 && (
+                  <CheckCircle className="ecf-chip-filter-badge" size={9} strokeWidth={2.5} aria-hidden />
+                )}
+              </span>
               <span>
                 Filter{activeCount > 0 ? ` · ${activeCount}` : ''}
               </span>
@@ -576,10 +593,11 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
             {activeCount > 0 && (
               <button
                 type="button"
-                className="ecf-chip-btn ecf-chip-btn--active"
+                className="ecf-chip-btn ecf-chip-btn--active ecf-chip-btn--clear"
                 onClick={() => setFilters(DEFAULT_FILTERS)}
               >
-                Clear all
+                <X size={13} strokeWidth={2.5} aria-hidden className="ecf-chip-clear-icon" />
+                <span>Clear all</span>
               </button>
             )}
           </div>
@@ -595,16 +613,6 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
             <span>Map</span>
           </button>
         </div>
-      </div>
-
-      {/* Progress dots */}
-      <div className="ecf-progress-dots" aria-hidden>
-        {filtered.map((_, i) => (
-          <div
-            key={i}
-            className={`ecf-dot${i === cardIdx ? ' ecf-dot--active' : ''}`}
-          />
-        ))}
       </div>
 
       {/* Scroll container */}

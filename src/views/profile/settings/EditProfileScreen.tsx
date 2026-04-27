@@ -1,7 +1,20 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Camera } from 'lucide-react'
 import { UploadToast, type UploadToastState } from '../../../components/UploadToast'
+import {
+  getCachedAvatarDataUrl,
+  persistAvatarToLocalCache,
+  warmAvatarCacheIfEmpty,
+} from '../../../lib/avatar-image-cache'
 import { postProfileAvatar } from '../../../lib/auth-api'
 import { resizeImageForAvatar } from '../../../lib/resizeImageForAvatar'
 import { api } from '../../../lib/trpc'
@@ -16,6 +29,11 @@ export function EditProfileScreen() {
   const closeEditProfile = useAppState((s) => s.closeEditProfile)
   const setUserProfile = useAppState((s) => s.setUserProfile)
   const avatarUrl = useAppState((s) => s.userProfile.avatarUrl)
+  const [avatarCacheTick, setAvatarCacheTick] = useState(0)
+  const avatarDisplayUrl = useMemo(
+    () => getCachedAvatarDataUrl(avatarUrl) ?? avatarUrl,
+    [avatarUrl, avatarCacheTick],
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
   const closeTimerRef = useRef<number | null>(null)
   const [photoBusy, setPhotoBusy] = useState(false)
@@ -60,6 +78,17 @@ export function EditProfileScreen() {
     },
     [],
   )
+
+  useEffect(() => {
+    if (!avatarUrl?.trim()) return
+    let cancelled = false
+    void warmAvatarCacheIfEmpty(avatarUrl.trim()).then((wrote) => {
+      if (!cancelled && wrote) setAvatarCacheTick((t) => t + 1)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [avatarUrl])
 
   const normalizedNow = normalizeProfileUsername(username)
   const usernameChanged = normalizedNow !== initialNormalized.current
@@ -196,11 +225,14 @@ export function EditProfileScreen() {
             <div className="edit-profile-avatar-wrap">
               <div className="edit-profile-avatar-inner">
                 <img
-                  src={avatarUrl}
+                  src={avatarDisplayUrl}
                   alt=""
                   className="edit-profile-avatar"
                   decoding="async"
                   referrerPolicy="no-referrer"
+                  onLoad={(e) => {
+                    if (avatarUrl) persistAvatarToLocalCache(avatarUrl, e.currentTarget)
+                  }}
                 />
                 <span className="edit-profile-avatar-gloss" aria-hidden />
               </div>
