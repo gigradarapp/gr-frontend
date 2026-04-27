@@ -160,8 +160,9 @@ body {
   inset: 0;
   z-index: 8;
   background: var(--bg);
-  overflow: auto;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .plan-detail-overlay-fallback {
@@ -6880,7 +6881,8 @@ button.taste-tag:focus-visible {
 
 /* ── Plan tab: event detail (wireframe) ── */
 
-.screen > .screen-content.plan-page {
+.screen > .screen-content.plan-page,
+.plan-detail-overlay > .screen-content.plan-page {
   min-height: 100%;
   padding: 0;
   gap: 0;
@@ -7504,7 +7506,7 @@ button.taste-tag:focus-visible {
 
 .plan-stat-row {
   display: grid;
-  grid-template-columns: 1fr 1.15fr;
+  grid-template-columns: 1fr;
   gap: 10px;
   align-items: stretch;
 }
@@ -7808,10 +7810,10 @@ button.taste-tag:focus-visible {
 .plan-cta-rail {
   flex-shrink: 0;
   margin-top: auto;
-  padding: 12px 30px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 30px calc(80px + env(safe-area-inset-bottom, 0px));
   display: grid;
   gap: 10px;
-  background: linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--bg) 55%, black) 28%, var(--bg) 100%);
+  background: linear-gradient(180deg, transparent 0%, var(--bg) 28%);
   border-top: 1px solid var(--stroke);
 }
 

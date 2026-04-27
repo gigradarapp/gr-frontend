@@ -65,6 +65,7 @@ export type PlanPageEvent = {
   genreTags: [string, string]
   venueLine: string
   timeRange: string
+  ticketPrice?: string
   aiVibeScore: number
   eliteVerifiedCount: number
   eliteStackExtra: number

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   ArrowLeft,
   Clock,
@@ -6,7 +6,7 @@ import {
   MapPin,
   Play,
   Share2,
-  ShieldCheck,
+  Ticket,
 } from 'lucide-react'
 import type { PlanPageEvent } from '../../types'
 
@@ -37,16 +37,6 @@ export function PlanEventDetail({
   onOpenReview,
 }: PlanEventDetailProps) {
   const [playing, setPlaying] = useState(false)
-
-  const elitePreview = useMemo(
-    () =>
-      [
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=120&q=80',
-        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&q=80',
-      ] as const,
-    [],
-  )
 
   return (
     <div className="screen-content plan-page plan-event-detail">
@@ -106,6 +96,12 @@ export function PlanEventDetail({
                 <Clock size={14} strokeWidth={2} aria-hidden />
                 {data.timeRange}
               </span>
+              {data.ticketPrice ? (
+                <span className="plan-hero-meta-row">
+                  <Ticket size={14} strokeWidth={2} aria-hidden />
+                  {data.ticketPrice}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -117,29 +113,6 @@ export function PlanEventDetail({
               <div className="plan-vibe-score">
                 <span className="plan-vibe-num">{data.aiVibeScore.toFixed(1)}</span>
                 <span className="plan-vibe-denom">/10</span>
-              </div>
-            </div>
-            <div className="plan-stat-card plan-stat-card--elite">
-              <div className="plan-elite-faces">
-                {elitePreview.map((src, i) => (
-                  <span key={i} className="plan-elite-face" style={{ zIndex: 3 - i }}>
-                    <img src={src} alt="" decoding="async" />
-                  </span>
-                ))}
-                <span
-                  className="plan-elite-face plan-elite-face--more"
-                  style={{ zIndex: 0 }}
-                  aria-label={`${data.eliteStackExtra} more`}
-                >
-                  +{data.eliteStackExtra}
-                </span>
-              </div>
-              <p className="plan-elite-quote">
-                &ldquo;verified by {data.eliteVerifiedCount} people who were there&rdquo;
-              </p>
-              <div className="plan-elite-foot">
-                <ShieldCheck size={14} strokeWidth={2.5} aria-hidden />
-                <span>ELITE REVIEWS</span>
               </div>
             </div>
           </div>
@@ -183,32 +156,6 @@ export function PlanEventDetail({
             </div>
           </div>
 
-          {data.friendsAttendingCount > 0 ? (
-            <section className="plan-section plan-whos">
-              <div className="plan-whos-head">
-                <h2 className="plan-whos-title">WHO&apos;S GOING</h2>
-                <span className="plan-whos-count">
-                  +{data.friendsAttendingCount} FRIENDS ATTENDING
-                </span>
-              </div>
-              <div className="plan-friends-row">
-                {data.friends.map((f) => (
-                  <div key={f.id} className="plan-friend">
-                    <div
-                      className={
-                        f.ring
-                          ? 'plan-friend-avatar plan-friend-avatar--ring'
-                          : 'plan-friend-avatar'
-                      }
-                    >
-                      <img src={f.avatar} alt="" decoding="async" />
-                    </div>
-                    <span className="plan-friend-name">{f.name}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
         </div>
       </div>
 
