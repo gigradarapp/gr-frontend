@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Lock, LogOut, Settings } from 'lucide-react'
 import { BUZO_PRO_UPSELL_CTA } from '../../config/pricing'
@@ -19,20 +19,9 @@ import { flushPersistUserTasteCategories } from '../../lib/persist-user-taste'
 import { api } from '../../lib/trpc'
 import { useAppState } from '../../store/appStore'
 
-type ProfileTabProps = {
-  /**
-   * 0–1 — how far the circular XP / tier ring is filled, clockwise from 12 o'clock.
-   * Omit to use `PROFILE_EXPERIENCE_RING_FALLBACK`; later, pass from buzz / level logic.
-   */
-  experienceRingFill?: number
-}
-
-/** Default ring fullness for demo UI; change here or pass `experienceRingFill` from parent / API. */
 export const PROFILE_EXPERIENCE_RING_FALLBACK = 0.75
 
-export function ProfileTab({
-  experienceRingFill = PROFILE_EXPERIENCE_RING_FALLBACK,
-}: ProfileTabProps) {
+export function ProfileTab() {
   const {
     openSettings,
     openProfileReputationAll,
@@ -52,9 +41,6 @@ export function ProfileTab({
       : `@${userProfile.username}`
   const avatarLabel =
     userProfile.displayName.trim() !== '' ? userProfile.displayName.trim() : userProfile.username
-  const ringFill = Math.min(1, Math.max(0, experienceRingFill))
-  const ringPercent = Math.round(ringFill * 100)
-  const ringStyle = { '--ring-fill': ringFill } as CSSProperties
   const [avatarLoaded, setAvatarLoaded] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
   /** Bumps when `warmAvatarCacheIfEmpty` writes so the `<img>` remounts with the cached data URL. */
