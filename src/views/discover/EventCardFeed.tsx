@@ -572,20 +572,37 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
 
   const activeCount = countActiveFilters(filters)
 
-  // Callback ref — attaches scroll listener the instant the div mounts
+  const scrollToCard = useCallback((idx: number) => {
+    const el = scrollElRef.current
+    if (!el) return
+    el.scrollTo({ top: idx * el.clientHeight, behavior: 'smooth' })
+  }, [])
+
+  // Callback ref — attaches scroll + scrollend listeners the instant the div mounts
   const setScrollEl = useCallback((el: HTMLDivElement | null) => {
     if (scrollElRef.current) {
       scrollElRef.current.removeEventListener('scroll', onScrollRef.current!)
+      scrollElRef.current.removeEventListener('scrollend', onScrollEndRef.current!)
     }
     scrollElRef.current = el
     ;(scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el
     if (el) {
       el.addEventListener('scroll', onScrollRef.current!, { passive: true })
+      if ('onscrollend' in el) {
+        el.addEventListener('scrollend', onScrollEndRef.current!, { passive: true })
+      }
     }
   }, [])
 
   const onScrollRef = useRef<(() => void) | undefined>(undefined)
   onScrollRef.current = () => {
+    const el = scrollElRef.current
+    if (!el) return
+    setCardIdx(Math.round(el.scrollTop / el.clientHeight))
+  }
+
+  const onScrollEndRef = useRef<(() => void) | undefined>(undefined)
+  onScrollEndRef.current = () => {
     const el = scrollElRef.current
     if (!el) return
     setCardIdx(Math.round(el.scrollTop / el.clientHeight))
@@ -687,11 +704,14 @@ export function EventCardFeed({ events, onMoreDetails, onMapView }: EventCardFee
 
       {/* Scroll progress indicator */}
       {filtered.length > 0 && (
-        <div className="ecf-progress" aria-hidden>
+        <div className="ecf-progress">
           {filtered.map((_, i) => (
-            <div
+            <button
               key={i}
+              type="button"
               className={`ecf-progress-dot${i === cardIdx ? ' ecf-progress-dot--active' : ''}`}
+              onClick={() => scrollToCard(i)}
+              aria-label={`Go to card ${i + 1}`}
             />
           ))}
         </div>
