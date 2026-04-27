@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft,
   Clock,
@@ -37,6 +37,24 @@ export function PlanEventDetail({
   onOpenReview,
 }: PlanEventDetailProps) {
   const [playing, setPlaying] = useState(false)
+  const [vibeAnimated, setVibeAnimated] = useState(false)
+  const vibeRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = vibeRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVibeAnimated(true); obs.disconnect() } },
+      { threshold: 0.4 },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  const radius = 36
+  const circumference = 2 * Math.PI * radius
+  const scoreFraction = data.aiVibeScore / 10
+  const dashOffset = circumference * (1 - (vibeAnimated ? scoreFraction : 0))
 
   return (
     <div className="screen-content plan-page plan-event-detail">
@@ -87,43 +105,66 @@ export function PlanEventDetail({
             </div>
             <h1 className="plan-hero-title">{data.displayTitle}</h1>
             <p className="plan-hero-artist">{data.artistLine}</p>
-            <div className="plan-hero-meta">
-              <span className="plan-hero-meta-row">
-                <MapPin size={14} strokeWidth={2} aria-hidden />
-                {data.venueLine}
-              </span>
-              <span className="plan-hero-meta-row">
-                <Clock size={14} strokeWidth={2} aria-hidden />
-                {data.timeRange}
-              </span>
-              {data.ticketPrice ? (
-                <span className="plan-hero-meta-row">
-                  <Ticket size={14} strokeWidth={2} aria-hidden />
-                  {data.ticketPrice}
-                </span>
-              ) : null}
-            </div>
           </div>
         </div>
 
         <div className="plan-body">
-          <div className="plan-stat-row">
-            <div className="plan-stat-card plan-stat-card--vibe">
-              <span className="plan-stat-label">AI VIBE SCORE</span>
-              <div className="plan-vibe-score">
-                <span className="plan-vibe-num">{data.aiVibeScore.toFixed(1)}</span>
-                <span className="plan-vibe-denom">/10</span>
+
+          {/* Quick-info strip + vibe arc */}
+          <div className="plan-info-strip" ref={vibeRef}>
+            <div className="plan-info-pills">
+              <div className="plan-info-pill">
+                <MapPin size={13} strokeWidth={2.2} aria-hidden />
+                <span>{data.venueLine}</span>
               </div>
+              <div className="plan-info-pill">
+                <Clock size={13} strokeWidth={2.2} aria-hidden />
+                <span>{data.timeRange}</span>
+              </div>
+              {data.ticketPrice ? (
+                <div className="plan-info-pill plan-info-pill--price">
+                  <Ticket size={13} strokeWidth={2.2} aria-hidden />
+                  <span>{data.ticketPrice}</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="plan-vibe-arc" aria-label={`AI Vibe Score ${data.aiVibeScore.toFixed(1)} out of 10`}>
+              <svg viewBox="0 0 96 96" width="72" height="72">
+                <circle cx="48" cy="48" r={radius} fill="none" stroke="var(--stroke)" strokeWidth="7" strokeLinecap="round" />
+                <circle
+                  cx="48" cy="48" r={radius}
+                  fill="none"
+                  stroke="url(#vibeGrad)"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={dashOffset}
+                  style={{ transition: vibeAnimated ? 'stroke-dashoffset 1.1s cubic-bezier(0.34,1.2,0.64,1)' : 'none' }}
+                  transform="rotate(-90 48 48)"
+                />
+                <defs>
+                  <linearGradient id="vibeGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="var(--primary-soft)" />
+                    <stop offset="100%" stopColor="var(--primary)" />
+                  </linearGradient>
+                </defs>
+                <text x="48" y="46" textAnchor="middle" className="plan-arc-score">{data.aiVibeScore.toFixed(1)}</text>
+                <text x="48" y="59" textAnchor="middle" className="plan-arc-label">VIBE</text>
+              </svg>
             </div>
           </div>
 
-          <section className="plan-section">
+          {/* Experience quote */}
+          <section className="plan-experience-block">
             <h2 className="plan-section-kicker">The Experience</h2>
-            <p className="plan-copy">
-              {data.experienceParts.before}
-              <em className="plan-copy-accent">{data.experienceParts.emphasis}</em>
-              {data.experienceParts.after}
-            </p>
+            <blockquote className="plan-experience-quote">
+              <span className="plan-experience-bar" aria-hidden />
+              <p className="plan-copy">
+                {data.experienceParts.before}
+                <em className="plan-copy-accent">{data.experienceParts.emphasis}</em>
+                {data.experienceParts.after}
+              </p>
+            </blockquote>
           </section>
 
           <div className="plan-audio">

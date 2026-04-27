@@ -7498,10 +7498,100 @@ button.taste-tag:focus-visible {
 }
 
 .plan-body {
-  padding: 18px 30px 20px;
+  padding: 18px 20px 20px;
   display: grid;
   gap: 20px;
   background: var(--bg);
+}
+
+/* ── Info pill strip ── */
+.plan-info-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.plan-info-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.plan-info-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: color-mix(in oklab, var(--card) 80%, transparent);
+  border: 1px solid var(--stroke);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.plan-info-pill svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.plan-info-pill--price {
+  border-color: color-mix(in oklab, var(--primary) 50%, var(--stroke));
+  color: var(--primary-soft);
+}
+
+.plan-info-pill--price svg {
+  color: var(--primary-soft);
+}
+
+
+.plan-vibe-arc {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.plan-arc-score {
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--text);
+  font-family: inherit;
+}
+
+.plan-arc-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  fill: var(--muted);
+  font-family: inherit;
+}
+
+/* ── Experience quote block ── */
+.plan-experience-block {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-experience-quote {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--card) 60%, transparent);
+  border: 1px solid var(--stroke);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.plan-experience-bar {
+  flex-shrink: 0;
+  display: block;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-soft));
+  align-self: stretch;
+  min-height: 100%;
 }
 
 .plan-stat-row {

@@ -1,17 +1,11 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Camera, Gift, Star, Zap } from 'lucide-react'
-import { buzzSummary, getBuzzTierState } from '../../data/demoData'
+import { ArrowLeft, ArrowRight, Camera, Star, Zap } from 'lucide-react'
 import type { PlanPageEvent } from '../../types'
 
 type PlanEventReviewProps = {
   data: PlanPageEvent
   onBack: () => void
 }
-
-const CHECK_IN = 10
-const RATED = 15
-const REVIEW = 20
-const PHOTO = 25
 
 const RATING_SCALE = 10
 const RATING_STEPS = Array.from({ length: RATING_SCALE }, (_, i) => i + 1)
@@ -270,23 +264,7 @@ export function PlanEventReview({ data, onBack }: PlanEventReviewProps) {
   const [photoAdded, setPhotoAdded] = useState(false)
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false)
 
-  const ratedEarned = vibe > 0 && artistRating > 0
-  const reviewEarned = oneLine.trim().length > 0
   const photoEarned = photoAdded
-
-  const { ratedPts, reviewPts, photoPts, totalEarned } = useMemo(() => {
-    const r = ratedEarned ? RATED : 0
-    const rv = reviewEarned ? REVIEW : 0
-    const p = photoEarned ? PHOTO : 0
-    return {
-      ratedPts: r,
-      reviewPts: rv,
-      photoPts: p,
-      totalEarned: CHECK_IN + r + rv + p,
-    }
-  }, [ratedEarned, reviewEarned, photoEarned])
-
-  const { current, next, progressToNext, remaining } = getBuzzTierState(buzzSummary.total)
 
   const heroCopy = useMemo(() => getReviewHeroCopy(data.timeRange), [data.timeRange])
 
@@ -458,62 +436,10 @@ export function PlanEventReview({ data, onBack }: PlanEventReviewProps) {
             {photoEarned ? 'Photo added' : 'Add a moment'}
           </span>
           <span className="plan-review-photo-hint">
-            {photoEarned ? 'Tap to remove' : 'Optional · +25 buzz'}
+            {photoEarned ? 'Tap to remove' : 'Optional'}
           </span>
         </button>
 
-        <section className="plan-review-buzz" aria-labelledby="plan-review-buzz-heading">
-          <Gift className="plan-review-buzz-watermark" size={120} strokeWidth={1} aria-hidden />
-          <h2 id="plan-review-buzz-heading" className="plan-review-buzz-title">
-            Buzz points earned
-          </h2>
-          <ul className="plan-review-buzz-lines">
-            <li>
-              <span>Check-in</span>
-              <span className="plan-review-buzz-pts">+{CHECK_IN}</span>
-            </li>
-            <li>
-              <span>Rated</span>
-              <span className={ratedEarned ? 'plan-review-buzz-pts' : 'plan-review-buzz-pts plan-review-buzz-pts--muted'}>
-                +{ratedPts}
-              </span>
-            </li>
-            <li>
-              <span>Review</span>
-              <span className={reviewEarned ? 'plan-review-buzz-pts' : 'plan-review-buzz-pts plan-review-buzz-pts--muted'}>
-                +{reviewPts}
-              </span>
-            </li>
-            <li>
-              <span>Photo</span>
-              <span className={photoEarned ? 'plan-review-buzz-pts' : 'plan-review-buzz-pts plan-review-buzz-pts--muted'}>
-                +{photoPts}
-              </span>
-            </li>
-          </ul>
-          <p className="plan-review-buzz-total">
-            Total <strong>{totalEarned}</strong> points from this recap
-          </p>
-          <div className="plan-review-level">
-            <p className="plan-review-level-row">
-              <span className="plan-review-level-muted">Current level:</span>{' '}
-              <span className="plan-review-level-accent">{current.label}</span>
-            </p>
-            {next ? (
-              <p className="plan-review-level-row">
-                <span className="plan-review-level-accent">
-                  {remaining.toLocaleString()} points to {next.label}
-                </span>
-              </p>
-            ) : null}
-            <div className="plan-review-progress">
-              <div
-                className="plan-review-progress-fill"
-                style={{ width: `${Math.round(progressToNext * 100)}%` }}
-              />
-            </div>
-          </div>
-        </section>
 
         <button
           type="button"
