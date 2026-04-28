@@ -9,7 +9,7 @@ import { DEFAULT_LOCATION_CITY_ID, getLocationCityById } from '../data/locationR
 import { postProfileDefaultCity } from '../lib/auth-api'
 import { navigateShellToPath } from '../lib/tabRoutes'
 import { persistSignupOnboardingDismissed, readSignupOnboardingDismissed, setOnboardingFlagUserId } from '../lib/signup-onboarding-flag'
-import { saveLastUsedAccount, clearLastUsedAccount } from '../lib/last-used-account'
+import { saveLastUsedAccount } from '../lib/last-used-account'
 import type { Tab, Theme } from '../types'
 
 const WELCOME_SESSION_KEY = 'buzo-welcome-dismissed'
