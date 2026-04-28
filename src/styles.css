@@ -2614,6 +2614,19 @@ body {
   /* Pull the hero up behind the topbar so stars can start from the very top */
   margin-top: -52px;
   padding-top: 52px;
+  /* The pulled-up 52px region overlaps the toolbar — don't block its clicks */
+  pointer-events: none;
+}
+
+/* Re-enable clicks on actual hero content (avatar, text, buttons) */
+.profile-hero-new--pro > * {
+  pointer-events: auto;
+}
+
+/* Keep decorative layers non-interactive */
+.profile-hero-new--pro > .profile-pro-stars,
+.profile-hero-new--pro > .profile-pro-mist {
+  pointer-events: none;
 }
 
 /* Bottom fade — only covers the bottom 40% of the hero, below the content */
