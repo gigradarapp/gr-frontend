@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { getLocationCityById } from '../../../data/locationRegions'
 import { postDeleteAccount } from '../../../lib/auth-api'
+import { clearLastUsedAccount } from '../../../lib/last-used-account'
 import { useAppState } from '../../../store/appStore'
 
 type RowIcon = ComponentType<{ size?: number; className?: string }>
@@ -198,6 +199,7 @@ export function SettingsScreen() {
   const dismissDeleteModal = () => {
     if (deleteState === 'success') {
       setDeleteState('idle')
+      clearLastUsedAccount()
       closeSettings()
       returnToLanding()
       window.location.reload()
