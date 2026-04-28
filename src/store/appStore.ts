@@ -9,6 +9,7 @@ import { DEFAULT_LOCATION_CITY_ID, getLocationCityById } from '../data/locationR
 import { postProfileDefaultCity } from '../lib/auth-api'
 import { navigateShellToPath } from '../lib/tabRoutes'
 import { persistSignupOnboardingDismissed, readSignupOnboardingDismissed } from '../lib/signup-onboarding-flag'
+import { saveLastUsedAccount, clearLastUsedAccount } from '../lib/last-used-account'
 import type { Tab, Theme } from '../types'
 
 const WELCOME_SESSION_KEY = 'buzo-welcome-dismissed'
@@ -403,6 +404,11 @@ export const useAppState = create<AppState>((set, get) => ({
     const savedTasteLabels = new Set<string>(tasteSelections)
 
     const tier = profile?.subscription_tier === 'pro' ? 'pro' : 'free'
+
+    // Persist last-used account so the sign-in sheet can show a quick "Continue as X" button
+    if (isRealUser && authEmail) {
+      saveLastUsedAccount({ email: authEmail, displayName, avatarUrl })
+    }
 
     const wasAuthenticated = get().isAuthenticated
     const freshSignIn = isFreshSignIn && !wasAuthenticated

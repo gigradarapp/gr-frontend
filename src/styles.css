@@ -12835,6 +12835,7 @@ button.taste-tag:focus-visible {
   border: 1px solid color-mix(in oklab, var(--stroke) 80%, transparent);
   background: var(--card);
   color: var(--text);
+  justify-content: center;
 }
 
 .welcome-signin-google:hover {
@@ -12854,6 +12855,118 @@ button.taste-tag:focus-visible {
 
 .welcome-signin-google-mark {
   display: inline-flex;
+}
+
+/* ── Last-used account quick sign-in ── */
+.welcome-signin-last {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid color-mix(in oklab, var(--primary) 40%, var(--stroke));
+  background: color-mix(in oklab, var(--primary) 6%, var(--card));
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.welcome-signin-last:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+}
+
+.welcome-signin-last:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.welcome-signin-last-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.welcome-signin-last-avatar--initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--primary) 18%, var(--card));
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.welcome-signin-last-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.welcome-signin-last-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.welcome-signin-last-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcome-signin-last-email {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcome-signin-last-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklab, var(--primary) 30%, transparent);
+  border-top-color: var(--primary);
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Divider between quick button and "use different account" */
+.welcome-signin-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.welcome-signin-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--stroke);
+}
+
+.welcome-signin-divider__text {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .welcome-signin-error {

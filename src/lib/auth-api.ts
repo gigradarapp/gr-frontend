@@ -56,6 +56,12 @@ export function googleOAuthRedirectUrl(returnTo: string): string {
   return `${apiBase()}/api/auth/oauth/google?return_to=${q}`
 }
 
+/** Same as googleOAuthRedirectUrl but skips the account chooser (for returning users). */
+export function googleOAuthRedirectUrlNoPrompt(returnTo: string): string {
+  const q = encodeURIComponent(returnTo)
+  return `${apiBase()}/api/auth/oauth/google?return_to=${q}&skip_prompt=1`
+}
+
 export async function postProfileTastePreferences(
   tasteLabels: string[],
 ): Promise<void> {

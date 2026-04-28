@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft } from 'lucide-react'
-import { googleOAuthRedirectUrl } from '../../lib/auth-api'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
+import { googleOAuthRedirectUrl, googleOAuthRedirectUrlNoPrompt } from '../../lib/auth-api'
+import { getLastUsedAccount } from '../../lib/last-used-account'
 import { useAppState } from '../../store/appStore'
 
 function GoogleMark() {
@@ -29,12 +30,44 @@ function GoogleMark() {
   )
 }
 
+function AvatarInitial({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  if (avatarUrl && !imgFailed) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name}
+        className="welcome-signin-last-avatar"
+        onError={() => setImgFailed(true)}
+      />
+    )
+  }
+  return (
+    <span className="welcome-signin-last-avatar welcome-signin-last-avatar--initial">
+      {name.charAt(0).toUpperCase()}
+    </span>
+  )
+}
+
 export function SignInSheet() {
   const { closeSignIn, signInRedirectError } = useAppState()
-  const [busy, setBusy] = useState<'idle' | 'google'>('idle')
+  const [busy, setBusy] = useState<'idle' | 'last' | 'google'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
+  const lastAccount = getLastUsedAccount()
   const emailRedirectTo = `${window.location.origin}/`
+
+  const signInWithLastAccount = () => {
+    setBusy('last')
+    setErrorMessage('')
+    try {
+      // Skip the account chooser — user explicitly chose their last account
+      window.location.href = googleOAuthRedirectUrlNoPrompt(emailRedirectTo)
+    } catch (e) {
+      setBusy('idle')
+      setErrorMessage(e instanceof Error ? e.message : 'Could not start Google sign-in')
+    }
+  }
 
   const signInWithGoogle = () => {
     setBusy('google')
@@ -85,14 +118,49 @@ export function SignInSheet() {
           </p>
         ) : null}
 
+        {/* Quick sign-in with last used account */}
+        {lastAccount ? (
+          <>
+            <button
+              type="button"
+              className="welcome-signin-last"
+              disabled={busy !== 'idle'}
+              onClick={signInWithLastAccount}
+            >
+              <AvatarInitial name={lastAccount.displayName} avatarUrl={lastAccount.avatarUrl} />
+              <span className="welcome-signin-last-info">
+                <span className="welcome-signin-last-label">Continue as</span>
+                <span className="welcome-signin-last-name">{lastAccount.displayName}</span>
+                <span className="welcome-signin-last-email">{lastAccount.email}</span>
+              </span>
+              {busy === 'last' ? (
+                <span className="welcome-signin-last-spinner" aria-hidden />
+              ) : null}
+            </button>
+
+            <div className="welcome-signin-divider">
+              <span className="welcome-signin-divider__line" aria-hidden />
+              <span className="welcome-signin-divider__text">or</span>
+              <span className="welcome-signin-divider__line" aria-hidden />
+            </div>
+          </>
+        ) : null}
+
         <button
           type="button"
           className="welcome-signin-google"
           disabled={busy !== 'idle'}
-          onClick={() => signInWithGoogle()}
+          onClick={signInWithGoogle}
         >
           <GoogleMark />
-          <span>{busy === 'google' ? 'Redirecting…' : 'Continue with Google'}</span>
+          <span>
+            {busy === 'google'
+              ? 'Redirecting…'
+              : lastAccount
+                ? 'Use a different account'
+                : 'Continue with Google'}
+          </span>
+          {lastAccount ? <ChevronDown size={15} aria-hidden /> : null}
         </button>
       </div>
     </motion.div>
