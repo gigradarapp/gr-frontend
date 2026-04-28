@@ -2616,20 +2616,24 @@ body {
   padding-top: 52px;
 }
 
-/* Fade the hero background only — not the text/avatar children */
+/* Bottom fade — only covers the bottom 40% of the hero, below the content */
 .profile-hero-new--pro::after {
   content: '';
   position: absolute;
-  inset: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent 50%, var(--bg) 100%);
-  z-index: 0;
+  background: linear-gradient(to bottom, transparent 0%, var(--bg) 100%);
+  z-index: 1;
 }
 
-/* All direct children of pro hero sit above the fade overlay */
-.profile-hero-new--pro > * {
+.profile-hero-new--pro .profile-display-name,
+.profile-hero-new--pro .profile-pro-badge,
+.profile-hero-new--pro .profile-handle-pill {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .theme-light .profile-hero-new {
@@ -2649,7 +2653,7 @@ body {
 .profile-avatar-wrap {
   position: relative;
   margin-bottom: 10px;
-  z-index: 1;
+  z-index: 2;
   overflow: visible;
   isolation: isolate;
 }
@@ -2752,13 +2756,15 @@ body {
 /* ── Dry-ice / fog layer ── */
 .profile-pro-mist {
   position: absolute;
+  /* Centre over the avatar area — avatar sits ~52px padding-top + some flex gap */
+  top: 52px;
   left: 50%;
   transform: translateX(-50%);
-  bottom: -8px;
   width: 320px;
-  height: 150px;
+  height: 180px;
   pointer-events: none;
-  z-index: -1;
+  /* Behind stars (z-index:0) and avatar (z-index:2) but above bg */
+  z-index: 0;
   overflow: visible;
 }
 
@@ -2851,6 +2857,39 @@ body {
   40%  { opacity: 0.7; transform: rotate(35deg) translateX(120px)  scaleX(1.4); }
   70%  { opacity: 0.2; transform: rotate(35deg) translateX(220px)  scaleX(1.1); }
   100% { opacity: 0;   transform: rotate(35deg) translateX(340px)  scaleX(0.3); }
+}
+
+/* ── Light mode overrides for Pro profile effects ── */
+.theme-light .profile-pro-star {
+  /* Much darker green tail so stars are visible on the light background */
+  background: linear-gradient(90deg, transparent 0%, #1b7a4a 30%, #2d9a5f 55%, #1a5c38 80%, transparent 100%);
+  height: 2.5px;
+}
+
+.theme-light .profile-pro-mist__blob {
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    #52b788 0%,
+    rgba(64, 145, 108, 0.7) 35%,
+    rgba(45, 106, 79, 0.3) 65%,
+    transparent 100%
+  );
+  filter: blur(14px);
+  opacity: 0.9;
+}
+
+.theme-light .profile-avatar-ring--pro {
+  box-shadow:
+    0 0 0 3px #40916c,
+    0 0 18px 6px rgba(64, 145, 108, 0.5),
+    0 0 36px 10px rgba(45, 106, 79, 0.3);
+}
+
+.theme-light .profile-pro-badge {
+  background: #d8f3dc;
+  color: #1b4332;
+  border-color: #40916c;
+  box-shadow: 0 0 8px rgba(64, 145, 108, 0.35);
 }
 
 .profile-avatar-inner {

@@ -240,15 +240,13 @@ export function ProfileTab() {
       {/* Hero */}
       <div className={`profile-hero-new${subscriptionTier === 'pro' ? ' profile-hero-new--pro' : ''}`}>
         {subscriptionTier === 'pro' ? (
-          <span className="profile-pro-stars" aria-hidden>
-            {Array.from({ length: 16 }, (_, i) => (
-              <span key={i} className={`profile-pro-star profile-pro-star--${i + 1}`} />
-            ))}
-          </span>
-        ) : null}
-        <div className="profile-avatar-wrap">
-          {subscriptionTier === 'pro' ? (
-            /* Fog */
+          <>
+            <span className="profile-pro-stars" aria-hidden>
+              {Array.from({ length: 16 }, (_, i) => (
+                <span key={i} className={`profile-pro-star profile-pro-star--${i + 1}`} />
+              ))}
+            </span>
+            {/* Fog lives here — outside avatar-wrap so it never bleeds into the photo */}
             <span className="profile-pro-mist" aria-hidden>
               <span className="profile-pro-mist__blob profile-pro-mist__blob--1" />
               <span className="profile-pro-mist__blob profile-pro-mist__blob--2" />
@@ -259,7 +257,9 @@ export function ProfileTab() {
               <span className="profile-pro-mist__blob profile-pro-mist__blob--7" />
               <span className="profile-pro-mist__blob profile-pro-mist__blob--8" />
             </span>
-          ) : null}
+          </>
+        ) : null}
+        <div className="profile-avatar-wrap">
           <div
             className={`profile-avatar-ring${subscriptionTier === 'pro' ? ' profile-avatar-ring--pro' : ''}`}
           >
