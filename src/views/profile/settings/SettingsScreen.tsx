@@ -1,7 +1,10 @@
 import type { ComponentType, ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
+  AlertTriangle,
   ArrowLeft,
+  CheckCircle2,
   ChevronRight,
   CreditCard,
   Globe,
@@ -69,7 +72,93 @@ function SettingsRow({
   return <div className="settings-row settings-row--static">{content}</div>
 }
 
+type DeleteModalState = 'idle' | 'confirm' | 'deleting' | 'success' | 'error'
+
+function DeleteAccountModal({
+  state,
+  errorMsg,
+  onConfirm,
+  onCancel,
+}: {
+  state: DeleteModalState
+  errorMsg: string
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  if (state === 'idle') return null
+  return (
+    <motion.div
+      className="delete-modal-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={state === 'deleting' ? undefined : onCancel}
+    >
+      <motion.div
+        className="delete-modal"
+        initial={{ scale: 0.92, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {state === 'success' ? (
+          <>
+            <span className="delete-modal-icon delete-modal-icon--success" aria-hidden>
+              <CheckCircle2 size={36} />
+            </span>
+            <h2 className="delete-modal-title">Account deleted</h2>
+            <p className="delete-modal-body">
+              Your account and personal data have been permanently removed. We're sorry to see you go.
+            </p>
+            <button type="button" className="delete-modal-btn delete-modal-btn--primary" onClick={onCancel}>
+              Done
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="delete-modal-icon delete-modal-icon--warn" aria-hidden>
+              <AlertTriangle size={36} />
+            </span>
+            <h2 className="delete-modal-title">Delete account?</h2>
+            <p className="delete-modal-body">
+              Your profile, activity, and saved plans will be <strong>permanently deleted</strong>. This cannot be undone.
+            </p>
+            {errorMsg ? (
+              <p className="delete-modal-error" role="alert">{errorMsg}</p>
+            ) : null}
+            <div className="delete-modal-actions">
+              <button
+                type="button"
+                className="delete-modal-btn delete-modal-btn--ghost"
+                onClick={onCancel}
+                disabled={state === 'deleting'}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="delete-modal-btn delete-modal-btn--danger"
+                onClick={onConfirm}
+                disabled={state === 'deleting'}
+              >
+                {state === 'deleting' ? (
+                  <span className="delete-modal-spinner" aria-hidden />
+                ) : null}
+                {state === 'deleting' ? 'Deleting…' : 'Yes, delete'}
+              </button>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
 export function SettingsScreen() {
+  const [deleteState, setDeleteState] = useState<DeleteModalState>('idle')
+  const [deleteError, setDeleteError] = useState('')
+
    const {
     closeSettings,
     openLanguage,
@@ -89,20 +178,33 @@ export function SettingsScreen() {
   const cityName = hasDefaultCity ? (getLocationCityById(feedLocationCityId)?.name ?? 'Singapore') : 'Not set'
 
   const handleDeleteAccount = () => {
-    const ok = window.confirm(
-      'Delete your Buzo account permanently? Your profile and activity will be removed. This cannot be undone.',
-    )
-    if (!ok) return
+    setDeleteError('')
+    setDeleteState('confirm')
+  }
+
+  const confirmDelete = () => {
+    setDeleteState('deleting')
     void (async () => {
       try {
         await postDeleteAccount()
-        closeSettings()
-        returnToLanding()
-        window.location.reload()
+        setDeleteState('success')
       } catch (e) {
-        window.alert(e instanceof Error ? e.message : 'Could not delete account. Try again.')
+        setDeleteError(e instanceof Error ? e.message : 'Could not delete account. Try again.')
+        setDeleteState('error')
       }
     })()
+  }
+
+  const dismissDeleteModal = () => {
+    if (deleteState === 'success') {
+      setDeleteState('idle')
+      closeSettings()
+      returnToLanding()
+      window.location.reload()
+    } else {
+      setDeleteState('idle')
+      setDeleteError('')
+    }
   }
 
   return (
@@ -166,6 +268,17 @@ export function SettingsScreen() {
           />
         </SettingsGroup>
       </div>
+
+      <AnimatePresence>
+        {deleteState !== 'idle' ? (
+          <DeleteAccountModal
+            state={deleteState}
+            errorMsg={deleteError}
+            onConfirm={confirmDelete}
+            onCancel={dismissDeleteModal}
+          />
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   )
 }
