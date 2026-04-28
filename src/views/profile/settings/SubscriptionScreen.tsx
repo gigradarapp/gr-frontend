@@ -35,6 +35,9 @@ export function SubscriptionScreen() {
   const isProTier = subscriptionTier === 'pro'
 
   const [actionError, setActionError] = useState<string | null>(null)
+  const [showAllInvoices, setShowAllInvoices] = useState(false)
+  const [filterYear, setFilterYear] = useState<string>('all')
+  const [filterMonth, setFilterMonth] = useState<string>('all')
 
   // Success screen after subscribing (driven by stripeSuccessOverlay in store)
   if (stripeSuccessOverlay) {
@@ -336,37 +339,121 @@ export function SubscriptionScreen() {
           <section className="subscription-section">
             <h3 className="subscription-section-title">Manage</h3>
             <div className="subscription-card">
-              {/* Billing history */}
               {billingLoading ? (
                 <div className="subscription-row">
                   <span className="subscription-row-muted">Loading billing history…</span>
                 </div>
-              ) : billing && billing.invoices.length > 0 ? (
-                billing.invoices.map((inv) => (
-                  <div key={inv.id} className="subscription-row subscription-row--invoice">
-                    <div className="subscription-invoice-meta">
-                      <span className="subscription-invoice-amount">
-                        {formatCurrency(inv.amount_paid, inv.currency)}
-                      </span>
-                      <span className="subscription-invoice-date">
-                        {formatDate(inv.created)}
-                      </span>
-                    </div>
-                    {inv.invoice_pdf ? (
-                      <a
-                        href={inv.invoice_pdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="subscription-invoice-download"
-                        aria-label="Download invoice PDF"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Download size={15} />
-                      </a>
+              ) : billing && billing.invoices.length > 0 ? (() => {
+                // Derive unique years from invoices
+                const years = Array.from(
+                  new Set(billing.invoices.map((inv) => new Date(inv.created * 1000).getFullYear().toString()))
+                ).sort((a, b) => Number(b) - Number(a))
+
+                // Derive months for the selected year
+                const monthsForYear = filterYear === 'all'
+                  ? []
+                  : Array.from(
+                      new Set(
+                        billing.invoices
+                          .filter((inv) => new Date(inv.created * 1000).getFullYear().toString() === filterYear)
+                          .map((inv) => (new Date(inv.created * 1000).getMonth() + 1).toString().padStart(2, '0'))
+                      )
+                    ).sort()
+
+                // Apply filters
+                const filtered = billing.invoices.filter((inv) => {
+                  const d = new Date(inv.created * 1000)
+                  if (filterYear !== 'all' && d.getFullYear().toString() !== filterYear) return false
+                  if (filterMonth !== 'all' && (d.getMonth() + 1).toString().padStart(2, '0') !== filterMonth) return false
+                  return true
+                })
+
+                const PREVIEW = 3
+                const visible = showAllInvoices ? filtered : filtered.slice(0, PREVIEW)
+                const hasMore = filtered.length > PREVIEW
+
+                const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+                return (
+                  <>
+                    {/* Filter row — only show if there are multiple years or months */}
+                    {years.length > 1 || monthsForYear.length > 1 ? (
+                      <div className="subscription-invoice-filters">
+                        <select
+                          className="subscription-invoice-select"
+                          value={filterYear}
+                          onChange={(e) => { setFilterYear(e.target.value); setFilterMonth('all'); setShowAllInvoices(false) }}
+                          aria-label="Filter by year"
+                        >
+                          <option value="all">All years</option>
+                          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                        {filterYear !== 'all' && monthsForYear.length > 1 ? (
+                          <select
+                            className="subscription-invoice-select"
+                            value={filterMonth}
+                            onChange={(e) => { setFilterMonth(e.target.value); setShowAllInvoices(false) }}
+                            aria-label="Filter by month"
+                          >
+                            <option value="all">All months</option>
+                            {monthsForYear.map((m) => (
+                              <option key={m} value={m}>{MONTH_NAMES[parseInt(m, 10) - 1]}</option>
+                            ))}
+                          </select>
+                        ) : null}
+                      </div>
                     ) : null}
-                  </div>
-                ))
-              ) : (
+
+                    {filtered.length === 0 ? (
+                      <div className="subscription-row">
+                        <span className="subscription-row-muted">No invoices for this period</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className={`subscription-invoice-list${showAllInvoices ? ' subscription-invoice-list--expanded' : ''}`}
+                        >
+                          {visible.map((inv) => (
+                            <div key={inv.id} className="subscription-row subscription-row--invoice">
+                              <div className="subscription-invoice-meta">
+                                <span className="subscription-invoice-amount">
+                                  {formatCurrency(inv.amount_paid, inv.currency)}
+                                </span>
+                                <span className="subscription-invoice-date">
+                                  {formatDate(inv.created)}
+                                </span>
+                              </div>
+                              {inv.invoice_pdf ? (
+                                <a
+                                  href={inv.invoice_pdf}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="subscription-invoice-download"
+                                  aria-label="Download invoice PDF"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Download size={15} />
+                                </a>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                        {hasMore ? (
+                          <button
+                            type="button"
+                            className="subscription-invoice-toggle"
+                            onClick={() => setShowAllInvoices((v) => !v)}
+                          >
+                            {showAllInvoices
+                              ? 'Show less'
+                              : `Show all ${filtered.length} invoices`}
+                          </button>
+                        ) : null}
+                      </>
+                    )}
+                  </>
+                )
+              })() : (
                 <div className="subscription-row">
                   <span className="subscription-row-muted">No invoices yet</span>
                 </div>
