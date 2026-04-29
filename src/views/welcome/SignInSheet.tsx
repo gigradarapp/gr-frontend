@@ -61,8 +61,8 @@ export function SignInSheet() {
     setBusy('last')
     setErrorMessage('')
     try {
-      // Skip the account chooser — user explicitly chose their last account
-      window.location.href = googleOAuthRedirectUrlNoPrompt(emailRedirectTo)
+      // Skip the account chooser — pass login_hint so Google auto-selects the right account
+      window.location.href = googleOAuthRedirectUrlNoPrompt(emailRedirectTo, lastAccount?.email)
     } catch (e) {
       setBusy('idle')
       setErrorMessage(e instanceof Error ? e.message : 'Could not start Google sign-in')
