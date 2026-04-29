@@ -112,8 +112,8 @@ export function EventListPage() {
 
         {rows && rows.length > 0 && (
           <ul className="event-list-list" aria-live="polite">
-            {rows.map(({ item, sourceUrl }) => (
-              <li key={item.id || `${item.title}-${item.venue}`} className="event-list-card">
+            {rows.map(({ item, sourceUrl }, idx) => (
+              <li key={`${item.id ?? 'no-id'}-${idx}`} className="event-list-card">
                 <div className="event-list-row">
                   <div className="event-list-thumb-wrap" aria-hidden>
                     <img src={item.image} alt="" className="event-list-thumb" loading="lazy" />
