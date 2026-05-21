@@ -18,6 +18,7 @@ type EventRow = {
 type ViewMode = 'list' | 'table'
 type FilterMode = 'basic' | 'advanced'
 type ImageSourceFilter = 'all' | 'event-img' | 'fallback-img' | 'splash-img' | 'failed-load'
+type TableColumnPreset = 'overview' | 'timing' | 'taste' | 'price' | 'images' | 'all'
 type TableSortDirection = 'asc' | 'desc'
 type TableSortState = { column: string; direction: TableSortDirection } | null
 
@@ -57,6 +58,12 @@ type OperatorOption = {
   label: string
 }
 
+type ActiveFilterChip = {
+  id: string
+  label: string
+  value: string
+}
+
 const TURSO_EVENT_SCHEMA_FIELDS = [
   'event_id',
   'title',
@@ -67,7 +74,6 @@ const TURSO_EVENT_SCHEMA_FIELDS = [
   'event_datetime',
   'event_time_raw',
   'the_experience',
-  'vibe_tags',
   'taste_and_recommendations',
   'category',
   'is_price_range',
@@ -85,12 +91,18 @@ const TURSO_EVENT_SCHEMA_FIELDS = [
   'is_deleted',
 ] as const
 
+const HIDDEN_TURSO_FIELDS = new Set(['vibe_tags'])
+const BOOLEAN_TURSO_FIELDS = new Set(['is_price_range', 'is_deleted'])
+
 /** Synthetic table column — thumbnail preview, inserted after `event_id`. */
 const TABLE_THUMB_COLUMN = '__thumb'
+const DEFAULT_LIMIT = 100
+const MIN_LIMIT = 1
+const MAX_LIMIT = 500
 const DEFAULT_DEBUG_FILTERS: DebugFilters = {
   cityId: '',
   categoryId: '',
-  limit: '100',
+  limit: String(DEFAULT_LIMIT),
   search: '',
   minPrice: '',
   maxPrice: '',
@@ -102,12 +114,71 @@ const IMAGE_SOURCE_FILTERS: Array<{ id: ImageSourceFilter; label: string }> = [
   { id: 'splash-img', label: 'splash-img' },
   { id: 'failed-load', label: 'failed load' },
 ]
+const TABLE_COLUMN_PRESETS: Array<{
+  id: TableColumnPreset
+  label: string
+  columns: string[] | null
+}> = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    columns: [
+      'event_id',
+      TABLE_THUMB_COLUMN,
+      'title',
+      'event_time_raw',
+      'location',
+      'category',
+      'taste_and_recommendations',
+      'is_price_range',
+      'min_price',
+      'max_price',
+      'source_url',
+    ],
+  },
+  {
+    id: 'timing',
+    label: 'Timing',
+    columns: ['event_id', 'title', 'event_datetime', 'event_time_raw', 'ingestion_datetime'],
+  },
+  {
+    id: 'taste',
+    label: 'Taste',
+    columns: [
+      'event_id',
+      'title',
+      'category',
+      'taste_and_recommendations',
+      'the_experience',
+      'host',
+      'platform',
+    ],
+  },
+  {
+    id: 'price',
+    label: 'Price',
+    columns: ['event_id', 'title', 'is_price_range', 'currencyId', 'min_price', 'max_price', 'source_url'],
+  },
+  {
+    id: 'images',
+    label: 'Images',
+    columns: ['event_id', TABLE_THUMB_COLUMN, 'title', 'event_img', 'fallback_event_img', 'source_url'],
+  },
+  { id: 'all', label: 'Raw all', columns: null },
+]
 const DEFAULT_ADVANCED_CONDITION: AdvancedCondition = {
   id: 'rule-1',
   column: 'category',
   operator: 'eq',
   value: '',
 }
+const ADVANCED_RULE_PRESETS: Array<{ label: string; rule: Omit<AdvancedCondition, 'id'> }> = [
+  { label: 'Missing datetime', rule: { column: 'event_datetime', operator: 'isnull', value: '' } },
+  { label: 'Has source URL', rule: { column: 'source_url', operator: 'notnull', value: '' } },
+  { label: 'Missing price', rule: { column: 'min_price', operator: 'isnull', value: '' } },
+  { label: 'Deleted only', rule: { column: 'is_deleted', operator: 'eq', value: '1' } },
+  { label: 'Tech House taste', rule: { column: 'taste_and_recommendations', operator: 'like', value: 'Tech House' } },
+]
 const OTHERS_CATEGORY_VALUE = '__others__'
 const OPERATOR_OPTIONS: OperatorOption[] = [
   { id: 'eq', label: 'equals (=)' },
@@ -122,6 +193,7 @@ const OPERATOR_OPTIONS: OperatorOption[] = [
   { id: 'isnull', label: 'is null' },
   { id: 'notnull', label: 'is not null' },
 ]
+const OPERATOR_LABEL_BY_ID = new Map(OPERATOR_OPTIONS.map((option) => [option.id, option.label]))
 
 const CITY_OPTIONS: CityOption[] = LOCATION_REGIONS.flatMap((region) =>
   region.cities.map((city) => ({
@@ -176,6 +248,26 @@ function normalizeAdvancedRules(rules: AdvancedCondition[]): AdvancedCondition[]
     .filter((rule) => rule.operator === 'isnull' || rule.operator === 'notnull' || rule.value.length > 0)
 }
 
+function normalizeLimitInput(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return String(DEFAULT_LIMIT)
+  const n = Number(trimmed)
+  if (!Number.isFinite(n)) return String(DEFAULT_LIMIT)
+  return String(Math.min(Math.max(Math.trunc(n), MIN_LIMIT), MAX_LIMIT))
+}
+
+function normalizeFilters(filters: DebugFilters): DebugFilters {
+  return {
+    ...filters,
+    cityId: filters.cityId.trim(),
+    categoryId: filters.categoryId.trim(),
+    limit: normalizeLimitInput(filters.limit),
+    search: filters.search.trim(),
+    minPrice: filters.minPrice.trim(),
+    maxPrice: filters.maxPrice.trim(),
+  }
+}
+
 function appendEventsQueryParams(
   params: URLSearchParams,
   mode: FilterMode,
@@ -183,7 +275,7 @@ function appendEventsQueryParams(
   advanced: AdvancedCondition[],
 ) {
   params.set('mode', mode)
-  params.set('limit', filters.limit.trim() || '100')
+  params.set('limit', normalizeLimitInput(filters.limit))
 
   if (mode === 'basic') {
     if (filters.cityId.trim()) params.set('cityId', filters.cityId.trim())
@@ -220,13 +312,19 @@ function eventsApiPath(
 }
 
 function isMissingValue(value: unknown): boolean {
-  return value == null || (typeof value === 'string' && value.trim().length === 0)
+  if (value == null) return true
+  if (Array.isArray(value)) return value.length === 0
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length === 0 || trimmed === '[]' || trimmed.toLowerCase() === 'null'
+  }
+  return false
 }
 
 function tursoExtraColumnKeys(row: Record<string, unknown>): string[] {
   const known = new Set<string>(TURSO_EVENT_SCHEMA_FIELDS)
   return Object.keys(row)
-    .filter((key) => !known.has(key))
+    .filter((key) => !known.has(key) && !HIDDEN_TURSO_FIELDS.has(key))
     .sort((a, b) => a.localeCompare(b))
 }
 
@@ -510,7 +608,6 @@ const WIDE_TURSO_FIELDS = new Set([
   'address',
   'the_experience',
   'taste_and_recommendations',
-  'vibe_tags',
   'source_url',
   'event_img',
   'fallback_event_img',
@@ -525,9 +622,9 @@ const TURSO_FACT_ROW_GROUPS = [
     keys: ['event_datetime', 'event_time_raw', 'ingestion_datetime'],
   },
   {
-    id: 'taste-vibe',
+    id: 'taste',
     className: 'event-list-fact-stack',
-    keys: ['vibe_tags', 'taste_and_recommendations'],
+    keys: ['taste_and_recommendations'],
   },
   {
     id: 'host-platform',
@@ -564,19 +661,38 @@ function tursoFieldLabel(key: string): string {
   return key.replace(/_/g, ' ')
 }
 
+function booleanFactLabel(value: unknown): string | null {
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (typeof value === 'number') {
+    if (value === 1) return 'true'
+    if (value === 0) return 'false'
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === '1' || normalized === 'true') return 'true'
+    if (normalized === '0' || normalized === 'false') return 'false'
+  }
+  return null
+}
+
+function renderTagChips(value: unknown, className = ''): ReactNode {
+  const tags = parseCategoryTags(value)
+  if (tags.length === 0) return null
+
+  return (
+    <div className={['event-list-category-tags', className].filter(Boolean).join(' ')}>
+      {tags.map((tag) => (
+        <span key={tag} className="event-list-category-tag">
+          {tag}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function renderTursoFactValue(key: string, value: unknown): ReactNode {
-  if (key === 'category' || key === 'vibe_tags') {
-    const tags = parseCategoryTags(value)
-    if (tags.length === 0) return <strong>—</strong>
-    return (
-      <div className="event-list-category-tags">
-        {tags.map((tag) => (
-          <span key={tag} className="event-list-category-tag">
-            {tag}
-          </span>
-        ))}
-      </div>
-    )
+  if (key === 'category' || key === 'taste_and_recommendations') {
+    return renderTagChips(value) ?? <strong>—</strong>
   }
 
   if (key === 'source_url' && typeof value === 'string' && value.trim()) {
@@ -596,6 +712,11 @@ function renderTursoFactValue(key: string, value: unknown): ReactNode {
 
   if (isMissingValue(value)) return <strong>—</strong>
 
+  if (BOOLEAN_TURSO_FIELDS.has(key)) {
+    const label = booleanFactLabel(value)
+    return <strong>{label ?? formatRawValue(value)}</strong>
+  }
+
   const text = formatRawValue(value)
   const valueClass = [
     WIDE_TURSO_FIELDS.has(key) ? 'event-list-fact-value--wide' : '',
@@ -612,7 +733,7 @@ function renderTursoFactValue(key: string, value: unknown): ReactNode {
 }
 
 function tursoFactTileClassName(key: string, value: unknown): string {
-  const tagged = key === 'category' || key === 'vibe_tags'
+  const tagged = key === 'category' || key === 'taste_and_recommendations'
   const missing =
     isMissingValue(value) || (tagged && parseCategoryTags(value).length === 0)
   const wide = WIDE_TURSO_FIELDS.has(key)
@@ -676,6 +797,14 @@ function renderTursoFacts(schemaRows: Array<{ key: string; value: unknown }>): R
 function renderTableCell(key: string, value: unknown): ReactNode {
   if (isMissingValue(value)) {
     return <span className="event-list-table-empty">-</span>
+  }
+
+  if (key === 'category' || key === 'taste_and_recommendations') {
+    return renderTagChips(value, 'event-list-table-tags') ?? <span className="event-list-table-empty">-</span>
+  }
+
+  if (BOOLEAN_TURSO_FIELDS.has(key)) {
+    return <span className="event-list-table-cell-text">{booleanFactLabel(value) ?? formatRawValue(value)}</span>
   }
 
   if (key === 'source_url' && typeof value === 'string') {
@@ -761,6 +890,13 @@ function formatRawValue(value: unknown): string {
   return JSON.stringify(value)
 }
 
+function advancedValueCandidates(column: string, value: unknown): string[] {
+  if (column === 'category' || column === 'taste_and_recommendations') {
+    return parseCategoryTags(value)
+  }
+  return [formatRawValue(value)]
+}
+
 function normalizeComparable(value: unknown): string {
   if (value == null) return ''
   if (typeof value === 'string') return value.trim().toLowerCase()
@@ -826,6 +962,7 @@ export function EventListPage() {
   const [appliedFilterMode, setAppliedFilterMode] = useState<FilterMode>('basic')
   const [filterEditorMode, setFilterEditorMode] = useState<FilterMode>('basic')
   const [imageSourceFilter, setImageSourceFilter] = useState<ImageSourceFilter>('all')
+  const [tableColumnPreset, setTableColumnPreset] = useState<TableColumnPreset>('overview')
   const [draftAdvanced, setDraftAdvanced] = useState<AdvancedCondition[]>([
     DEFAULT_ADVANCED_CONDITION,
   ])
@@ -838,6 +975,8 @@ export function EventListPage() {
   const [tableSort, setTableSort] = useState<TableSortState>(null)
   const [tableColumnFilters, setTableColumnFilters] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
+  const [countWarning, setCountWarning] = useState<string | null>(null)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [loading, setLoading] = useState(true)
 
   const toggleAllCardFacts = useCallback(() => {
@@ -896,9 +1035,30 @@ export function EventListPage() {
     })
   }, [])
 
+  const requestPath = useMemo(
+    () => eventsApiPath('/api/events', appliedFilterMode, appliedFilters, appliedAdvanced),
+    [appliedAdvanced, appliedFilterMode, appliedFilters],
+  )
+
+  const copyRequestPath = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(requestPath)
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('failed')
+    }
+  }, [requestPath])
+
+  useEffect(() => {
+    if (copyStatus === 'idle') return
+    const timer = window.setTimeout(() => setCopyStatus('idle'), 1600)
+    return () => window.clearTimeout(timer)
+  }, [copyStatus])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setCountWarning(null)
     try {
       const [res, countRes] = await Promise.all([
         fetch(eventsApiPath('/api/events', appliedFilterMode, appliedFilters, appliedAdvanced), {
@@ -912,6 +1072,7 @@ export function EventListPage() {
         const j = (await res.json().catch(() => ({}))) as { error?: string }
         setRows(null)
         setTotalCount(null)
+        setCountWarning(null)
         setError(j.error ?? `HTTP ${res.status}`)
         return
       }
@@ -919,6 +1080,7 @@ export function EventListPage() {
       if (!Array.isArray(data)) {
         setRows(null)
         setTotalCount(null)
+        setCountWarning(null)
         setError('Invalid response: expected a JSON array')
         return
       }
@@ -926,8 +1088,11 @@ export function EventListPage() {
         const countData = (await countRes.json()) as { total?: unknown }
         const n = Number(countData.total ?? 0)
         setTotalCount(Number.isFinite(n) ? n : null)
+        setCountWarning(null)
       } else {
+        const j = (await countRes.json().catch(() => ({}))) as { error?: string }
         setTotalCount(null)
+        setCountWarning(j.error ? `Count unavailable: ${j.error}` : `Count unavailable: HTTP ${countRes.status}`)
       }
       setRows(
         data.map((r) => ({
@@ -950,17 +1115,21 @@ export function EventListPage() {
   }, [load])
 
   const applyBasicFilters = useCallback(() => {
+    const normalized = normalizeFilters(draftFilters)
+    setDraftFilters(normalized)
     setAppliedFilterMode('basic')
-    setAppliedFilters({ ...draftFilters, limit: draftFilters.limit.trim() || '100' })
+    setAppliedFilters(normalized)
     setAppliedAdvanced([])
     setFailedImageUrls(new Set())
   }, [draftFilters])
 
   const applyAdvancedFilters = useCallback(() => {
+    const normalizedLimit = normalizeLimitInput(draftFilters.limit)
+    setDraftFilters((current) => ({ ...current, limit: normalizedLimit }))
     setAppliedFilterMode('advanced')
     setAppliedFilters({
       ...DEFAULT_DEBUG_FILTERS,
-      limit: draftFilters.limit.trim() || '100',
+      limit: normalizedLimit,
     })
     setAppliedAdvanced(normalizeAdvancedRules(draftAdvanced))
     setFailedImageUrls(new Set())
@@ -977,6 +1146,8 @@ export function EventListPage() {
     setFailedImageUrls(new Set())
     setTableSort(null)
     setTableColumnFilters({})
+    setTableColumnPreset('overview')
+    setCountWarning(null)
   }, [])
 
   const imageSourceCounts = useMemo(() => {
@@ -1053,19 +1224,36 @@ export function EventListPage() {
       const values = Array.from(
         new Set(
           rows
-            .map((row) => row.raw[col])
-            .filter((v) => !isMissingValue(v))
-            .map((v) => formatRawValue(v)),
+            .flatMap((row) => {
+              const value = row.raw[col]
+              return isMissingValue(value) ? [] : advancedValueCandidates(col, value)
+            })
+            .map((v) => v.trim())
+            .filter(Boolean),
         ),
       ).slice(0, 80)
       out[col] = values
     }
     return out
   }, [rows])
-  const tableColumns = useMemo(
-    () => (imageFilteredRows.length > 0 ? tableColumnsWithThumb(imageFilteredRows) : []),
-    [imageFilteredRows],
-  )
+  const tableColumns = useMemo(() => {
+    if (imageFilteredRows.length === 0) return []
+    const allColumns = tableColumnsWithThumb(imageFilteredRows)
+    const preset = TABLE_COLUMN_PRESETS.find((option) => option.id === tableColumnPreset)
+    if (!preset?.columns) return allColumns
+    const visible = new Set(preset.columns)
+    return allColumns.filter((column) => visible.has(column))
+  }, [imageFilteredRows, tableColumnPreset])
+
+  useEffect(() => {
+    const visibleColumns = new Set(tableColumns)
+    setTableColumnFilters((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([column]) => visibleColumns.has(column)),
+      )
+      return Object.keys(next).length === Object.keys(current).length ? current : next
+    })
+  }, [tableColumns])
   const tableFilteredRows = useMemo(
     () => imageFilteredRows.filter((row) => rowMatchesTableFilters(row, tableColumnFilters)),
     [imageFilteredRows, tableColumnFilters],
@@ -1082,6 +1270,89 @@ export function EventListPage() {
       .map(({ row }) => row)
   }, [tableFilteredRows, tableSort])
   const activeTableFilterCount = Object.values(tableColumnFilters).filter((value) => value.trim()).length
+  const activeFilterChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (appliedFilterMode === 'basic') {
+      if (appliedFilters.cityId) chips.push({ id: 'basic:cityId', label: 'City', value: appliedFilters.cityId })
+      if (appliedFilters.categoryId) chips.push({ id: 'basic:categoryId', label: 'Category', value: appliedFilters.categoryId })
+      if (appliedFilters.search) chips.push({ id: 'basic:search', label: 'Search', value: appliedFilters.search })
+      if (appliedFilters.minPrice) chips.push({ id: 'basic:minPrice', label: 'Min price', value: appliedFilters.minPrice })
+      if (appliedFilters.maxPrice) chips.push({ id: 'basic:maxPrice', label: 'Max price', value: appliedFilters.maxPrice })
+    } else {
+      appliedAdvanced.forEach((rule) => {
+        chips.push({
+          id: `advanced:${rule.id}`,
+          label: 'Rule',
+          value: `${rule.column} ${OPERATOR_LABEL_BY_ID.get(rule.operator) ?? rule.operator}${rule.value ? ` ${rule.value}` : ''}`,
+        })
+      })
+    }
+
+    if (imageSourceFilter !== 'all') {
+      chips.push({ id: 'imageSource', label: 'Image', value: imageSourceFilter })
+    }
+    if (viewMode === 'table' && tableColumnPreset !== 'overview') {
+      chips.push({
+        id: 'table:preset',
+        label: 'Columns',
+        value: TABLE_COLUMN_PRESETS.find((option) => option.id === tableColumnPreset)?.label ?? tableColumnPreset,
+      })
+    }
+    for (const [column, value] of Object.entries(tableColumnFilters)) {
+      if (value.trim()) chips.push({ id: `tableFilter:${column}`, label: `Table ${column}`, value })
+    }
+    if (tableSort) chips.push({ id: 'table:sort', label: 'Sort', value: `${tableSort.column} ${tableSort.direction}` })
+
+    return chips
+  }, [
+    appliedAdvanced,
+    appliedFilterMode,
+    appliedFilters,
+    imageSourceFilter,
+    tableColumnFilters,
+    tableColumnPreset,
+    tableSort,
+    viewMode,
+  ])
+
+  const clearActiveFilterChip = useCallback((chipId: string) => {
+    if (chipId.startsWith('basic:')) {
+      const key = chipId.slice('basic:'.length) as keyof DebugFilters
+      setDraftFilters((current) => ({ ...current, [key]: '' }))
+      setAppliedFilters((current) => ({ ...current, [key]: '' }))
+      return
+    }
+    if (chipId.startsWith('advanced:')) {
+      const id = chipId.slice('advanced:'.length)
+      setAppliedAdvanced((current) => current.filter((rule) => rule.id !== id))
+      setDraftAdvanced((current) =>
+        current.length <= 1 ? current : current.filter((rule) => rule.id !== id),
+      )
+      return
+    }
+    if (chipId === 'imageSource') {
+      setImageSourceFilter('all')
+      return
+    }
+    if (chipId === 'table:preset') {
+      setTableColumnPreset('overview')
+      return
+    }
+    if (chipId.startsWith('tableFilter:')) {
+      const column = chipId.slice('tableFilter:'.length)
+      setTableColumnFilters((current) => {
+        const next = { ...current }
+        delete next[column]
+        return next
+      })
+      return
+    }
+    if (chipId === 'table:sort') {
+      setTableSort(null)
+    }
+  }, [])
+
   return (
     <div
       className="event-list-root"
@@ -1108,6 +1379,7 @@ export function EventListPage() {
                     : ` · ${rows.length} loaded`
                   : ''}
                 {rows && imageSourceFilter !== 'all' ? ` · ${totalRows} shown` : ''}
+                {countWarning ? ' · count unavailable' : ''}
               </p>
             </div>
           </div>
@@ -1123,7 +1395,17 @@ export function EventListPage() {
             </button>
           </div>
         </header>
-        <section className="event-list-filters" aria-label="Debug filters">
+        <section
+          className="event-list-filters"
+          aria-label="Debug filters"
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return
+            if (!(event.target instanceof HTMLInputElement)) return
+            event.preventDefault()
+            if (filterEditorMode === 'basic') applyBasicFilters()
+            else applyAdvancedFilters()
+          }}
+        >
           <div className="event-list-filters-toolbar">
             <div className="event-list-filter-mode-toggle" role="group" aria-label="Search mode">
               <button
@@ -1148,8 +1430,15 @@ export function EventListPage() {
                   className="event-list-filter-input"
                   value={draftFilters.limit}
                   inputMode="numeric"
+                  min={MIN_LIMIT}
+                  max={MAX_LIMIT}
                   placeholder="100"
-                  onChange={(e) => setDraftFilters((f) => ({ ...f, limit: e.target.value }))}
+                  title={`Limit is clamped to ${MIN_LIMIT}-${MAX_LIMIT} when filters are applied.`}
+                  onBlur={() => setDraftFilters((f) => ({ ...f, limit: normalizeLimitInput(f.limit) }))}
+                  onChange={(e) => {
+                    const next = e.target.value.replace(/[^\d]/g, '')
+                    setDraftFilters((f) => ({ ...f, limit: next }))
+                  }}
                 />
               </label>
               <div className="event-list-view-toggle" role="group" aria-label="View mode">
@@ -1192,6 +1481,35 @@ export function EventListPage() {
                 <span>{imageSourceCounts.get(option.id) ?? 0}</span>
               </button>
             ))}
+          </div>
+
+          <div className="event-list-debug-summary" aria-label="Active filter summary">
+            <div className="event-list-debug-url">
+              <span>Request</span>
+              <code title={requestPath}>{requestPath}</code>
+              <button type="button" className="event-list-debug-copy" onClick={() => void copyRequestPath()}>
+                {copyStatus === 'copied' ? 'Copied' : copyStatus === 'failed' ? 'Copy failed' : 'Copy URL'}
+              </button>
+            </div>
+            <div className="event-list-active-filter-row">
+              {activeFilterChips.length === 0 ? (
+                <span className="event-list-active-filter-empty">No active filters beyond limit.</span>
+              ) : (
+                activeFilterChips.map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    className="event-list-active-filter-chip"
+                    title={`Clear ${chip.label}`}
+                    onClick={() => clearActiveFilterChip(chip.id)}
+                  >
+                    <span>{chip.label}</span>
+                    <strong>{chip.value}</strong>
+                    <em>×</em>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
 
           {filterEditorMode === 'basic' ? (
@@ -1374,76 +1692,118 @@ export function EventListPage() {
           </div>
           ) : (
           <div className="event-list-filters-panel event-list-advanced">
+            <div className="event-list-advanced-presets" role="group" aria-label="Advanced filter presets">
+              <span>Presets</span>
+              {ADVANCED_RULE_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  className="event-list-filter-preset-btn"
+                  onClick={() =>
+                    setDraftAdvanced([
+                      {
+                        ...preset.rule,
+                        id: `rule-${Date.now()}-${preset.label.replace(/[^a-z0-9]+/gi, '-')}`,
+                      },
+                    ])
+                  }
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
             {draftAdvanced.map((rule) => {
               const listId = `event-list-values-${rule.id}`
               const disableValue = rule.operator === 'isnull' || rule.operator === 'notnull'
+              const suggestedValues = (advancedValueOptions[rule.column] ?? []).slice(0, 8)
               return (
-                <div key={rule.id} className="event-list-advanced-row">
-                  <select
-                    className="event-list-filter-input event-list-filter-select"
-                    value={rule.column}
-                    onChange={(e) =>
-                      setDraftAdvanced((rows) =>
-                        rows.map((r) =>
-                          r.id === rule.id
-                            ? { ...r, column: e.target.value as AdvancedCondition['column'] }
-                            : r,
-                        ),
-                      )
-                    }
-                  >
-                    {TURSO_EVENT_SCHEMA_FIELDS.map((field) => (
-                      <option key={field} value={field}>
-                        {field}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="event-list-filter-input event-list-filter-select"
-                    value={rule.operator}
-                    onChange={(e) =>
-                      setDraftAdvanced((rows) =>
-                        rows.map((r) =>
-                          r.id === rule.id
-                            ? { ...r, operator: e.target.value as FilterOperator }
-                            : r,
-                        ),
-                      )
-                    }
-                  >
-                    {OPERATOR_OPTIONS.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className="event-list-filter-input"
-                    list={listId}
-                    value={rule.value}
-                    placeholder={disableValue ? 'no value needed' : 'value'}
-                    disabled={disableValue}
-                    onChange={(e) =>
-                      setDraftAdvanced((rows) =>
-                        rows.map((r) => (r.id === rule.id ? { ...r, value: e.target.value } : r)),
-                      )
-                    }
-                  />
-                  <datalist id={listId}>
-                    {(advancedValueOptions[rule.column] ?? []).map((value) => (
-                      <option key={value} value={value} />
-                    ))}
-                  </datalist>
-                  <button
-                    type="button"
-                    className="event-list-filter-btn ghost"
-                    disabled={draftAdvanced.length <= 1}
-                    onClick={() =>
-                      setDraftAdvanced((rows) => rows.filter((r) => r.id !== rule.id))
-                    }
-                  >
-                    Remove
-                  </button>
+                <div key={rule.id} className="event-list-advanced-rule">
+                  <div className="event-list-advanced-row">
+                    <select
+                      className="event-list-filter-input event-list-filter-select"
+                      value={rule.column}
+                      onChange={(e) =>
+                        setDraftAdvanced((rows) =>
+                          rows.map((r) =>
+                            r.id === rule.id
+                              ? { ...r, column: e.target.value as AdvancedCondition['column'] }
+                              : r,
+                          ),
+                        )
+                      }
+                    >
+                      {TURSO_EVENT_SCHEMA_FIELDS.map((field) => (
+                        <option key={field} value={field}>
+                          {field}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="event-list-filter-input event-list-filter-select"
+                      value={rule.operator}
+                      onChange={(e) =>
+                        setDraftAdvanced((rows) =>
+                          rows.map((r) =>
+                            r.id === rule.id
+                              ? { ...r, operator: e.target.value as FilterOperator }
+                              : r,
+                          ),
+                        )
+                      }
+                    >
+                      {OPERATOR_OPTIONS.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className="event-list-filter-input"
+                      list={listId}
+                      value={rule.value}
+                      placeholder={disableValue ? 'no value needed' : 'value'}
+                      disabled={disableValue}
+                      onChange={(e) =>
+                        setDraftAdvanced((rows) =>
+                          rows.map((r) => (r.id === rule.id ? { ...r, value: e.target.value } : r)),
+                        )
+                      }
+                    />
+                    <datalist id={listId}>
+                      {(advancedValueOptions[rule.column] ?? []).map((value) => (
+                        <option key={value} value={value} />
+                      ))}
+                    </datalist>
+                    <button
+                      type="button"
+                      className="event-list-filter-btn ghost"
+                      disabled={draftAdvanced.length <= 1}
+                      onClick={() =>
+                        setDraftAdvanced((rows) => rows.filter((r) => r.id !== rule.id))
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  {!disableValue && suggestedValues.length > 0 ? (
+                    <div className="event-list-advanced-values" aria-label={`${rule.column} suggested values`}>
+                      <span>Top values</span>
+                      {suggestedValues.map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className="event-list-filter-preset-btn"
+                          onClick={() =>
+                            setDraftAdvanced((rows) =>
+                              rows.map((r) => (r.id === rule.id ? { ...r, value } : r)),
+                            )
+                          }
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
@@ -1493,6 +1853,13 @@ export function EventListPage() {
                 {error}
               </p>
             </div>
+          </div>
+        )}
+
+        {!error && countWarning && (
+          <div className="event-list-warning" role="status">
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <span>{countWarning}</span>
           </div>
         )}
 
@@ -1675,6 +2042,18 @@ export function EventListPage() {
                 {tableSort ? ` · sorted by ${tableSort.column} ${tableSort.direction}` : ''}
                 {` · ${sortedTableRows.length}/${imageFilteredRows.length} shown`}
               </span>
+              <div className="event-list-table-preset-row" role="group" aria-label="Table column preset">
+                {TABLE_COLUMN_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`event-list-table-preset-btn${tableColumnPreset === preset.id ? ' is-active' : ''}`}
+                    onClick={() => setTableColumnPreset(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
               <div className="event-list-table-toolbar-actions">
                 {tableSort ? (
                   <button
@@ -1697,7 +2076,7 @@ export function EventListPage() {
               </div>
             </div>
             <div className="event-list-table-wrap" aria-live="polite">
-              <table className="event-list-table event-list-table--full">
+              <table className={`event-list-table${tableColumnPreset === 'all' ? ' event-list-table--full' : ' event-list-table--focused'}`}>
                 <thead>
                   <tr>
                     {tableColumns.map((col) => {

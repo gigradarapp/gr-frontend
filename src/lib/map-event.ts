@@ -137,6 +137,7 @@ export function mapRemoteEventRowToEventItem(row: Record<string, unknown>): Even
   const time = formatDateTimeLabel(row.event_datetime ?? row.event_time, row.event_time_raw)
   const categoryTags = parseCategoryTags(row.category)
   const category = categoryTags[0] ?? ''
+  const tasteTags = parseCategoryTags(row.taste_and_recommendations)
   const eventImg = firstText(row.event_img)
   const cityId = firstText(row.location_city_id) || 'unknown'
   const image = eventImg && !isSplashImageUrl(eventImg) ? eventImg : splashImageForEventRow(row)
@@ -155,9 +156,7 @@ export function mapRemoteEventRowToEventItem(row: Record<string, unknown>): Even
     host: String(row.host ?? ''),
     hostPrompt: firstText(row.the_experience),
     friendsGoing: 0,
-    vibeTags: firstText(row.taste_and_recommendations)
-      ? [String(row.taste_and_recommendations)]
-      : [],
+    vibeTags: tasteTags,
     ticketPrice: formatTicketPrice(row),
     bpReward: undefined,
     buzzPct: undefined,
