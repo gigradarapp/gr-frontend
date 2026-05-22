@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft,
   Clock,
+  ExternalLink,
   Heart,
   MapPin,
   Play,
@@ -26,6 +27,29 @@ const waveformHeights = [
   14, 32, 22, 40, 18, 36, 26, 44, 20, 38, 16, 42, 24, 34, 30, 48, 12, 28, 36, 22, 40, 18,
 ]
 
+const googleMapsEmbedKey = import.meta.env.GOOGLE_MAPS_EMBED_KEY?.trim() ?? ''
+
+function mapsQueryFromData(data: PlanPageEvent): string {
+  return data.mapQuery?.trim() || data.venueLine.trim()
+}
+
+function googleMapsEmbedSrc(query: string): string | null {
+  if (!googleMapsEmbedKey || !query) return null
+  const params = new URLSearchParams({
+    key: googleMapsEmbedKey,
+    q: query,
+  })
+  return `https://www.google.com/maps/embed/v1/place?${params.toString()}`
+}
+
+function googleMapsSearchUrl(query: string): string {
+  const params = new URLSearchParams({
+    api: '1',
+    query,
+  })
+  return `https://www.google.com/maps/search/?${params.toString()}`
+}
+
 export function PlanEventDetail({
   data,
   variant,
@@ -41,6 +65,9 @@ export function PlanEventDetail({
   const vibeRef = useRef<HTMLDivElement>(null)
   const hasVibeScore = typeof data.aiVibeScore === 'number' && Number.isFinite(data.aiVibeScore)
   const hasAudioPreview = Boolean(data.audioPreviewLabel)
+  const mapQuery = mapsQueryFromData(data)
+  const mapEmbedSrc = googleMapsEmbedSrc(mapQuery)
+  const mapSearchUrl = googleMapsSearchUrl(mapQuery)
 
   useEffect(() => {
     const el = vibeRef.current
@@ -157,6 +184,46 @@ export function PlanEventDetail({
               </div>
             ) : null}
           </div>
+
+          {mapQuery ? (
+            <section className="plan-location-block">
+              <div className="plan-section-head">
+                <h2 className="plan-section-kicker">Location</h2>
+                <a
+                  className="plan-location-open"
+                  href={mapSearchUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>Open in Google Maps</span>
+                  <ExternalLink size={14} strokeWidth={2.2} aria-hidden />
+                </a>
+              </div>
+              <div className="plan-location-card">
+                {mapEmbedSrc ? (
+                  <iframe
+                    className="plan-location-map"
+                    title={`Map for ${data.displayTitle}`}
+                    src={mapEmbedSrc}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                ) : (
+                  <a
+                    className="plan-location-fallback"
+                    href={mapSearchUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MapPin size={18} strokeWidth={2.2} aria-hidden />
+                    <span>Open this location in Google Maps</span>
+                    <ExternalLink size={14} strokeWidth={2.2} aria-hidden />
+                  </a>
+                )}
+              </div>
+            </section>
+          ) : null}
 
           {/* Experience quote */}
           <section className="plan-experience-block">

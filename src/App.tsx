@@ -65,6 +65,8 @@ function liveEventGenreTags(event: EventItem): [string, string] {
 function planDetailFromDiscoverEvent(event: EventItem): PlanPageEvent {
   const dateTimeLabel = event.displayDateTimeLabel ?? event.time
   const venueLine = [event.venue, event.district].map((part) => part.trim()).filter(Boolean).join(', ')
+  const coordinateQuery =
+    typeof event.lat === 'number' && typeof event.lng === 'number' ? `${event.lat},${event.lng}` : ''
   const tags = event.vibeTags.map((tag) => tag.trim()).filter(Boolean)
   const summary = event.hostPrompt.trim()
 
@@ -75,6 +77,7 @@ function planDetailFromDiscoverEvent(event: EventItem): PlanPageEvent {
     artistLine: event.host ? `HOST · ${event.host}` : cleanLabel(event.genre, 'LIVE EVENT').toUpperCase(),
     genreTags: liveEventGenreTags(event),
     venueLine: venueLine || event.venue || event.district || 'Venue TBA',
+    mapQuery: venueLine || coordinateQuery || undefined,
     timeRange: dateTimeLabel,
     ticketPrice: event.ticketPrice || undefined,
     aiVibeScore: null,

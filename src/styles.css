@@ -8548,6 +8548,13 @@ button.taste-tag:focus-visible {
   color: var(--muted);
 }
 
+.plan-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .plan-copy {
   margin: 0;
   font-size: 0.88rem;
@@ -8559,6 +8566,64 @@ button.taste-tag:focus-visible {
   font-style: italic;
   color: var(--primary-soft);
   font-weight: 600;
+}
+
+.plan-location-block {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-location-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-soft);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.plan-location-open:hover {
+  color: var(--primary);
+}
+
+.plan-location-card {
+  overflow: hidden;
+  min-height: 178px;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: color-mix(in oklab, var(--card) 78%, black);
+}
+
+.plan-location-map {
+  display: block;
+  width: 100%;
+  height: 190px;
+  border: 0;
+}
+
+.plan-location-fallback {
+  min-height: 178px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 18px;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.plan-location-fallback svg {
+  color: var(--primary-soft);
+  flex-shrink: 0;
 }
 
 .plan-audio {

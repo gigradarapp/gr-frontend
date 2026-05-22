@@ -69,6 +69,8 @@ export type PlanPageEvent = {
   artistLine: string
   genreTags: [string, string]
   venueLine: string
+  /** Google Maps Embed/search query, usually venue + full address or future `place_id:...`. */
+  mapQuery?: string
   timeRange: string
   ticketPrice?: string
   aiVibeScore?: number | null

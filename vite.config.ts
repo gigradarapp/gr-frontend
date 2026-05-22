@@ -21,6 +21,7 @@ const toBackend: ProxyOptions = {
 
 export default defineConfig({
   plugins: [react()],
+  envPrefix: ['VITE_', 'GOOGLE_MAPS_EMBED_'],
   server: {
     host: true,
     port: 5173,
