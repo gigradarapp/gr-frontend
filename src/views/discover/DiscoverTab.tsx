@@ -31,7 +31,6 @@ import {
 } from '../../data/demoData'
 import {
   type DiscoverAgentResult,
-  fetchMapboxPlaceName,
   fetchOpenAIDiscoverResult,
   getHardcodedAgentFallback,
   normalizePrompt,
@@ -336,17 +335,7 @@ export function DiscoverTab({
       return
     }
 
-    let finalReply = resolvedAgentResult.reply
-    if (resolvedAgentResult.locationQuery) {
-      const placeName = await fetchMapboxPlaceName(resolvedAgentResult.locationQuery)
-      if (requestCounter.current !== requestId) {
-        return
-      }
-
-      if (placeName) {
-        finalReply = `${finalReply} Best match area: ${placeName}.`
-      }
-    }
+    const finalReply = resolvedAgentResult.reply
 
     const hasMatchingEvent =
       resolvedAgentResult.suggestedEventId !== null &&

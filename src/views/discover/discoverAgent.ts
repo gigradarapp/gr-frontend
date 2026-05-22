@@ -3,7 +3,6 @@ import type { EventItem } from '../../types'
 export type DiscoverAgentResult = {
   reply: string
   suggestedEventId: string | null
-  locationQuery: string | null
 }
 
 export function normalizePrompt(prompt: string) {
@@ -21,7 +20,6 @@ export function getHardcodedAgentFallback(prompt: string): DiscoverAgentResult {
     return {
       reply: 'Jazz looks strongest around Tiong Bahru tonight.',
       suggestedEventId: 'bluenote',
-      locationQuery: 'Tiong Bahru Singapore',
     }
   }
 
@@ -29,14 +27,12 @@ export function getHardcodedAgentFallback(prompt: string): DiscoverAgentResult {
     return {
       reply: 'Techno momentum is highest around Marina Bay tonight.',
       suggestedEventId: 'marquee',
-      locationQuery: 'Marina Bay Singapore',
     }
   }
 
   return {
     reply: 'Neon Pulse is a strong all-round pick for tonight.',
     suggestedEventId: 'neonpulse',
-    locationQuery: 'Downtown Core Singapore',
   }
 }
 
@@ -77,27 +73,7 @@ export async function fetchOpenAIDiscoverResult(
     return {
       reply: payload.reply.trim(),
       suggestedEventId: typeof payload.suggestedEventId === 'string' ? payload.suggestedEventId : null,
-      locationQuery: typeof payload.locationQuery === 'string' ? payload.locationQuery : null,
     }
-  } catch {
-    return null
-  }
-}
-
-export async function fetchMapboxPlaceName(locationQuery: string): Promise<string | null> {
-  try {
-    const endpoint = import.meta.env.VITE_MAPBOX_PROXY_URL ?? '/api/geocode'
-    const separator = endpoint.includes('?') ? '&' : '?'
-    const response = await fetch(`${endpoint}${separator}q=${encodeURIComponent(locationQuery)}`)
-
-    if (!response.ok) {
-      return null
-    }
-
-    const payload = (await response.json()) as { placeName?: unknown }
-    return typeof payload.placeName === 'string' && payload.placeName.trim()
-      ? payload.placeName.trim()
-      : null
   } catch {
     return null
   }

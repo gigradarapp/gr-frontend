@@ -19,7 +19,6 @@ export const appRouter = t.router({
       .mutation(() => ({
         reply: '',
         suggestedEventId: null as string | null,
-        locationQuery: null as string | null,
       })),
   }),
   events: t.router({

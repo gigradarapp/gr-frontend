@@ -31,7 +31,7 @@ Build Buzo as a fast, mobile-first web app that feels app-like on phones and sca
 - Prefer fluid typography (`clamp`) for headings and key text.
 
 ## Optional Add-Ons (If Needed)
-- **Map UI**: `Mapbox GL` or `MapLibre` (venue/event map experiences)
+- **Map UI**: `React Leaflet` with CARTO basemaps (venue/event map experiences)
 - **Carousels / gestures**: `Embla Carousel`
 - **Charts / profile analytics**: `Recharts`
 - **Error tracking (frontend)**: `Sentry`

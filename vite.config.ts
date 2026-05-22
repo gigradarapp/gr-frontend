@@ -29,7 +29,6 @@ export default defineConfig({
       '/trpc': toBackend,
       '/api/events': toBackend,
       '/api/source-preview': toBackend,
-      '/api/geocode': toBackend,
       '/api/auth': toBackend,
       '/api/profile/taste': toBackend,
       '/api/profile': toBackend,

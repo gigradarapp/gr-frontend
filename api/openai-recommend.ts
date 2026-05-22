@@ -17,7 +17,6 @@ type ExploreRequestBody = {
 type ExploreModelResult = {
   reply: string
   suggestedEventId: string | null
-  locationQuery: string | null
 }
 
 function parseRequestBody(rawBody: unknown): ExploreRequestBody {
@@ -54,7 +53,6 @@ function parseModelJson(content: string): ExploreModelResult | null {
     return {
       reply: parsed.reply.trim(),
       suggestedEventId: typeof parsed.suggestedEventId === 'string' ? parsed.suggestedEventId : null,
-      locationQuery: typeof parsed.locationQuery === 'string' ? parsed.locationQuery : null,
     }
   } catch {
     return null
@@ -97,9 +95,8 @@ export default async function handler(req: any, res: any) {
     'You are Buzo assistant for nightlife discovery.',
     'Use the provided event list to recommend exactly one best-match event if possible.',
     'Respond as strict JSON only (no markdown):',
-    '{"reply":"string","suggestedEventId":"string|null","locationQuery":"string|null"}',
+    '{"reply":"string","suggestedEventId":"string|null"}',
     'Keep reply concise, 1-2 sentences, and user-friendly.',
-    'locationQuery should be a short geocoding query like "Tiong Bahru Singapore" when relevant.',
   ].join(' ')
 
   try {
