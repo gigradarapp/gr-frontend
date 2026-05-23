@@ -10,6 +10,7 @@ import {
   Ticket,
 } from 'lucide-react'
 import { fetchDiscoverEventById } from '../../lib/useDiscoverEvents'
+import { EventShareSheet } from '../../components/EventShareSheet'
 import type { PlanPageEvent } from '../../types'
 
 type PlanEventDetailProps = {
@@ -63,6 +64,7 @@ export function PlanEventDetail({
 }: PlanEventDetailProps) {
   const [playing, setPlaying] = useState(false)
   const [vibeAnimated, setVibeAnimated] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const vibeRef = useRef<HTMLDivElement>(null)
   const hasVibeScore = typeof data.aiVibeScore === 'number' && Number.isFinite(data.aiVibeScore)
   const hasAudioPreview = Boolean(data.audioPreviewLabel)
@@ -244,7 +246,7 @@ export function PlanEventDetail({
             >
               EVENT REVIEW
             </button>
-            <button type="button" className="plan-cta-secondary">
+            <button type="button" className="plan-cta-secondary" onClick={() => setShareOpen(true)}>
               <Share2 size={18} strokeWidth={2} aria-hidden />
               SHARE WITH FRIENDS
             </button>
@@ -339,6 +341,16 @@ export function PlanEventDetail({
 
         </div>
       </div>
+      {shareOpen ? (
+        <EventShareSheet
+          title={data.displayTitle}
+          venue={data.venueLine}
+          when={data.timeRange}
+          url={data.sourceUrl}
+          fallbackPath={`/discover/${data.eventId}`}
+          onClose={() => setShareOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }

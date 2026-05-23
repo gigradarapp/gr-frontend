@@ -7,6 +7,7 @@ import { DISCOVER_FEED_CATEGORY_FILTER_OPTIONS } from '../../data/exploreCategor
 import { useAppState } from '../../store/appStore'
 import { handleEventImageError } from '../../lib/event-image-fallback'
 import { fetchDiscoverEventById } from '../../lib/useDiscoverEvents'
+import { EventShareSheet } from '../../components/EventShareSheet'
 import {
   AREA_FILTER,
   DATE_FILTER,
@@ -233,10 +234,11 @@ type EventCardProps = {
   isSaved: boolean
   onGoing: () => void
   onSave: () => void
+  onShare: () => void
   onMoreDetails: () => void
 }
 
-function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: EventCardProps) {
+function EventCard({ event, isGoing, isSaved, onGoing, onSave, onShare, onMoreDetails }: EventCardProps) {
   const [loaded, setLoaded] = useState(false)
   const accent = getAccent(event.genre)
   const bgColor = getBg(event.genre)
@@ -355,6 +357,7 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onMoreDetails }: 
             className="ecf-icon-btn"
             aria-label="Share event"
             title="Share this event"
+            onClick={onShare}
           >
             <Share2 size={18} strokeWidth={2} aria-hidden />
           </button>
@@ -697,6 +700,7 @@ export function EventCardFeed({
   const toggleFavoriteEvent = useAppState((s) => s.toggleFavoriteEvent)
   const isEventFavorited = useAppState((s) => s.isEventFavorited)
   const [cardIdx, setCardIdx] = useState(0)
+  const [shareEventTarget, setShareEventTarget] = useState<EventItem | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollElRef = useRef<HTMLDivElement | null>(null)
   const endSentinelRef = useRef<HTMLDivElement | null>(null)
@@ -1010,6 +1014,7 @@ export function EventCardFeed({
                 isSaved={isEventFavorited(ev.id)}
                 onGoing={() => openEventSourceInNewTab(ev)}
                 onSave={() => toggleFavoriteEvent(toFavoriteEvent(ev))}
+                onShare={() => setShareEventTarget(ev)}
                 onMoreDetails={() => onMoreDetails(ev.id)}
               />
             ))}
@@ -1079,6 +1084,20 @@ export function EventCardFeed({
         </AnimatePresence>,
         (document.querySelector('main.phone-shell') ?? document.getElementById('root')) as HTMLElement,
       )}
+
+      {shareEventTarget
+        ? createPortal(
+            <EventShareSheet
+              title={shareEventTarget.title}
+              venue={`${shareEventTarget.venue}, ${shareEventTarget.district}`}
+              when={shareEventTarget.displayDateTimeLabel ?? shareEventTarget.time}
+              url={shareEventTarget.sourceUrl}
+              fallbackPath={`/discover/${shareEventTarget.id}`}
+              onClose={() => setShareEventTarget(null)}
+            />,
+            (document.querySelector('main.phone-shell') ?? document.getElementById('root')) as HTMLElement,
+          )
+        : null}
     </div>
   )
 }

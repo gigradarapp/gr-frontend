@@ -6,6 +6,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { CheckCircle, ChevronLeft, Funnel, Heart, Info, Maximize2, Minimize2, Pause, Play, RefreshCw, Share2 } from 'lucide-react'
 import { LocationCityPickerControl, CityPickerSheet } from '../../components/LocationCityPickerControl'
+import { EventShareSheet } from '../../components/EventShareSheet'
 import {
   FilterSheet,
   countActiveFilters,
@@ -420,6 +421,7 @@ export function MapView({
   const [localFilters, setLocalFilters] = useState<EventFeedFilters>(filters)
   const [showFilter, setShowFilter] = useState(false)
   const [showCityPicker, setShowCityPicker] = useState(false)
+  const [shareEventTarget, setShareEventTarget] = useState<EventItem | null>(null)
   const [isCycling, setIsCycling] = useState(false)
   const [mapSheetState, setMapSheetState] = useState<MapSheetState>('peek')
   const [holdProgress, setHoldProgress] = useState(0)
@@ -924,7 +926,10 @@ export function MapView({
                             type="button"
                             className="mv-card-icon-btn"
                             aria-label="Share event"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShareEventTarget(event)
+                            }}
                           >
                             <Share2 size={13} strokeWidth={2} aria-hidden />
                           </button>
@@ -1011,6 +1016,20 @@ export function MapView({
         </AnimatePresence>,
         (document.querySelector('main.phone-shell') ?? document.getElementById('root')) as HTMLElement,
       )}
+
+      {shareEventTarget
+        ? createPortal(
+            <EventShareSheet
+              title={shareEventTarget.title}
+              venue={`${shareEventTarget.venue}, ${shareEventTarget.district}`}
+              when={shareEventTarget.displayDateTimeLabel ?? shareEventTarget.time}
+              url={shareEventTarget.sourceUrl}
+              fallbackPath={`/discover/${shareEventTarget.id}`}
+              onClose={() => setShareEventTarget(null)}
+            />,
+            (document.querySelector('main.phone-shell') ?? document.getElementById('root')) as HTMLElement,
+          )
+        : null}
     </div>
   )
 }
