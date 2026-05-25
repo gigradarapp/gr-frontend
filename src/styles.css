@@ -14071,6 +14071,33 @@ button.taste-tag:focus-visible {
   border-radius: 4px;
 }
 
+.ecf-going-badge {
+  position: absolute;
+  top: max(112px, calc(78px + env(safe-area-inset-top, 0px)));
+  right: 34px;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--primary) 58%, rgba(255, 255, 255, 0.18));
+  background: color-mix(in oklab, var(--primary) 16%, rgba(8, 8, 8, 0.78));
+  color: var(--primary-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.72);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.ecf-going-badge svg {
+  flex-shrink: 0;
+}
+
 /* Bottom content — extra bottom inset clears iOS Safari + in-app tab bar overlap on the card */
 .phone-shell:has(.ecf-root) {
   /* Lift actions above iOS browser chrome + tab bar overlap */
@@ -14260,54 +14287,13 @@ button.taste-tag:focus-visible {
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* Action buttons — "I'm Going" takes remaining width; details sizes to content (avoids cramped hyphenation) */
+/* Action buttons — event info remains primary; save/share stay compact */
 .ecf-actions {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: stretch;
   flex-shrink: 0;
-}
-
-.ecf-going-btn {
-  grid-column: 1 / -1;
-  white-space: nowrap;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 11px 12px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    color 0.15s,
-    background 0.15s,
-    filter 0.15s;
-}
-
-.ecf-going-btn:hover {
-  border-color: color-mix(in oklab, var(--primary) 45%, rgba(255, 255, 255, 0.2));
-  color: var(--primary-soft);
-  background: color-mix(in oklab, var(--primary) 14%, rgba(255, 255, 255, 0.08));
-}
-
-.ecf-going-btn:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
-  outline-offset: 2px;
-}
-
-.ecf-going-btn--active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-}
-
-.ecf-going-btn--active:hover {
-  filter: brightness(1.1);
 }
 
 .ecf-details-btn {
@@ -14322,9 +14308,9 @@ button.taste-tag:focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -14345,7 +14331,8 @@ button.taste-tag:focus-visible {
   line-height: 1.25;
   text-align: center;
   hyphens: none;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .ecf-icon-btn {
@@ -14481,11 +14468,6 @@ button.taste-tag:focus-visible {
   }
 
   .ecf-meta-value {
-    font-size: 12px;
-  }
-
-  .ecf-going-btn {
-    padding: 9px 10px;
     font-size: 12px;
   }
 

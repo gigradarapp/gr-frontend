@@ -234,13 +234,12 @@ type EventCardProps = {
   event: EventItem
   isGoing: boolean
   isSaved: boolean
-  onGoing: () => void
   onSave: () => void
   onShare: () => void
   onMoreDetails: () => void
 }
 
-function EventCard({ event, isGoing, isSaved, onGoing, onSave, onShare, onMoreDetails }: EventCardProps) {
+function EventCard({ event, isGoing, isSaved, onSave, onShare, onMoreDetails }: EventCardProps) {
   const [loaded, setLoaded] = useState(false)
   const accent = getAccent(event.genre)
   const bgColor = getBg(event.genre)
@@ -264,6 +263,13 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onShare, onMoreDe
           background: `linear-gradient(160deg, ${bgColor}88 0%, transparent 50%, ${bgColor}ff 75%)`,
         }}
       />
+
+      {isGoing ? (
+        <div className="ecf-going-badge" aria-label="You're going">
+          <CheckCircle size={13} strokeWidth={2.5} aria-hidden />
+          <span>I&apos;m going</span>
+        </div>
+      ) : null}
 
       {/* Tag badge */}
       <div className="ecf-tags">
@@ -323,21 +329,13 @@ function EventCard({ event, isGoing, isSaved, onGoing, onSave, onShare, onMoreDe
         <div className="ecf-actions">
           <button
             type="button"
-            className={`ecf-going-btn${isGoing ? ' ecf-going-btn--active' : ''}`}
-            onClick={onGoing}
-            title={isGoing ? "You're going — tap to undo" : "Mark yourself as going"}
-          >
-            {isGoing ? '✓ I\'m Going' : 'I\'m Going'}
-          </button>
-          <button
-            type="button"
             className="ecf-details-btn"
-            aria-label={`More details for ${event.title}`}
-            title="See full event details"
+            aria-label={`View event info for ${event.title}`}
+            title="View event info"
             onClick={onMoreDetails}
           >
             <Info size={16} strokeWidth={2} aria-hidden />
-            <span className="ecf-details-btn-label">More details</span>
+            <span className="ecf-details-btn-label">View event info</span>
           </button>
           <button
             type="button"
@@ -699,7 +697,7 @@ export function EventCardFeed({
   const [showCityPicker, setShowCityPicker] = useState(false)
   const toggleFavoriteEvent = useAppState((s) => s.toggleFavoriteEvent)
   const isEventFavorited = useAppState((s) => s.isEventFavorited)
-  const { isEventPlanned, toggleEventPlan } = useEventPlans()
+  const { isEventPlanned } = useEventPlans()
   const [cardIdx, setCardIdx] = useState(0)
   const [shareEventTarget, setShareEventTarget] = useState<EventItem | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -1030,7 +1028,6 @@ export function EventCardFeed({
                 event={ev}
                 isGoing={isEventPlanned(ev.id)}
                 isSaved={isEventFavorited(ev.id)}
-                onGoing={() => toggleEventPlan(ev.id)}
                 onSave={() => toggleFavoriteEvent(toFavoriteEvent(ev))}
                 onShare={() => setShareEventTarget(ev)}
                 onMoreDetails={() => onMoreDetails(ev.id)}

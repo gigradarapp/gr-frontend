@@ -275,7 +275,7 @@ export function PlanEventDetail({
               onClick={openEventSourceInNewTab}
             >
               <ExternalLink size={17} strokeWidth={2} aria-hidden />
-              VIEW EVENT INFO
+              VIEW EVENT SOURCE
             </button>
             <button
               type="button"
