@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent,
+  type ReactNode,
+} from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Link } from 'react-router-dom'
 import { divIcon, type DivIcon } from 'leaflet'
@@ -11,20 +19,16 @@ import {
   Cloud,
   CloudDrizzle,
   CloudFog,
-  CloudLightning,
   CloudMoon,
   CloudRain,
   CloudSun,
-  Database,
   Globe2,
   MapPin,
   Moon,
   RefreshCw,
   Sun,
   Table2,
-  ThermometerSun,
   Wind,
-  Waves,
   Zap,
 } from 'lucide-react'
 import {
@@ -62,17 +66,11 @@ type StatFact = {
   value: string
 }
 
-type WeatherContextRowProps = {
-  icon: ReactNode
-  title: string
-  primary: string
-  secondary: string
-}
-
 type AdvisoryRowProps = {
   category: WeatherAdvisoryCategory
   title: string
   message: string
+  context: string
   kind?: 'official' | 'derived' | 'source'
   level: WeatherConditionLevel
 }
@@ -351,7 +349,7 @@ function buildFloodSignal(weather: SingaporeWeatherMapData): WeatherAdvisorySign
     title: 'Flood alerts',
     kind: 'official',
     level: 1,
-    message: `No active PUB flood alert events · updated ${formatRelativeTime(weather.floodAlerts.updatedAt)}.`,
+    message: 'No active PUB flood alert events.',
   }
 }
 
@@ -379,8 +377,10 @@ function buildRainSignal(weather: SingaporeWeatherMapData): WeatherAdvisorySigna
     level,
     message:
       level === 1
-        ? `No rain signal · ${formatMillimetres(maxRain)} max across ${weather.rainfall.stationCount} stations.`
-        : `${formatMillimetres(maxRain)} max · ${pluralize(activeStations, 'station')} reporting rain · ${pluralize(rainForecastAreas, 'forecast area')} mention rain/showers.`,
+        ? 'No wet-weather action needed from current rain readings.'
+        : level >= 4
+          ? 'Heavy rain risk: keep wet-weather routing and sheltered queue plans ready.'
+          : `${pluralize(rainForecastAreas, 'forecast area')} mention rain/showers. Monitor if the event has exposed outdoor queues.`,
   }
 }
 
@@ -434,8 +434,8 @@ function buildHeatSignal(weather: SingaporeWeatherMapData): WeatherAdvisorySigna
     level,
     message:
       level <= 2
-        ? `${formatTemperature(avgC)} avg · ${formatPercent(humidity)} humidity.`
-        : `${temperatureLabel(avgC)} · ${formatTemperature(avgC)} avg · ${formatPercent(humidity)} humidity · ${comfortAdvice(avgC, humidity)}.`,
+        ? comfortAdvice(avgC, humidity)
+        : `${temperatureLabel(avgC)} · ${comfortAdvice(avgC, humidity)}.`,
   }
 }
 
@@ -460,6 +460,37 @@ function buildUvSignal(weather: SingaporeWeatherMapData): WeatherAdvisorySignal 
     level,
     message: latest == null ? 'No UV reading available.' : `${latest} · ${uvLevel(latest)} · ${uvAdvice(latest)}.`,
   }
+}
+
+function advisoryContextLine(
+  signal: WeatherAdvisorySignal,
+  weather: SingaporeWeatherMapData,
+  hottestStation: WeatherStationValue | null,
+  wettestStation: WeatherStationValue | null,
+): string {
+  if (signal.category === 'heat') {
+    return `Outdoor comfort · ${formatTemperature(weather.temperature.avgC)} avg · ${formatPercent(weather.humidity.avgPct)} humidity · hottest ${formatTemperatureStation(hottestStation)}`
+  }
+
+  if (signal.category === 'rain') {
+    const activeText = weather.rainfall.activeStationCount === 0
+      ? 'No active rain stations'
+      : `${weather.rainfall.activeStationCount} active rain stations`
+    return `Rain areas · ${activeText} · ${formatMillimetres(weather.rainfall.maxMm)} max · ${wettestStation ? formatRainfallStation(wettestStation) : `${weather.rainfall.stationCount} stations`}`
+  }
+
+  if (signal.category === 'flood') {
+    return weather.floodAlerts.status === 'ready'
+      ? `Official PUB feed · updated ${formatRelativeTime(weather.floodAlerts.updatedAt)}`
+      : weather.floodAlerts.note
+  }
+
+  if (signal.category === 'uv') {
+    return `UV index · latest ${formatTime(weather.uvIndex.latestHour)}`
+  }
+
+  const thunderAreas = countForecastAreas(weather.twoHourForecast.areas, /thunder/i)
+  return `2-hour nowcast · ${thunderAreas} of ${weather.twoHourForecast.areas.length} areas mention thunder`
 }
 
 function forecastMarkerKind(forecast: string): ForecastMarkerKind {
@@ -601,21 +632,6 @@ function forecastConditionSummary(areas: ForecastAreaWeather[]): {
       { label: 'Runner-up', value: secondary ? `${secondary[0]} (${secondary[1]})` : 'None' },
     ],
   }
-}
-
-function WeatherContextRow({ icon, title, primary, secondary }: WeatherContextRowProps) {
-  return (
-    <div className="admin-weather-context-row">
-      <span className="admin-weather-context-icon" aria-hidden>
-        {icon}
-      </span>
-      <div className="admin-weather-context-copy">
-        <p>{title}</p>
-        <strong>{primary}</strong>
-        <span>{secondary}</span>
-      </div>
-    </div>
-  )
 }
 
 function FourDayOutlookPanel({ weather }: { weather: SingaporeWeatherMapData }) {
@@ -919,16 +935,193 @@ function ScoreMetricRuler({
   )
 }
 
-function AdvisoryIcon({ category }: { category: WeatherAdvisoryCategory }) {
-  if (category === 'flood') return <Waves size={28} strokeWidth={2.3} aria-hidden />
-  if (category === 'rain') return <CloudRain size={28} strokeWidth={2.3} aria-hidden />
-  if (category === 'thunder') return <CloudLightning size={28} strokeWidth={2.3} aria-hidden />
-  if (category === 'heat') return <ThermometerSun size={28} strokeWidth={2.3} aria-hidden />
-  if (category === 'uv') return <Sun size={28} strokeWidth={2.3} aria-hidden />
-  return <CloudSun size={28} strokeWidth={2.3} aria-hidden />
+const ADVISORY_GLYPH_SIZE = 28
+const ADVISORY_GLYPH_STROKE = 2.3
+
+function AdvisoryGlyphFrame({
+  className,
+  size = ADVISORY_GLYPH_SIZE,
+  children,
+}: {
+  className: string
+  size?: number
+  children: ReactNode
+}) {
+  return (
+    <span
+      className={`admin-weather-advisory-glyph ${className}`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      {children}
+    </span>
+  )
 }
 
-function AdvisoryRow({ category, title, message, kind = 'derived', level }: AdvisoryRowProps) {
+function FloodAdvisoryGlyph({
+  size = ADVISORY_GLYPH_SIZE,
+  strokeWidth = ADVISORY_GLYPH_STROKE,
+}: {
+  size?: number
+  strokeWidth?: number
+}) {
+  const stroke = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
+
+  return (
+    <AdvisoryGlyphFrame className="admin-weather-flood-glyph" size={size}>
+      <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+        <path
+          className="admin-weather-flood-wave admin-weather-flood-wave-1"
+          d="M2 8c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"
+          {...stroke}
+        />
+        <path
+          className="admin-weather-flood-wave admin-weather-flood-wave-2"
+          d="M2 13c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"
+          {...stroke}
+        />
+        <path
+          className="admin-weather-flood-wave admin-weather-flood-wave-3"
+          d="M2 18c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"
+          {...stroke}
+        />
+      </svg>
+    </AdvisoryGlyphFrame>
+  )
+}
+
+function RainAdvisoryGlyph({
+  size = ADVISORY_GLYPH_SIZE,
+  strokeWidth = ADVISORY_GLYPH_STROKE,
+}: {
+  size?: number
+  strokeWidth?: number
+}) {
+  const stroke = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth,
+    strokeLinecap: 'round' as const,
+  }
+
+  return (
+    <AdvisoryGlyphFrame className="admin-weather-rain-glyph" size={size}>
+      <svg viewBox="0 0 24 24" width={size} height={size} className="admin-weather-rain-cloud-svg" aria-hidden>
+        <path
+          className="admin-weather-rain-cloud"
+          d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+          {...stroke}
+        />
+        <line className="admin-weather-rain-drop admin-weather-rain-drop-1" x1="8" y1="19" x2="8" y2="22" {...stroke} />
+        <line className="admin-weather-rain-drop admin-weather-rain-drop-2" x1="12" y1="19" x2="12" y2="22" {...stroke} />
+        <line className="admin-weather-rain-drop admin-weather-rain-drop-3" x1="16" y1="19" x2="16" y2="22" {...stroke} />
+      </svg>
+    </AdvisoryGlyphFrame>
+  )
+}
+
+function ThunderAdvisoryGlyph({
+  size = ADVISORY_GLYPH_SIZE,
+  strokeWidth = ADVISORY_GLYPH_STROKE,
+}: {
+  size?: number
+  strokeWidth?: number
+}) {
+  const boltSize = Math.max(12, Math.round(size * 0.52))
+
+  return (
+    <AdvisoryGlyphFrame className="admin-weather-thunder-advisory-glyph" size={size}>
+      <Cloud size={size} strokeWidth={strokeWidth} className="admin-weather-thunder-advisory-cloud" />
+      <Zap
+        size={boltSize}
+        strokeWidth={strokeWidth + 0.1}
+        fill="currentColor"
+        className="admin-weather-thunder-advisory-bolt"
+      />
+    </AdvisoryGlyphFrame>
+  )
+}
+
+function HeatAdvisoryGlyph({
+  size = ADVISORY_GLYPH_SIZE,
+  strokeWidth = ADVISORY_GLYPH_STROKE,
+}: {
+  size?: number
+  strokeWidth?: number
+}) {
+  const sunSize = Math.max(11, Math.round(size * 0.46))
+  const stroke = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
+
+  return (
+    <AdvisoryGlyphFrame className="admin-weather-heat-glyph" size={size}>
+      <svg viewBox="0 0 24 24" width={size} height={size} className="admin-weather-heat-tube-svg" aria-hidden>
+        <path
+          className="admin-weather-heat-tube"
+          d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a6.5 6.5 0 1 0 5 0z"
+          {...stroke}
+        />
+        <line className="admin-weather-heat-mercury" x1="11.5" y1="11" x2="11.5" y2="17.5" {...stroke} />
+      </svg>
+      <Sun size={sunSize} strokeWidth={strokeWidth} className="admin-weather-heat-sun" />
+    </AdvisoryGlyphFrame>
+  )
+}
+
+function UvAdvisoryGlyph({
+  size = ADVISORY_GLYPH_SIZE,
+  strokeWidth = ADVISORY_GLYPH_STROKE,
+}: {
+  size?: number
+  strokeWidth?: number
+}) {
+  const stroke = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth,
+    strokeLinecap: 'round' as const,
+  }
+
+  return (
+    <AdvisoryGlyphFrame className="admin-weather-uv-glyph" size={size}>
+      <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+        <circle className="admin-weather-uv-disc" cx="12" cy="12" r="4" {...stroke} />
+        <g className="admin-weather-uv-rays">
+          <line x1="12" y1="2" x2="12" y2="5" {...stroke} />
+          <line x1="12" y1="19" x2="12" y2="22" {...stroke} />
+          <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" {...stroke} />
+          <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" {...stroke} />
+          <line x1="2" y1="12" x2="5" y2="12" {...stroke} />
+          <line x1="19" y1="12" x2="22" y2="12" {...stroke} />
+          <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" {...stroke} />
+          <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" {...stroke} />
+        </g>
+      </svg>
+    </AdvisoryGlyphFrame>
+  )
+}
+
+function AdvisoryIcon({ category }: { category: WeatherAdvisoryCategory }) {
+  if (category === 'flood') return <FloodAdvisoryGlyph />
+  if (category === 'rain') return <RainAdvisoryGlyph />
+  if (category === 'thunder') return <ThunderAdvisoryGlyph />
+  if (category === 'heat') return <HeatAdvisoryGlyph />
+  if (category === 'uv') return <UvAdvisoryGlyph />
+  return <CloudSun size={ADVISORY_GLYPH_SIZE} strokeWidth={ADVISORY_GLYPH_STROKE} aria-hidden />
+}
+
+function AdvisoryRow({ category, title, message, context, kind = 'derived', level }: AdvisoryRowProps) {
   const tone = conditionTone(level)
   return (
     <article className={`admin-weather-advisory-row is-${tone} is-level-${level}`}>
@@ -950,6 +1143,7 @@ function AdvisoryRow({ category, title, message, kind = 'derived', level }: Advi
       <ScoreMetricRuler category={category} level={level} />
       <ScoreRuler />
       <div className="admin-weather-advisory-body">
+        <p className="admin-weather-advisory-context">{context}</p>
         <p className="admin-weather-alert-message">{message}</p>
       </div>
     </article>
@@ -1151,11 +1345,6 @@ export function AdminWeatherMapPage() {
     }
   }, [countryMenuOpen])
 
-  const rainSummary = useMemo(() => {
-    if (!weather) return 'No rain data'
-    if (weather.rainfall.activeStationCount === 0) return 'No active rain stations'
-    return `${weather.rainfall.activeStationCount} active rain stations`
-  }, [weather])
   const forecastSummary = useMemo(
     () => (weather ? forecastConditionSummary(weather.twoHourForecast.areas) : null),
     [weather],
@@ -1418,46 +1607,8 @@ export function AdminWeatherMapPage() {
 
             <FourDayOutlookPanel weather={weather} />
 
-            <article className="admin-weather-nea-panel admin-weather-context-panel">
-              <h2>Event weather context</h2>
-              <div className="admin-weather-context-list">
-                <WeatherContextRow
-                  icon={<ThermometerSun size={36} strokeWidth={2.3} />}
-                  title="Outdoor comfort"
-                  primary={temperatureLabel(weather.temperature.avgC)}
-                  secondary={`${formatTemperature(weather.temperature.avgC)} avg · ${formatPercent(weather.humidity.avgPct)} humidity · hottest ${formatTemperatureStation(hottestStation)}`}
-                />
-                <WeatherContextRow
-                  icon={<CloudRain size={36} strokeWidth={2.3} />}
-                  title="Rain areas"
-                  primary={rainSummary}
-                  secondary={`${formatMillimetres(weather.rainfall.maxMm)} max · ${wettestStation ? formatRainfallStation(wettestStation) : `${weather.rainfall.stationCount} stations`}`}
-                />
-                <WeatherContextRow
-                  icon={<Waves size={36} strokeWidth={2.3} />}
-                  title="Flood alerts"
-                  primary={weather.floodAlerts.activeAlertCount > 0 ? `${weather.floodAlerts.activeAlertCount} active` : 'No active alerts'}
-                  secondary={weather.floodAlerts.status === 'ready'
-                    ? `Official PUB feed · updated ${formatRelativeTime(weather.floodAlerts.updatedAt)}`
-                    : weather.floodAlerts.note}
-                />
-                <WeatherContextRow
-                  icon={<Sun size={36} strokeWidth={2.3} />}
-                  title="UV index"
-                  primary={`${weather.uvIndex.latestValue ?? 'N/A'} · ${uvLevel(weather.uvIndex.latestValue)}`}
-                  secondary={`${uvAdvice(weather.uvIndex.latestValue)} · latest ${formatTime(weather.uvIndex.latestHour)}`}
-                />
-                <WeatherContextRow
-                  icon={<Database size={36} strokeWidth={2.3} />}
-                  title="Region cache"
-                  primary="country:SG"
-                  secondary={`${cacheStateLabel(weather)} · refreshed ${formatRelativeTime(weather.cachedAt)}`}
-                />
-              </div>
-            </article>
-
             <article className="admin-weather-nea-panel admin-weather-advisory-panel">
-              <h2>Alerts & derived signals (Islandwide)</h2>
+              <h2>Event weather signals (Islandwide)</h2>
               <div className="admin-weather-advisory-scale" aria-label="Weather condition scale">
                 {WEATHER_CONDITION_LEVELS.map((level) => (
                   <span key={level} className={`is-level-${level}`}>
@@ -1473,13 +1624,14 @@ export function AdminWeatherMapPage() {
                     category={signal.category}
                     title={signal.title}
                     message={signal.message}
+                    context={advisoryContextLine(signal, weather, hottestStation, wettestStation)}
                     kind={signal.kind}
                     level={signal.level}
                   />
                 ))}
               </div>
               <p className="admin-weather-advisory-note">
-                Flood uses official PUB alert events. Rain, thunder, heat, and UV are scored from data.gov.sg readings and forecasts.
+                Flood uses official PUB alert events. Rain, thunder, heat, and UV are scored from data.gov.sg readings and forecasts. Backend cache: {cacheStateLabel(weather)} · refreshed {formatRelativeTime(weather.cachedAt)}.
               </p>
             </article>
           </section>

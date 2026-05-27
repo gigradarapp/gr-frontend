@@ -1186,6 +1186,90 @@
   background: color-mix(in oklab, currentColor 16%, transparent);
 }
 
+.admin-weather-advisory-glyph {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  color: inherit;
+}
+
+.admin-weather-advisory-glyph svg {
+  display: block;
+  overflow: visible;
+}
+
+.admin-weather-flood-wave {
+  stroke-dasharray: 14 8;
+  animation: admin-weather-advisory-flood-flow 1.9s linear infinite;
+}
+
+.admin-weather-flood-wave-2 {
+  animation-delay: -0.35s;
+}
+
+.admin-weather-flood-wave-3 {
+  animation-delay: -0.7s;
+}
+
+.admin-weather-rain-cloud {
+  transform-origin: center;
+}
+
+.admin-weather-rain-drop {
+  transform-origin: center top;
+  animation: admin-weather-advisory-rain-fall 1.35s ease-in infinite;
+}
+
+.admin-weather-rain-drop-2 {
+  animation-delay: 0.22s;
+}
+
+.admin-weather-rain-drop-3 {
+  animation-delay: 0.44s;
+}
+
+.admin-weather-thunder-advisory-glyph .admin-weather-thunder-advisory-cloud {
+  display: block;
+}
+
+.admin-weather-thunder-advisory-glyph .admin-weather-thunder-advisory-bolt {
+  position: absolute;
+  right: -6%;
+  bottom: 4%;
+  filter: drop-shadow(0 0 6px color-mix(in oklab, currentColor 45%, transparent));
+  animation: admin-weather-outlook-bolt 2.6s ease-in-out infinite;
+}
+
+.admin-weather-heat-tube-svg {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-weather-heat-mercury {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: admin-weather-advisory-mercury 2.8s ease-in-out infinite;
+}
+
+.admin-weather-heat-sun {
+  position: absolute;
+  top: -8%;
+  right: -10%;
+  z-index: 0;
+  color: color-mix(in oklab, currentColor 88%, #facc15);
+  animation: admin-weather-advisory-heat-glow 2.8s ease-in-out infinite;
+}
+
+.admin-weather-uv-disc {
+  transform-origin: 12px 12px;
+  animation: admin-weather-advisory-uv-core 3.2s ease-in-out infinite;
+}
+
+.admin-weather-uv-rays {
+  transform-origin: 12px 12px;
+  animation: admin-weather-advisory-uv-spin 10s linear infinite;
+}
+
 .admin-weather-advisory-badge {
   flex: 0 0 auto;
   display: inline-flex;
@@ -1335,8 +1419,17 @@
 
 .admin-weather-advisory-body {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
+}
+
+.admin-weather-advisory-context {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 760;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
 }
 
 .admin-weather-alert-message {
@@ -1717,6 +1810,71 @@
   }
 }
 
+@keyframes admin-weather-advisory-flood-flow {
+  to {
+    stroke-dashoffset: -44;
+  }
+}
+
+@keyframes admin-weather-advisory-rain-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px) scaleY(0.7);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(7px) scaleY(1);
+  }
+}
+
+@keyframes admin-weather-advisory-mercury {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes admin-weather-advisory-heat-glow {
+  0%,
+  100% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px color-mix(in oklab, #fb923c 55%, transparent));
+  }
+}
+
+@keyframes admin-weather-advisory-uv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes admin-weather-advisory-uv-core {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 @keyframes admin-weather-forecast-face-in {
   from {
     opacity: 0;
@@ -1755,7 +1913,14 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-weather-outlook-icon svg,
   .admin-weather-outlook-icon .admin-weather-thunder-shower-rain,
-  .admin-weather-outlook-icon .admin-weather-thunder-shower-bolt {
+  .admin-weather-outlook-icon .admin-weather-thunder-shower-bolt,
+  .admin-weather-advisory-glyph .admin-weather-flood-wave,
+  .admin-weather-advisory-glyph .admin-weather-rain-drop,
+  .admin-weather-advisory-glyph .admin-weather-thunder-advisory-bolt,
+  .admin-weather-advisory-glyph .admin-weather-heat-mercury,
+  .admin-weather-advisory-glyph .admin-weather-heat-sun,
+  .admin-weather-advisory-glyph .admin-weather-uv-rays,
+  .admin-weather-advisory-glyph .admin-weather-uv-disc {
     animation: none !important;
   }
 
