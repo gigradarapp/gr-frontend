@@ -32,6 +32,9 @@ export type WeatherStationValue = {
 export type FloodAlertEvent = {
   label: string
   detail: string
+  lat: number | null
+  lng: number | null
+  radiusM: number | null
 }
 
 export type FourDayOutlookDay = {

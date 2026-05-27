@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -10,7 +11,7 @@ import {
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Link } from 'react-router-dom'
 import { divIcon, type DivIcon } from 'leaflet'
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { Circle, CircleMarker, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   ArrowLeft,
@@ -36,6 +37,7 @@ import {
   isWeatherCountryAvailable,
   weatherMapCountries,
   type ForecastAreaWeather,
+  type FloodAlertEvent,
   type FourDayOutlookDay,
   type SingaporeWeatherMapData,
   type TwentyFourHourForecastPeriod,
@@ -75,9 +77,15 @@ type AdvisoryRowProps = {
   category: WeatherAdvisoryCategory
   title: string
   message: string
-  context: string
+  absoluteValue: AdvisoryAbsoluteValue
   kind?: 'official' | 'derived' | 'source'
   level: WeatherConditionLevel
+}
+
+type AdvisoryAbsoluteValue = {
+  primary: string
+  secondary?: string
+  label: string
 }
 
 type WeatherConditionLevel = 1 | 2 | 3 | 4 | 5
@@ -105,6 +113,31 @@ type WeatherAdvisorySignal = {
 }
 
 const WEATHER_CONDITION_LEVELS: WeatherConditionLevel[] = [1, 2, 3, 4, 5]
+
+const MAP_FORECAST_LEGEND: Array<{ kind: ForecastMarkerKind; label: string }> = [
+  { kind: 'fair', label: 'Fair' },
+  { kind: 'fair-night', label: 'Fair (night)' },
+  { kind: 'partly-cloudy', label: 'Partly cloudy' },
+  { kind: 'partly-cloudy-night', label: 'Partly cloudy (night)' },
+  { kind: 'cloudy', label: 'Cloudy' },
+  { kind: 'drizzle', label: 'Drizzle / light' },
+  { kind: 'rain', label: 'Rain / showers' },
+  { kind: 'heavy-rain', label: 'Heavy rain' },
+  { kind: 'thunder', label: 'Thunder' },
+  { kind: 'heavy-thunder', label: 'Heavy thunder' },
+  { kind: 'wind', label: 'Windy' },
+  { kind: 'haze', label: 'Haze / mist' },
+]
+
+type TemperatureBucket = 'below-27' | '27-30' | '30-33' | '33-plus'
+
+const TEMPERATURE_LEGEND: Array<{ id: TemperatureBucket; label: string; color: string }> = [
+  { id: 'below-27', label: 'Below 27°C', color: '#22c55e' },
+  { id: '27-30', label: '27–30°C', color: '#facc15' },
+  { id: '30-33', label: '30–33°C', color: '#f97316' },
+  { id: '33-plus', label: '33°C and above', color: '#ef4444' },
+]
+
 const forecastIconCache = new Map<string, DivIcon>()
 
 function getWeatherCountryMapDefaults(country: WeatherMapCountryCode): {
@@ -246,27 +279,9 @@ function formatCacheRefreshRate(cachedAt: string, expiresAt: string): string {
   return `refresh every ${hours}h`
 }
 
-function formatTemperatureStation(station: WeatherStationValue | null): string {
-  if (!station) return 'N/A'
-  return `${station.name} ${formatTemperature(station.value)}`
-}
-
-function formatRainfallStation(station: WeatherStationValue | null): string {
-  if (!station) return 'N/A'
-  return `${station.name} ${formatMillimetres(station.value)}`
-}
-
 function maxStation(stations: WeatherStationValue[]): WeatherStationValue | null {
   if (stations.length === 0) return null
   return stations.reduce((max, station) => (station.value > max.value ? station : max), stations[0]!)
-}
-
-function temperatureLabel(avgC: number | null): string {
-  if (avgC == null) return 'No reading'
-  if (avgC < 27) return 'Comfortable'
-  if (avgC < 30) return 'Warm'
-  if (avgC < 33) return 'Hot and humid'
-  return 'Very hot'
 }
 
 function comfortAdvice(avgC: number | null, humidityPct: number | null): string {
@@ -276,15 +291,6 @@ function comfortAdvice(avgC: number | null, humidityPct: number | null): string 
   if (avgC >= 27 && (humidityPct ?? 0) >= 70) return 'Warm and sticky outdoors'
   if (avgC >= 27) return 'Warm, manageable outdoors'
   return 'Comfortable for most users'
-}
-
-function uvLevel(value: number | null): string {
-  if (value == null) return 'Not available'
-  if (value <= 2) return 'Low'
-  if (value <= 5) return 'Moderate'
-  if (value <= 7) return 'High'
-  if (value <= 10) return 'Very high'
-  return 'Extreme'
 }
 
 function uvAdvice(value: number | null): string {
@@ -437,10 +443,7 @@ function buildHeatSignal(weather: SingaporeWeatherMapData): WeatherAdvisorySigna
     title: 'Heat signal',
     kind: 'derived',
     level,
-    message:
-      level <= 2
-        ? comfortAdvice(avgC, humidity)
-        : `${temperatureLabel(avgC)} · ${comfortAdvice(avgC, humidity)}.`,
+    message: comfortAdvice(avgC, humidity),
   }
 }
 
@@ -463,39 +466,64 @@ function buildUvSignal(weather: SingaporeWeatherMapData): WeatherAdvisorySignal 
     title: 'UV exposure signal',
     kind: 'derived',
     level,
-    message: latest == null ? 'No UV reading available.' : `${latest} · ${uvLevel(latest)} · ${uvAdvice(latest)}.`,
+    message: latest == null ? 'No UV reading available.' : uvAdvice(latest),
   }
 }
 
-function advisoryContextLine(
+function advisoryAbsoluteValue(
   signal: WeatherAdvisorySignal,
   weather: SingaporeWeatherMapData,
   hottestStation: WeatherStationValue | null,
   wettestStation: WeatherStationValue | null,
-): string {
+): AdvisoryAbsoluteValue {
   if (signal.category === 'heat') {
-    return `Outdoor comfort · ${formatTemperature(weather.temperature.avgC)} avg · ${formatPercent(weather.humidity.avgPct)} humidity · hottest ${formatTemperatureStation(hottestStation)}`
-  }
-
-  if (signal.category === 'rain') {
-    const activeText = weather.rainfall.activeStationCount === 0
-      ? 'No active rain stations'
-      : `${weather.rainfall.activeStationCount} active rain stations`
-    return `Rain areas · ${activeText} · ${formatMillimetres(weather.rainfall.maxMm)} max · ${wettestStation ? formatRainfallStation(wettestStation) : `${weather.rainfall.stationCount} stations`}`
-  }
-
-  if (signal.category === 'flood') {
-    return weather.floodAlerts.status === 'ready'
-      ? `Official PUB feed · updated ${formatRelativeTime(weather.floodAlerts.updatedAt)}`
-      : weather.floodAlerts.note
+    const hottest = hottestStation ? formatTemperature(hottestStation.value) : formatTemperature(weather.temperature.maxC)
+    return {
+      label: 'Now',
+      primary: formatTemperature(weather.temperature.avgC),
+      secondary: `${formatPercent(weather.humidity.avgPct)} humidity · hottest ${hottest}`,
+    }
   }
 
   if (signal.category === 'uv') {
-    return `UV index · latest ${formatTime(weather.uvIndex.latestHour)}`
+    const latest = weather.uvIndex.latestValue
+    return {
+      label: 'UV index',
+      primary: latest == null ? 'N/A' : String(latest),
+    }
   }
 
-  const thunderAreas = countForecastAreas(weather.twoHourForecast.areas, /thunder/i)
-  return `2-hour nowcast · ${thunderAreas} of ${weather.twoHourForecast.areas.length} areas mention thunder`
+  if (signal.category === 'rain') {
+    const wettest = wettestStation ? formatMillimetres(wettestStation.value) : formatMillimetres(weather.rainfall.maxMm)
+    return {
+      label: 'Max rain',
+      primary: wettest,
+      secondary: `${weather.rainfall.activeStationCount} of ${weather.rainfall.stationCount} stations reporting`,
+    }
+  }
+
+  if (signal.category === 'thunder') {
+    const thunderAreas = countForecastAreas(weather.twoHourForecast.areas, /thunder/i)
+    const totalAreas = weather.twoHourForecast.areas.length
+    return {
+      label: 'Thunder areas',
+      primary: String(thunderAreas),
+      secondary: totalAreas > 0 ? `of ${totalAreas} nowcast areas` : undefined,
+    }
+  }
+
+  if (signal.category === 'flood') {
+    if (weather.floodAlerts.status !== 'ready') {
+      return { label: 'Active alerts', primary: 'N/A', secondary: 'Feed unavailable' }
+    }
+    return {
+      label: 'Active alerts',
+      primary: String(weather.floodAlerts.activeAlertCount),
+      secondary: weather.floodAlerts.activeAlertCount === 1 ? 'PUB flood event' : 'PUB flood events',
+    }
+  }
+
+  return { label: 'Reading', primary: 'N/A' }
 }
 
 function forecastMarkerKind(forecast: string): ForecastMarkerKind {
@@ -595,11 +623,24 @@ function forecastMarkerIcon(kind: ForecastMarkerKind, size: 'area' | 'region' = 
   return icon
 }
 
+function temperatureBucket(value: number): TemperatureBucket {
+  if (value >= 33) return '33-plus'
+  if (value >= 30) return '30-33'
+  if (value >= 27) return '27-30'
+  return 'below-27'
+}
+
 function temperatureColor(value: number): string {
-  if (value >= 33) return '#ef4444'
-  if (value >= 30) return '#f97316'
-  if (value >= 27) return '#facc15'
-  return '#22c55e'
+  const bucket = TEMPERATURE_LEGEND.find((item) => item.id === temperatureBucket(value))
+  return bucket?.color ?? '#22c55e'
+}
+
+function activeTemperatureBuckets(stations: WeatherStationValue[]): Set<TemperatureBucket> {
+  const buckets = new Set<TemperatureBucket>()
+  for (const station of stations) {
+    buckets.add(temperatureBucket(station.value))
+  }
+  return buckets
 }
 
 function cacheStateLabel(data: SingaporeWeatherMapData): string {
@@ -726,14 +767,38 @@ function WeatherAdviceSection({ adviceItems, ariaLabel }: { adviceItems: Weather
   )
 }
 
-function BackendCacheStatus({ weather }: { weather: SingaporeWeatherMapData | null }) {
+function BackendCacheStatus({
+  weather,
+  onForceRefresh,
+  isRefreshing,
+}: {
+  weather: SingaporeWeatherMapData | null
+  onForceRefresh: () => void
+  isRefreshing: boolean
+}) {
   if (!weather) return null
 
   return (
-    <div className="admin-weather-backend-cache" aria-label="Backend cache status">
-      <small>Backend cache</small>
-      <strong>{formatCacheTtl(weather.cacheExpiresAt)}</strong>
-      <span>{formatCacheRefreshRate(weather.cachedAt, weather.cacheExpiresAt)}</span>
+    <div
+      className="admin-weather-backend-cache"
+      aria-label={`Backend cache ${formatCacheTtl(weather.cacheExpiresAt)} · ${formatCacheRefreshRate(weather.cachedAt, weather.cacheExpiresAt)}`}
+      title={formatCacheRefreshRate(weather.cachedAt, weather.cacheExpiresAt)}
+    >
+      <div className="admin-weather-backend-cache-meta">
+        <small>Cache</small>
+        <strong>{formatCacheTtl(weather.cacheExpiresAt)}</strong>
+      </div>
+      <button
+        type="button"
+        className="admin-weather-backend-cache-refresh"
+        onClick={onForceRefresh}
+        disabled={isRefreshing}
+        aria-label="Force backend re-cache"
+        title="Force backend re-cache"
+      >
+        <RefreshCw size={12} strokeWidth={2.4} aria-hidden className={isRefreshing ? 'is-spinning' : undefined} />
+        Re-cache
+      </button>
     </div>
   )
 }
@@ -1058,17 +1123,32 @@ function ThunderAdvisoryGlyph({
   size?: number
   strokeWidth?: number
 }) {
-  const boltSize = Math.max(12, Math.round(size * 0.52))
+  const stroke = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
 
   return (
     <AdvisoryGlyphFrame className="admin-weather-thunder-advisory-glyph" size={size}>
-      <Cloud size={size} strokeWidth={strokeWidth} className="admin-weather-thunder-advisory-cloud" />
-      <Zap
-        size={boltSize}
-        strokeWidth={strokeWidth + 0.1}
-        fill="currentColor"
-        className="admin-weather-thunder-advisory-bolt"
-      />
+      <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+        <path
+          className="admin-weather-thunder-advisory-cloud"
+          d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+          {...stroke}
+        />
+        <path
+          className="admin-weather-thunder-advisory-bolt"
+          d="M13 19.5 9.5 23.5h2.8L11 27"
+          fill="currentColor"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
     </AdvisoryGlyphFrame>
   )
 }
@@ -1177,7 +1257,14 @@ function AdvisoryIcon({ category }: { category: WeatherAdvisoryCategory }) {
   return <CloudSun size={ADVISORY_GLYPH_SIZE} strokeWidth={ADVISORY_GLYPH_STROKE} aria-hidden />
 }
 
-function AdvisoryRow({ category, title, message, context, kind = 'derived', level }: AdvisoryRowProps) {
+function AdvisoryRow({
+  category,
+  title,
+  message,
+  absoluteValue,
+  kind = 'derived',
+  level,
+}: AdvisoryRowProps) {
   const tone = conditionTone(level)
   return (
     <article className={`admin-weather-advisory-row is-${tone} is-level-${level}`}>
@@ -1199,15 +1286,22 @@ function AdvisoryRow({ category, title, message, context, kind = 'derived', leve
             </div>
           </div>
         </div>
-        <span className={`admin-weather-advisory-badge is-${kind}`}>
-          {kind === 'official' ? 'Official' : kind === 'source' ? 'Source' : 'Derived'}
-        </span>
+        <div className="admin-weather-advisory-head-side">
+          <div className="admin-weather-advisory-absolute" aria-label={`${absoluteValue.label}: ${absoluteValue.primary}`}>
+            <span>{absoluteValue.label}</span>
+            <strong>{absoluteValue.primary}</strong>
+            {absoluteValue.secondary ? <small>{absoluteValue.secondary}</small> : null}
+          </div>
+          <span className={`admin-weather-advisory-badge is-${kind}`}>
+            {kind === 'official' ? 'Official Source' : kind === 'source' ? 'Source' : 'Algorithm Driven'}
+          </span>
+        </div>
       </div>
       <ScoreBar level={level} />
       <ScoreMetricRuler category={category} level={level} />
       <ScoreRuler />
       <div className="admin-weather-advisory-body">
-        <p className="admin-weather-advisory-context">{context}</p>
+        <b className="admin-weather-advisory-recommendations-label">Recommendations</b>
         <p className="admin-weather-alert-message">{message}</p>
       </div>
     </article>
@@ -1238,6 +1332,168 @@ function MapLegendForecastIcon({ kind }: { kind: ForecastMarkerKind }) {
     <span className={`admin-weather-map-legend-icon is-${kind}`} aria-hidden>
       <ForecastMarkerGlyph kind={kind} size={11} />
     </span>
+  )
+}
+
+function MapLegendCollapsible({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string
+  defaultOpen?: boolean
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  const bodyId = useId()
+
+  return (
+    <section className={`admin-weather-map-legend-panel${open ? ' is-open' : ' is-collapsed'}`}>
+      <button
+        type="button"
+        className="admin-weather-map-legend-header"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="admin-weather-map-legend-title">{title}</span>
+        <ChevronDown className="admin-weather-map-legend-chevron" size={16} strokeWidth={2.4} aria-hidden />
+      </button>
+      <div id={bodyId} className="admin-weather-map-legend-body" aria-hidden={!open}>
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function MapWeatherLegendPanel({ activeKinds }: { activeKinds: Set<ForecastMarkerKind> }) {
+  return (
+    <MapLegendCollapsible title="Weather legend">
+      <div className="admin-weather-map-legend-keys is-weather" aria-label="Weather forecast icon legend">
+        {MAP_FORECAST_LEGEND.map(({ kind, label }) => (
+          <span key={kind} className={activeKinds.has(kind) ? 'is-on-map' : ''}>
+            <MapLegendForecastIcon kind={kind} />
+            {label}
+          </span>
+        ))}
+      </div>
+      <p className="admin-weather-map-legend-hint">
+        {activeKinds.size === 0
+          ? 'No forecast markers on the map for this layer.'
+          : activeKinds.size === 1
+            ? 'All visible forecast markers use the highlighted icon — conditions are uniform for this layer.'
+            : `${activeKinds.size} icon types are on the map now (highlighted).`}
+      </p>
+    </MapLegendCollapsible>
+  )
+}
+
+function MapTemperatureLegendPanel({ activeBuckets }: { activeBuckets: Set<TemperatureBucket> }) {
+  const activeCount = activeBuckets.size
+
+  return (
+    <MapLegendCollapsible title="Temperature legend">
+      <div className="admin-weather-map-temp-scale" aria-label="Temperature color scale">
+        {TEMPERATURE_LEGEND.map((item) => (
+          <span
+            key={item.id}
+            className={`admin-weather-map-temp-scale-item${activeBuckets.has(item.id) ? ' is-on-map' : ''}`}
+          >
+            <i className="admin-weather-map-temp-swatch" style={{ background: item.color }} aria-hidden />
+            {item.label}
+          </span>
+        ))}
+      </div>
+      <p className="admin-weather-map-legend-hint">
+        {activeCount === 0
+          ? 'No temperature stations on the map.'
+          : activeCount === 1
+            ? 'All visible station dots use the highlighted range.'
+            : `${activeCount} ranges appear on the map now (highlighted).`}
+      </p>
+    </MapLegendCollapsible>
+  )
+}
+
+function plottableFloodAlerts(alerts: FloodAlertEvent[]): FloodAlertEvent[] {
+  return alerts.filter((alert) => alert.lat != null && alert.lng != null)
+}
+
+function MapFloodLegendPanel({ activeCount }: { activeCount: number }) {
+  return (
+    <MapLegendCollapsible title="Flood legend">
+      <div className="admin-weather-map-legend-keys is-flood">
+        <span className={activeCount > 0 ? 'is-on-map' : undefined}>
+          <i className="is-flood" aria-hidden />
+          Active PUB flood alert
+        </span>
+      </div>
+      <p className="admin-weather-map-legend-hint">
+        {activeCount === 0
+          ? 'No active flood alerts on the map.'
+          : `${activeCount} active ${activeCount === 1 ? 'alert' : 'alerts'} pinned from PUB.`}
+      </p>
+    </MapLegendCollapsible>
+  )
+}
+
+function FloodAlertMarker({ alert }: { alert: FloodAlertEvent }) {
+  if (alert.lat == null || alert.lng == null) return null
+
+  const color = '#ef4444'
+
+  return (
+    <>
+      {alert.radiusM != null && alert.radiusM > 0 ? (
+        <Circle
+          center={[alert.lat, alert.lng]}
+          radius={alert.radiusM}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.14,
+            opacity: 0.55,
+            weight: 2,
+          }}
+        />
+      ) : null}
+      <CircleMarker
+        center={[alert.lat, alert.lng]}
+        radius={8}
+        pathOptions={{
+          color: '#fff',
+          fillColor: color,
+          fillOpacity: 0.95,
+          opacity: 1,
+          weight: 2,
+        }}
+      >
+        <Tooltip direction="top" opacity={0.96}>
+          <strong>{alert.label}</strong>
+          {alert.detail ? (
+            <>
+              <br />
+              {alert.detail}
+            </>
+          ) : null}
+        </Tooltip>
+        <Popup>
+          <strong>{alert.label}</strong>
+          {alert.detail ? (
+            <>
+              <br />
+              {alert.detail}
+            </>
+          ) : null}
+          {alert.radiusM != null && alert.radiusM > 0 ? (
+            <>
+              <br />
+              Alert radius: {Math.round(alert.radiusM)} m
+            </>
+          ) : null}
+        </Popup>
+      </CircleMarker>
+    </>
   )
 }
 
@@ -1361,6 +1617,7 @@ export function AdminWeatherMapPage() {
   const [mapForecastLayer, setMapForecastLayer] = useState<MapForecastLayer>('twoHour')
   const [showMapForecast, setShowMapForecast] = useState(true)
   const [showMapTemperature, setShowMapTemperature] = useState(true)
+  const [showMapFlood, setShowMapFlood] = useState(true)
   const countryPickerRef = useRef<HTMLDivElement>(null)
 
   const countryAvailable = isWeatherCountryAvailable(country)
@@ -1490,89 +1747,97 @@ export function AdminWeatherMapPage() {
     const regionCount = mapForecastAreas.length
     return `24-hour forecast · ${activeTwentyFourHourPeriod.validText} · ${regionCount} ${regionCount === 1 ? 'region' : 'regions'}`
   }, [weather, mapForecastLayer, twentyFourHourMapReady, activeTwentyFourHourPeriod, mapForecastAreas.length])
-
+  const mapActiveForecastKinds = useMemo(() => {
+    const kinds = new Set<ForecastMarkerKind>()
+    for (const area of mapForecastAreas) {
+      kinds.add(forecastMarkerKind(area.forecast))
+    }
+    return kinds
+  }, [mapForecastAreas])
+  const mapActiveTemperatureBuckets = useMemo(
+    () => (weather ? activeTemperatureBuckets(weather.temperature.stations) : new Set<TemperatureBucket>()),
+    [weather],
+  )
+  const mapPlottableFloodAlerts = useMemo(
+    () => (weather && weather.floodAlerts.status === 'ready' ? plottableFloodAlerts(weather.floodAlerts.alerts) : []),
+    [weather],
+  )
   return (
     <main className="admin-weather-page">
       <section className="admin-weather-shell" aria-labelledby="admin-weather-title">
         <header className="admin-weather-header">
           <Link to="/admin" className="admin-weather-back" aria-label="Back to admin">
-            <ArrowLeft size={18} strokeWidth={2.2} aria-hidden />
+            <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
           </Link>
-          <div>
-            <p className="admin-weather-kicker">Admin weather</p>
-            <h1 id="admin-weather-title">Weather Map</h1>
-            <p className="admin-weather-copy">
-              Region-cached weather layer for event context.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="admin-weather-refresh"
-            onClick={() => void loadSingaporeWeather(true)}
-            disabled={!countryAvailable || loadState === 'loading'}
-          >
-            <RefreshCw size={16} strokeWidth={2.2} aria-hidden className={loadState === 'loading' ? 'is-spinning' : undefined} />
-            Refresh
-          </button>
-        </header>
-
-        <div className="admin-weather-control-row">
-          <div className="admin-weather-country-picker" ref={countryPickerRef}>
-            <button
-              type="button"
-              className="admin-weather-country-trigger"
-              aria-haspopup="listbox"
-              aria-expanded={countryMenuOpen}
-              aria-label={`Country: ${selectedCountry.label}`}
-              onClick={() => setCountryMenuOpen((open) => !open)}
-            >
-              <span className="admin-weather-country-trigger-icon" aria-hidden>
-                <Globe2 size={17} strokeWidth={2.25} />
-              </span>
-              <span className="admin-weather-country-trigger-copy">
-                <small>Country</small>
-                <strong>{selectedCountry.label}</strong>
-              </span>
-              <ChevronDown
-                className="admin-weather-country-trigger-chevron"
-                size={16}
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            </button>
-
-            {countryMenuOpen ? (
-              <div className="admin-weather-country-menu" role="listbox" aria-label="Choose weather country">
-                {weatherMapCountries.map((item) => (
-                  <button
-                    key={item.code}
-                    type="button"
-                    role="option"
-                    aria-selected={country === item.code}
-                    className={`admin-weather-country-option${country === item.code ? ' is-active' : ''}${!item.available ? ' is-muted' : ''}`}
-                    onClick={() => {
-                      setCountry(item.code)
-                      setCountryMenuOpen(false)
-                    }}
-                  >
-                    <span className="admin-weather-country-option-icon" aria-hidden>
-                      {country === item.code ? (
-                        <Check size={15} strokeWidth={2.4} />
-                      ) : (
-                        <MapPin size={15} strokeWidth={2.25} />
-                      )}
-                    </span>
-                    <span className="admin-weather-country-option-copy">
-                      <strong>{item.label}</strong>
-                      <small>{item.available ? 'Available' : 'Not available'}</small>
-                    </span>
-                  </button>
-                ))}
+          <div className="admin-weather-header-main">
+            <div className="admin-weather-header-title-row">
+              <div className="admin-weather-header-copy">
+                <p className="admin-weather-kicker">Admin weather</p>
+                <h1 id="admin-weather-title">Weather Map</h1>
               </div>
-            ) : null}
+            </div>
+            <div className="admin-weather-toolbar">
+              <div className="admin-weather-country-picker" ref={countryPickerRef}>
+                <button
+                  type="button"
+                  className="admin-weather-country-trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded={countryMenuOpen}
+                  aria-label={`Country: ${selectedCountry.label}`}
+                  onClick={() => setCountryMenuOpen((open) => !open)}
+                >
+                  <span className="admin-weather-country-trigger-icon" aria-hidden>
+                    <Globe2 size={15} strokeWidth={2.25} />
+                  </span>
+                  <span className="admin-weather-country-trigger-copy">
+                    <strong>{selectedCountry.label}</strong>
+                  </span>
+                  <ChevronDown
+                    className="admin-weather-country-trigger-chevron"
+                    size={14}
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                </button>
+
+                {countryMenuOpen ? (
+                  <div className="admin-weather-country-menu" role="listbox" aria-label="Choose weather country">
+                    {weatherMapCountries.map((item) => (
+                      <button
+                        key={item.code}
+                        type="button"
+                        role="option"
+                        aria-selected={country === item.code}
+                        className={`admin-weather-country-option${country === item.code ? ' is-active' : ''}${!item.available ? ' is-muted' : ''}`}
+                        onClick={() => {
+                          setCountry(item.code)
+                          setCountryMenuOpen(false)
+                        }}
+                      >
+                        <span className="admin-weather-country-option-icon" aria-hidden>
+                          {country === item.code ? (
+                            <Check size={14} strokeWidth={2.4} />
+                          ) : (
+                            <MapPin size={14} strokeWidth={2.25} />
+                          )}
+                        </span>
+                        <span className="admin-weather-country-option-copy">
+                          <strong>{item.label}</strong>
+                          <small>{item.available ? 'Available' : 'Not available'}</small>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <BackendCacheStatus
+                weather={weather}
+                onForceRefresh={() => void loadSingaporeWeather(true)}
+                isRefreshing={loadState === 'loading'}
+              />
+            </div>
           </div>
-          <BackendCacheStatus weather={weather} />
-        </div>
+        </header>
 
         {countryAvailable && weather ? (
           <section className="admin-weather-dashboard" aria-label="Singapore weather overview">
@@ -1721,7 +1986,7 @@ export function AdminWeatherMapPage() {
                     category={signal.category}
                     title={signal.title}
                     message={signal.message}
-                    context={advisoryContextLine(signal, weather, hottestStation, wettestStation)}
+                    absoluteValue={advisoryAbsoluteValue(signal, weather, hottestStation, wettestStation)}
                     kind={signal.kind}
                     level={signal.level}
                   />
@@ -1790,11 +2055,22 @@ export function AdminWeatherMapPage() {
                       <i className="is-temp" aria-hidden />
                       Temperature
                     </button>
+                    <button
+                      type="button"
+                      className={`admin-weather-map-layer-toggle${showMapFlood ? ' is-on' : ''}`}
+                      aria-pressed={showMapFlood}
+                      onClick={() => setShowMapFlood((value) => !value)}
+                    >
+                      <i className="is-flood" aria-hidden />
+                      Flood alerts
+                    </button>
                   </div>
-                  <div className="admin-weather-map-legend-keys" aria-label="Forecast icon legend">
-                    <span><MapLegendForecastIcon kind="rain" /> Rain</span>
-                    <span><MapLegendForecastIcon kind="thunder" /> Thunder</span>
-                    <span><MapLegendForecastIcon kind="haze" /> Haze / wind</span>
+                  <div className="admin-weather-map-legend-panels">
+                    <MapWeatherLegendPanel
+                      activeKinds={showMapForecast ? mapActiveForecastKinds : new Set()}
+                    />
+                    <MapTemperatureLegendPanel activeBuckets={mapActiveTemperatureBuckets} />
+                    <MapFloodLegendPanel activeCount={showMapFlood ? mapPlottableFloodAlerts.length : 0} />
                   </div>
                 </div>
                 <div className="admin-weather-map-frame">
@@ -1828,6 +2104,11 @@ export function AdminWeatherMapPage() {
                     {showMapTemperature
                       ? weather.temperature.stations.map((station) => (
                           <TemperatureMarker key={station.stationId} station={station} />
+                        ))
+                      : null}
+                    {showMapFlood
+                      ? mapPlottableFloodAlerts.map((alert, index) => (
+                          <FloodAlertMarker key={`${alert.label}-${alert.lat}-${alert.lng}-${index}`} alert={alert} />
                         ))
                       : null}
                   </MapContainer>
