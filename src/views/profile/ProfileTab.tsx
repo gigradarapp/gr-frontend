@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Lock, LogOut, Settings, Sparkles } from 'lucide-react'
+import { Check, Lock, LogOut, Settings, ShieldCheck, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { BUZO_PRO_UPSELL_CTA } from '../../config/pricing'
 import { buzzSummary, getBuzzTierState } from '../../data/demoData'
 import {
@@ -15,6 +16,7 @@ import {
 } from '../../lib/avatar-image-cache.ts'
 import { postProfileTastePreferences, postSignOut } from '../../lib/auth-api'
 import { navigateShellToTab } from '../../lib/tabRoutes'
+import { useAdminAccess } from '../../lib/useAdminAccess'
 import { api } from '../../lib/trpc'
 import { useAppState } from '../../store/appStore'
 
@@ -204,6 +206,10 @@ export function ProfileTab() {
     !isAuthenticated ||
     (isAuthenticated && reputationQuery.isPending)
 
+  const profileContentReady = !showProfileSkeleton
+  const adminAccess = useAdminAccess(profileContentReady)
+  const showAdminAccess = profileContentReady && adminAccess === 'authorized'
+
   if (showProfileSkeleton) {
     const skeletonAria =
       !authSessionHydrated ? 'Loading profile' : !isAuthenticated ? 'Redirecting' : 'Loading profile'
@@ -226,6 +232,11 @@ export function ProfileTab() {
         >
           <Settings size={18} />
         </button>
+        {showAdminAccess ? (
+          <Link to="/admin" className="icon-btn profile-toolbar-admin" aria-label="Admin access">
+            <ShieldCheck size={18} aria-hidden />
+          </Link>
+        ) : null}
         <button
           className="icon-btn profile-toolbar-logout"
           type="button"

@@ -2233,6 +2233,30 @@ body {
   padding: 14px 12px 0 30px;
 }
 
+.profile-toolbar-admin {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--stroke));
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.theme-light .profile-toolbar-admin {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--stroke));
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+
+.profile-toolbar-admin:hover {
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+.theme-light .profile-toolbar-admin:hover {
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.profile-toolbar-admin:active {
+  transform: scale(0.99);
+}
+
 .profile-toolbar-logout {
   border-color: color-mix(in oklab, #e2493a 55%, var(--stroke));
   background: color-mix(in oklab, #e2493a 12%, transparent);
