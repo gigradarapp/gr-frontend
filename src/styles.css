@@ -9392,6 +9392,15 @@ button.taste-tag:focus-visible {
   width: 100%;
 }
 
+.favorites-list-card:disabled {
+  cursor: default;
+}
+
+.favorites-list-card--unavailable {
+  border-color: color-mix(in oklab, var(--primary) 30%, var(--stroke));
+  opacity: 0.86;
+}
+
 .favorites-list-card-body {
   padding-right: 48px;
 }

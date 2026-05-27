@@ -27,28 +27,37 @@ function favoriteFromEventItem(event: EventItem): FavoriteEvent {
   }
 }
 
-function fallbackFavorite(eventId: string): FavoriteEvent {
+function fallbackFavorite(eventId: string, unavailable = false): FavoriteEvent {
   return {
     id: eventId,
-    title: 'Saved event',
-    venueLine: 'Details will load when available',
-    timeLabel: eventId,
+    title: unavailable ? 'Event no longer available' : 'Loading saved event',
+    venueLine: unavailable
+      ? 'This event is no longer in the Discover feed. Remove it to clean up your saved list.'
+      : 'Fetching latest event details...',
+    timeLabel: unavailable ? `Saved ID: ${eventId}` : eventId,
     image: '',
     variant: 'upcoming',
   }
 }
 
-async function fetchFavoriteDetails(ids: string[], signal: AbortSignal): Promise<FavoriteEvent[]> {
+type FavoriteDetailsResult = {
+  details: FavoriteEvent[]
+  unavailableIds: string[]
+}
+
+async function fetchFavoriteDetails(ids: string[], signal: AbortSignal): Promise<FavoriteDetailsResult> {
   const out: FavoriteEvent[] = []
+  const unavailableIds: string[] = []
   for (let i = 0; i < ids.length; i += FAVORITES_CONFIG.refreshBatchSize) {
     if (signal.aborted) break
     const batch = ids.slice(i, i + FAVORITES_CONFIG.refreshBatchSize)
     const results = await Promise.allSettled(batch.map((id) => fetchDiscoverEventById(id, signal)))
-    for (const result of results) {
+    results.forEach((result, index) => {
       if (result.status === 'fulfilled') out.push(favoriteFromEventItem(result.value))
-    }
+      else if (!signal.aborted) unavailableIds.push(batch[index]!)
+    })
   }
-  return out
+  return { details: out, unavailableIds }
 }
 
 export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
@@ -60,6 +69,7 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [refreshedAt, setRefreshedAt] = useState<number | null>(null)
+  const [unavailableFavoriteIds, setUnavailableFavoriteIds] = useState<Set<string>>(() => new Set())
   const requestedIdsRef = useRef(new Set<string>())
   const favoriteLimit = favoriteLimitForTier(subscriptionTier)
   const tierLabel = subscriptionTier === 'pro' ? 'Buzo Pro' : 'Buzo Basic'
@@ -68,13 +78,19 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
     const live = new Map(events.map((event) => [event.id, favoriteFromEventItem(event)]))
     const snapshots = new Map(favoriteEventSnapshots.map((event) => [event.id, event]))
     return favoriteEventIds.map(
-      (id) => live.get(id) ?? cachedFavorites[id] ?? snapshots.get(id) ?? fallbackFavorite(id),
+      (id) =>
+        live.get(id) ??
+        cachedFavorites[id] ??
+        snapshots.get(id) ??
+        fallbackFavorite(id, unavailableFavoriteIds.has(id)),
     )
-  }, [cachedFavorites, events, favoriteEventIds, favoriteEventSnapshots])
+  }, [cachedFavorites, events, favoriteEventIds, favoriteEventSnapshots, unavailableFavoriteIds])
 
   useEffect(() => {
     pruneFavoriteDetailCache(favoriteEventIds)
     setCachedFavorites(readFreshFavoriteDetails(favoriteEventIds))
+    setUnavailableFavoriteIds((current) => new Set([...current].filter((id) => favoriteEventIds.includes(id))))
+    requestedIdsRef.current = new Set([...requestedIdsRef.current].filter((id) => favoriteEventIds.includes(id)))
   }, [favoriteEventIds])
 
   useEffect(() => {
@@ -101,14 +117,30 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
     if (missing.length === 0) return
 
     const controller = new AbortController()
+    let settled = false
     missing.forEach((id) => requestedIdsRef.current.add(id))
-    fetchFavoriteDetails(missing, controller.signal).then((details) => {
-      if (controller.signal.aborted) return
-      upsertFavoriteDetailCache(details)
-      setCachedFavorites((current) => ({ ...current, ...Object.fromEntries(details.map((event) => [event.id, event])) }))
-    })
+    fetchFavoriteDetails(missing, controller.signal)
+      .then(({ details, unavailableIds }) => {
+        settled = true
+        if (controller.signal.aborted) return
+        upsertFavoriteDetailCache(details)
+        setCachedFavorites((current) => ({ ...current, ...Object.fromEntries(details.map((event) => [event.id, event])) }))
+        setUnavailableFavoriteIds((current) => {
+          const next = new Set(current)
+          details.forEach((event) => next.delete(event.id))
+          unavailableIds.forEach((id) => next.add(id))
+          return next
+        })
+      })
+      .catch((e) => {
+        settled = true
+        if (!(e instanceof DOMException && e.name === 'AbortError')) setRefreshError('Could not load saved event details.')
+      })
 
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+      if (!settled) missing.forEach((id) => requestedIdsRef.current.delete(id))
+    }
   }, [cachedFavorites, events, favoriteEventIds, favoriteEventSnapshots])
 
   const refreshFavorites = async () => {
@@ -117,9 +149,18 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
     setRefreshing(true)
     setRefreshError(null)
     try {
-      const details = await fetchFavoriteDetails(favoriteEventIds, controller.signal)
+      const { details, unavailableIds } = await fetchFavoriteDetails(favoriteEventIds, controller.signal)
       upsertFavoriteDetailCache(details)
       setCachedFavorites((current) => ({ ...current, ...Object.fromEntries(details.map((event) => [event.id, event])) }))
+      setUnavailableFavoriteIds((current) => {
+        const next = new Set(current)
+        favoriteEventIds.forEach((id) => next.delete(id))
+        unavailableIds.forEach((id) => next.add(id))
+        return next
+      })
+      if (unavailableIds.length > 0) {
+        setRefreshError(`${unavailableIds.length} saved event${unavailableIds.length === 1 ? ' is' : 's are'} no longer available.`)
+      }
       setRefreshedAt(Date.now())
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
@@ -172,12 +213,15 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
         </div>
       ) : (
         <div className="plan-list" role="list" aria-label="Saved events">
-          {favoriteEvents.map((event) => (
+          {favoriteEvents.map((event) => {
+            const unavailable = unavailableFavoriteIds.has(event.id)
+            return (
             <div key={event.id} className="favorites-list-item-wrap" role="listitem">
               <button
                 type="button"
-                className="plan-list-card favorites-list-card"
+                className={`plan-list-card favorites-list-card${unavailable ? ' favorites-list-card--unavailable' : ''}`}
                 onClick={() => onOpenFavorite(event.id)}
+                disabled={unavailable}
               >
                 {event.image ? (
                   <img src={event.image} alt="" className="plan-list-card-img" decoding="async" />
@@ -188,7 +232,7 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
                   <span
                     className={`plan-list-card-label${event.variant === 'past' ? ' plan-list-card-label--past' : ''}`}
                   >
-                    {event.variant === 'past' ? 'Past favorite' : 'Upcoming favorite'}
+                    {unavailable ? 'Unavailable favorite' : event.variant === 'past' ? 'Past favorite' : 'Upcoming favorite'}
                   </span>
                   <h2 className="plan-list-card-title">{event.title}</h2>
                   <p className="plan-list-card-meta">
@@ -210,7 +254,7 @@ export function FavoritesTab({ events, onOpenFavorite }: FavoritesTabProps) {
                 <Heart size={18} fill="currentColor" aria-hidden />
               </button>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </motion.div>
