@@ -24,6 +24,7 @@ import {
   ThermometerSun,
   Wind,
   Waves,
+  Zap,
 } from 'lucide-react'
 import {
   getSingaporeWeatherMapData,
@@ -113,6 +114,27 @@ function formatTime(value: string): string {
   }).format(new Date(value))
 }
 
+function formatForecastTimeRange(start: string, end: string): string {
+  const formattedStart = formatTime(start)
+  const formattedEnd = formatTime(end)
+  if (formattedStart === 'Not available' || formattedEnd === 'Not available') return 'Not available'
+  return `${formattedStart} - ${formattedEnd}`
+}
+
+function formatForecastDateRange(start: string, end: string): string {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 'Not available'
+  const formatter = new Intl.DateTimeFormat('en-SG', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'Asia/Singapore',
+  })
+  return `${formatter.format(startDate)} - ${formatter.format(endDate)}`
+}
+
 function formatOutlookDate(value: string): string {
   if (!value) return ''
   const date = new Date(value)
@@ -148,6 +170,18 @@ function formatOutlookHumidityRange(day: FourDayOutlookDay): string {
     return `${day.humidityLowPct ?? day.humidityHighPct}%`
   }
   return `${day.humidityLowPct} - ${day.humidityHighPct}%`
+}
+
+function formatForecastTemperatureRange(low: number | null, high: number | null): string {
+  if (low == null && high == null) return 'N/A'
+  if (low == null || high == null) return `${low ?? high}°C`
+  return `${low} - ${high}°C`
+}
+
+function formatForecastHumidityRange(low: number | null, high: number | null): string {
+  if (low == null && high == null) return 'N/A'
+  if (low == null || high == null) return `${low ?? high}%`
+  return `${low} - ${high}%`
 }
 
 function formatPercent(value: number | null): string {
@@ -416,15 +450,59 @@ function forecastMarkerKind(forecast: string): ForecastMarkerKind {
   return 'cloudy'
 }
 
+function ThunderShowerGlyph({
+  size = 13,
+  strokeWidth = 2.7,
+  variant = 'thunder',
+}: {
+  size?: number
+  strokeWidth?: number
+  variant?: 'thunder' | 'heavy-thunder'
+}) {
+  const boltSize = Math.max(8, Math.round(size * 0.5))
+  return (
+    <span
+      className={`admin-weather-thunder-shower-glyph${variant === 'heavy-thunder' ? ' is-heavy' : ''}`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <CloudRain size={size} strokeWidth={strokeWidth} className="admin-weather-thunder-shower-rain" />
+      <Zap
+        size={boltSize}
+        strokeWidth={strokeWidth + 0.15}
+        fill="currentColor"
+        className="admin-weather-thunder-shower-bolt"
+      />
+    </span>
+  )
+}
+
+function PartlyCloudyGlyph({ size = 13, strokeWidth = 2.7 }: { size?: number; strokeWidth?: number }) {
+  return (
+    <span
+      className="admin-weather-partly-cloudy-glyph"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <Sun size={Math.round(size * 0.78)} strokeWidth={strokeWidth} className="admin-weather-partly-cloudy-sun" />
+      <Cloud size={Math.round(size * 0.82)} strokeWidth={strokeWidth} className="admin-weather-partly-cloudy-cloud" />
+    </span>
+  )
+}
+
 function ForecastMarkerGlyph({ kind, size = 13 }: { kind: ForecastMarkerKind; size?: number }) {
   const props = { size, strokeWidth: 2.7, 'aria-hidden': true }
   if (kind === 'fair') return <Sun {...props} />
   if (kind === 'fair-night') return <Moon {...props} />
   if (kind === 'partly-cloudy-night') return <CloudMoon {...props} />
+  if (kind === 'partly-cloudy') return <PartlyCloudyGlyph size={size} strokeWidth={props.strokeWidth} />
   if (kind === 'cloudy') return <Cloud {...props} />
   if (kind === 'drizzle') return <CloudDrizzle {...props} />
   if (kind === 'rain' || kind === 'heavy-rain') return <CloudRain {...props} />
-  if (kind === 'thunder' || kind === 'heavy-thunder') return <CloudLightning {...props} />
+  if (kind === 'thunder') return <ThunderShowerGlyph size={size} strokeWidth={props.strokeWidth} variant="thunder" />
+  if (kind === 'heavy-thunder') {
+    return <ThunderShowerGlyph size={size} strokeWidth={props.strokeWidth} variant="heavy-thunder" />
+  }
   if (kind === 'wind') return <Wind {...props} />
   if (kind === 'haze') return <CloudFog {...props} />
   return <CloudSun {...props} />
@@ -457,6 +535,8 @@ function temperatureColor(value: number): string {
 
 function cacheStateLabel(data: SingaporeWeatherMapData): string {
   if (data.cacheState === 'network') return 'Network refresh'
+  if (data.cacheState === 'kv-cache') return 'Backend KV cache'
+  if (data.cacheState === 'stale-cache') return 'Stale KV fallback'
   if (data.cacheState === 'memory-cache') return 'Memory cache'
   return 'Session cache'
 }
@@ -529,27 +609,25 @@ function FourDayOutlookPanel({ weather }: { weather: SingaporeWeatherMapData }) 
           {weather.fourDayOutlook.days.map((day) => (
             <article className="admin-weather-outlook-day" key={day.timestamp || day.day}>
               <div className="admin-weather-outlook-day-head">
+                <p className="admin-weather-outlook-day-name">{day.day}</p>
+                <span className="admin-weather-outlook-day-date">{formatOutlookDate(day.timestamp)}</span>
                 <span className={`admin-weather-outlook-icon is-${forecastMarkerKind(day.forecastText)}`} aria-hidden>
-                  <ForecastMarkerGlyph kind={forecastMarkerKind(day.forecastText)} size={30} />
+                  <ForecastMarkerGlyph kind={forecastMarkerKind(day.forecastText)} size={42} />
                 </span>
-                <div>
-                  <p>{day.day}</p>
-                  <span>{formatOutlookDate(day.timestamp)}</span>
-                </div>
               </div>
 
               <strong>{day.forecastText}</strong>
               <small>{day.forecastSummary}</small>
 
               <div className="admin-weather-outlook-meta">
-                <span>
+                <div className="admin-weather-outlook-stat">
                   <b>Temp</b>
-                  {formatOutlookTemperatureRange(day)}
-                </span>
-                <span>
+                  <span>{formatOutlookTemperatureRange(day)}</span>
+                </div>
+                <div className="admin-weather-outlook-stat">
                   <b>Humidity</b>
-                  {formatOutlookHumidityRange(day)}
-                </span>
+                  <span>{formatOutlookHumidityRange(day)}</span>
+                </div>
               </div>
             </article>
           ))}
@@ -619,7 +697,7 @@ function scoreMetricLabels(category: WeatherAdvisoryCategory): string[] {
     return ['No rain signal', 'Light scattered rain', 'Rain watch', 'Heavy rain risk', 'Severe rain risk']
   }
 
-  return ['No active alerts', 'Monitoring', 'Source unavailable watch', 'Alert watch', 'Active flood alert']
+  return ['No active alerts', 'Rain monitor', 'PUB feed offline', 'Flood watch', 'Active PUB alert']
 }
 
 function ScoreMetricRuler({
@@ -881,6 +959,16 @@ export function AdminWeatherMapPage() {
     () => (weather ? forecastConditionSummary(weather.twoHourForecast.areas) : null),
     [weather],
   )
+  const nowcastCondition = forecastSummary?.primary ?? 'Islandwide forecast'
+  const nowcastIconKind: ForecastMarkerKind = useMemo(() => {
+    if (!weather) return 'cloudy'
+    if (hasThunderRisk(weather.twoHourForecast.areas)) return 'thunder'
+    return forecastMarkerKind(nowcastCondition)
+  }, [weather, nowcastCondition])
+  const twentyFourHourIconKind: ForecastMarkerKind = useMemo(() => {
+    if (!weather || weather.twentyFourHourForecast.status !== 'ready') return 'cloudy'
+    return forecastMarkerKind(weather.twentyFourHourForecast.forecastText)
+  }, [weather])
   const hottestStation = useMemo(
     () => (weather ? maxStation(weather.temperature.stations) : null),
     [weather],
@@ -984,31 +1072,92 @@ export function AdminWeatherMapPage() {
 
         {countryAvailable && weather ? (
           <section className="admin-weather-dashboard" aria-label="Singapore weather overview">
-            <article className="admin-weather-nea-panel admin-weather-forecast-panel">
-              <div className="admin-weather-forecast-head">
-                <span className="admin-weather-panel-icon" aria-hidden>
-                  {hasThunderRisk(weather.twoHourForecast.areas) ? (
-                    <CloudRain size={52} strokeWidth={2.25} />
-                  ) : (
-                    <CloudSun size={52} strokeWidth={2.25} />
-                  )}
-                </span>
-                <div>
-                  <h2>2-hour weather nowcast (Islandwide)</h2>
-                  <p>{forecastSummary?.primary ?? weather.twoHourForecast.validText}</p>
+            <section className="admin-weather-forecast-comparison" aria-label="2-hour and 24-hour forecast comparison">
+              <article className="admin-weather-nea-panel admin-weather-forecast-panel">
+                <div className="admin-weather-forecast-head">
+                  <h2>2-hour weather nowcast</h2>
+                  <p className="admin-weather-forecast-condition">{nowcastCondition}</p>
+                  <span
+                    className={`admin-weather-outlook-icon admin-weather-forecast-icon is-${nowcastIconKind}`}
+                    aria-hidden
+                  >
+                    <ForecastMarkerGlyph kind={nowcastIconKind} size={42} />
+                  </span>
                 </div>
-              </div>
 
-              <div className="admin-weather-forecast-temp">
-                {formatTemperatureRange(weather.temperature.minC, weather.temperature.maxC)}
-              </div>
+                <div className="admin-weather-forecast-meta" aria-label="2-hour nowcast metrics">
+                  <div className="admin-weather-outlook-stat">
+                    <b>Temp</b>
+                    <span>{formatTemperatureRange(weather.temperature.minC, weather.temperature.maxC)}</span>
+                  </div>
+                  <div className="admin-weather-outlook-stat">
+                    <b>Humidity</b>
+                    <span>{formatPercent(weather.humidity.avgPct)}</span>
+                  </div>
+                </div>
 
-              <div className="admin-weather-forecast-foot">
-                <span>{weather.twoHourForecast.validText}</span>
-                <span>{formatPercent(weather.humidity.avgPct)} humidity</span>
-                <span>{weather.twoHourForecast.areaCount} forecast areas</span>
-              </div>
-            </article>
+                <div className="admin-weather-forecast-foot">
+                  <span className="admin-weather-forecast-period">
+                    <small>Valid</small>
+                    <strong>{formatForecastTimeRange(weather.twoHourForecast.validStart, weather.twoHourForecast.validEnd)}</strong>
+                  </span>
+                  <span className="admin-weather-forecast-count">
+                    {weather.twoHourForecast.areaCount} areas
+                  </span>
+                </div>
+              </article>
+
+              <article className="admin-weather-nea-panel admin-weather-forecast-panel">
+                <div className="admin-weather-forecast-head">
+                  <h2>24-hour weather forecast</h2>
+                  <p className="admin-weather-forecast-condition">
+                    {weather.twentyFourHourForecast.forecastText}
+                  </p>
+                  <span
+                    className={`admin-weather-outlook-icon admin-weather-forecast-icon is-${twentyFourHourIconKind}`}
+                    aria-hidden
+                  >
+                    <ForecastMarkerGlyph kind={twentyFourHourIconKind} size={42} />
+                  </span>
+                </div>
+
+                <div className="admin-weather-forecast-meta" aria-label="24-hour forecast metrics">
+                  <div className="admin-weather-outlook-stat">
+                    <b>Temp</b>
+                    <span>
+                      {formatForecastTemperatureRange(
+                        weather.twentyFourHourForecast.tempLowC,
+                        weather.twentyFourHourForecast.tempHighC,
+                      )}
+                    </span>
+                  </div>
+                  <div className="admin-weather-outlook-stat">
+                    <b>Humidity</b>
+                    <span>
+                      {formatForecastHumidityRange(
+                        weather.twentyFourHourForecast.humidityLowPct,
+                        weather.twentyFourHourForecast.humidityHighPct,
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="admin-weather-forecast-foot">
+                  <span className="admin-weather-forecast-period">
+                    <small>Valid</small>
+                    <strong>
+                      {formatForecastDateRange(
+                        weather.twentyFourHourForecast.validStart,
+                        weather.twentyFourHourForecast.validEnd,
+                      )}
+                    </strong>
+                  </span>
+                  <span className="admin-weather-forecast-count">
+                    {weather.twentyFourHourForecast.periodCount} periods
+                  </span>
+                </div>
+              </article>
+            </section>
 
             <FourDayOutlookPanel weather={weather} />
 
