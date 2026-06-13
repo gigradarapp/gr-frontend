@@ -123,6 +123,8 @@ body {
   transition:
     filter 0.28s ease,
     opacity 0.28s ease;
+  /* Matches .bottom-nav footprint so sheet overlays scroll above the tab bar. */
+  --bottom-nav-shell-offset: calc(58px + 8px + 10px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Discover: shell keeps the same solid bg as other tabs so the topbar looks identical. */
@@ -138,7 +140,7 @@ body {
   user-select: none;
 }
 
-/** Full event detail from feed/explore: chrome behind overlay (tab bar stays active underneath). */
+/** Plan sheet overlay: soften feed chrome behind the modal. */
 .phone-shell--behind-plan-overlay .topbar,
 .phone-shell--behind-plan-overlay .screen {
   filter: blur(6px);
@@ -157,12 +159,27 @@ body {
 
 .plan-detail-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: var(--bottom-nav-shell-offset);
   z-index: 8;
   background: var(--bg);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+}
+
+.screen-tab-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.screen-tab-pane.screen-tab-underlay {
+  display: none;
 }
 
 .plan-detail-overlay-fallback {
@@ -14377,16 +14394,11 @@ button.taste-tag:focus-visible {
   outline-offset: 2px;
 }
 
-/* Screen container becomes a flex column so the tab can fill it */
-.screen:has(.discover-tab.discover-layla) {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Discover card feed — without this, `height: 100%` on slides collapses (screen stays `overflow: auto`) */
-.screen:has(.ecf-root),
-.screen:has(.mv-root) {
+/* Screen container becomes a flex column so tab content can fill the shell */
+.screen:has(> .screen-tab-pane):not(:has(> .screen-content.plan-page)),
+.screen:has(.discover-tab.discover-layla):not(:has(> .screen-content.plan-page)),
+.screen:has(.ecf-root):not(:has(> .screen-content.plan-page)),
+.screen:has(.mv-root):not(:has(> .screen-content.plan-page)) {
   display: flex;
   flex-direction: column;
   overflow: hidden;

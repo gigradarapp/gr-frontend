@@ -334,6 +334,11 @@ function MainApp() {
   const [discoverDetailRemoteEvent, setDiscoverDetailRemoteEvent] = useState<EventItem | null>(null)
   const [discoverDetailLoading, setDiscoverDetailLoading] = useState(false)
   const [discoverDetailError, setDiscoverDetailError] = useState<string | null>(null)
+  const [askBuzoDetailEventId, setAskBuzoDetailEventId] = useState<string | null>(null)
+  const [askBuzoDetailSnapshot, setAskBuzoDetailSnapshot] = useState<EventItem | null>(null)
+  const [askBuzoDetailRemoteEvent, setAskBuzoDetailRemoteEvent] = useState<EventItem | null>(null)
+  const [askBuzoDetailLoading, setAskBuzoDetailLoading] = useState(false)
+  const [askBuzoDetailError, setAskBuzoDetailError] = useState<string | null>(null)
 
   const {
     events: discoverEvents,
@@ -405,6 +410,41 @@ function MainApp() {
     () => (discoverDetailEvent ? planDetailFromDiscoverEvent(discoverDetailEvent) : null),
     [discoverDetailEvent],
   )
+  const askBuzoDetailListEvent = useMemo(
+    () => discoverEvents.find((event) => event.id === askBuzoDetailEventId) ?? null,
+    [askBuzoDetailEventId, discoverEvents],
+  )
+  const askBuzoDetailEvent = useMemo(() => {
+    if (!askBuzoDetailEventId) return null
+    if (askBuzoDetailRemoteEvent?.id === askBuzoDetailEventId) return askBuzoDetailRemoteEvent
+    if (askBuzoDetailListEvent) return askBuzoDetailListEvent
+    if (askBuzoDetailSnapshot?.id === askBuzoDetailEventId) return askBuzoDetailSnapshot
+    return null
+  }, [askBuzoDetailEventId, askBuzoDetailListEvent, askBuzoDetailRemoteEvent, askBuzoDetailSnapshot])
+  const askBuzoDetailData = useMemo(
+    () => (askBuzoDetailEvent ? planDetailFromDiscoverEvent(askBuzoDetailEvent) : null),
+    [askBuzoDetailEvent],
+  )
+
+  const openAskBuzoEventDetail = useCallback(
+    (event: EventItem) => {
+      closeEvent()
+      setAskBuzoDetailSnapshot(event)
+      setAskBuzoDetailEventId(event.id)
+      setAskBuzoDetailRemoteEvent(null)
+      setAskBuzoDetailError(null)
+      setAskBuzoDetailLoading(false)
+    },
+    [closeEvent],
+  )
+
+  const closeAskBuzoEventDetail = useCallback(() => {
+    setAskBuzoDetailEventId(null)
+    setAskBuzoDetailSnapshot(null)
+    setAskBuzoDetailRemoteEvent(null)
+    setAskBuzoDetailError(null)
+    setAskBuzoDetailLoading(false)
+  }, [])
 
   const openDiscoverDetail = useCallback(
     (eventId: string) => {
@@ -502,6 +542,55 @@ function MainApp() {
     return () => controller.abort()
   }, [discoverDetailEventId, discoverDetailListEvent, discoverEventsSource, tab])
 
+  useEffect(() => {
+    if (!askBuzoDetailEventId || tab !== 'ask') return
+    if (askBuzoDetailListEvent) {
+      setAskBuzoDetailRemoteEvent(null)
+      setAskBuzoDetailError(null)
+      setAskBuzoDetailLoading(false)
+      return
+    }
+    if (discoverEventsSource === 'demo') {
+      if (!askBuzoDetailSnapshot || askBuzoDetailSnapshot.id !== askBuzoDetailEventId) {
+        setAskBuzoDetailError('Event not found in demo data')
+      }
+      setAskBuzoDetailLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    setAskBuzoDetailLoading(true)
+    setAskBuzoDetailError(null)
+
+    fetchDiscoverEventById(askBuzoDetailEventId, controller.signal)
+      .then((detail) => {
+        setAskBuzoDetailRemoteEvent(detail)
+        setAskBuzoDetailError(null)
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        if (askBuzoDetailSnapshot?.id === askBuzoDetailEventId) {
+          setAskBuzoDetailError(null)
+          return
+        }
+        setAskBuzoDetailRemoteEvent(null)
+        setAskBuzoDetailError(error instanceof Error ? error.message : 'Failed to load event details')
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setAskBuzoDetailLoading(false)
+        }
+      })
+
+    return () => controller.abort()
+  }, [
+    askBuzoDetailEventId,
+    askBuzoDetailListEvent,
+    askBuzoDetailSnapshot,
+    discoverEventsSource,
+    tab,
+  ])
+
   const sheetPlanOverlayBody = useMemo(() => {
     if (!sheetPlanOverlay) return null
     const data =
@@ -560,6 +649,117 @@ function MainApp() {
     toFavoriteEvent,
   ])
 
+  const askBuzoDetailBody = useMemo(() => {
+    if (!askBuzoDetailEventId) return null
+    if (askBuzoDetailEvent && askBuzoDetailData) {
+      return (
+        <PlanEventDetail
+          data={askBuzoDetailData}
+          variant="upcoming"
+          backAriaLabel="Back to Ask Buzo"
+          onBack={closeAskBuzoEventDetail}
+          onOpenEvent={(eventId) => {
+            const related =
+              discoverEvents.find((event) => event.id === eventId) ??
+              (askBuzoDetailEvent?.id === eventId ? askBuzoDetailEvent : null)
+            if (related) {
+              openAskBuzoEventDetail(related)
+            }
+          }}
+          isFavorited={isEventFavorited(askBuzoDetailEvent.id)}
+          onToggleFavorite={() =>
+            requireAuth('Sign in to save this event.', () =>
+              toggleFavoriteEvent(favoriteFromDiscoverEvent(askBuzoDetailEvent)),
+            )
+          }
+          isPlanned={isEventPlanned(askBuzoDetailEvent.id)}
+          onTogglePlan={() =>
+            requireAuth('Sign in to mark yourself as going.', () => toggleEventPlan(askBuzoDetailEvent.id))
+          }
+        />
+      )
+    }
+
+    return (
+      <div className="plan-detail-overlay-fallback screen-content plan-home">
+        <p className="plan-home-sub">
+          {askBuzoDetailLoading ? 'Loading event details...' : askBuzoDetailError || 'Event not found'}
+        </p>
+        <button type="button" className="plan-segment plan-segment--on" onClick={closeAskBuzoEventDetail}>
+          Back to Ask Buzo
+        </button>
+      </div>
+    )
+  }, [
+    askBuzoDetailData,
+    askBuzoDetailError,
+    askBuzoDetailEvent,
+    askBuzoDetailEventId,
+    askBuzoDetailLoading,
+    closeAskBuzoEventDetail,
+    discoverEvents,
+    isEventFavorited,
+    isEventPlanned,
+    openAskBuzoEventDetail,
+    requireAuth,
+    toggleEventPlan,
+    toggleFavoriteEvent,
+  ])
+
+  const discoverDetailBody = useMemo(() => {
+    if (!discoverDetailEventId) return null
+    if (discoverDetailEvent && discoverDetailData) {
+      return (
+        <PlanEventDetail
+          data={discoverDetailData}
+          variant="upcoming"
+          backAriaLabel={discoverMapMode ? 'Back to map' : 'Back to discover feed'}
+          onBack={closeDiscoverDetail}
+          onOpenEvent={() => undefined}
+          isFavorited={isEventFavorited(discoverDetailEvent.id)}
+          onToggleFavorite={() =>
+            requireAuth('Sign in to save this event.', () =>
+              toggleFavoriteEvent(favoriteFromDiscoverEvent(discoverDetailEvent)),
+            )
+          }
+          isPlanned={isEventPlanned(discoverDetailEvent.id)}
+          onTogglePlan={() =>
+            requireAuth('Sign in to mark yourself as going.', () => toggleEventPlan(discoverDetailEvent.id))
+          }
+        />
+      )
+    }
+
+    return (
+      <div className="plan-detail-overlay-fallback screen-content plan-home">
+        <p className="plan-home-sub">
+          {discoverDetailLoading || discoverEventsLoading
+            ? 'Loading event details...'
+            : discoverDetailError || 'Event not found'}
+        </p>
+        <button type="button" className="plan-segment plan-segment--on" onClick={closeDiscoverDetail}>
+          {discoverMapMode ? 'Back to map' : 'Back to discover'}
+        </button>
+      </div>
+    )
+  }, [
+    closeDiscoverDetail,
+    discoverDetailData,
+    discoverDetailError,
+    discoverDetailEvent,
+    discoverDetailEventId,
+    discoverDetailLoading,
+    discoverEventsLoading,
+    discoverMapMode,
+    isEventFavorited,
+    isEventPlanned,
+    requireAuth,
+    toggleEventPlan,
+    toggleFavoriteEvent,
+  ])
+
+  const planDetailOverlayOpen = Boolean(sheetPlanOverlay)
+
   return (
     <div className={`app theme-${theme}`}>
       <div className="glow glow-1" />
@@ -586,7 +786,7 @@ function MainApp() {
           className={[
             activeEvent
               ? 'phone-shell phone-shell--behind-event-sheet'
-              : sheetPlanOverlay
+              : planDetailOverlayOpen
                 ? 'phone-shell phone-shell--behind-plan-overlay'
                 : tab === 'ask' || tab === 'discover'
                   ? `phone-shell phone-shell--discover ${isDiscoverExpanded ? 'phone-shell--expanded' : ''}`
@@ -652,78 +852,64 @@ function MainApp() {
           <section className="screen">
             <Suspense fallback={<div className="tab-suspense-fallback" aria-hidden />}>
               {tab === 'discover' && (
-                discoverDetailEventId ? (
-                  discoverDetailEvent && discoverDetailData ? (
-                    <PlanEventDetail
-                      data={discoverDetailData}
-                      variant="upcoming"
-                      backAriaLabel={discoverMapMode ? 'Back to map' : 'Back to discover feed'}
-                      onBack={closeDiscoverDetail}
-                      onOpenEvent={() => undefined}
-                      isFavorited={isEventFavorited(discoverDetailEvent.id)}
-                      onToggleFavorite={() =>
-                        requireAuth('Sign in to save this event.', () =>
-                          toggleFavoriteEvent(favoriteFromDiscoverEvent(discoverDetailEvent)),
-                        )
-                      }
-                      isPlanned={isEventPlanned(discoverDetailEvent.id)}
-                      onTogglePlan={() =>
-                        requireAuth('Sign in to mark yourself as going.', () => toggleEventPlan(discoverDetailEvent.id))
-                      }
-                    />
-                  ) : (
-                    <div className="plan-detail-overlay-fallback screen-content plan-home">
-                      <p className="plan-home-sub">
-                        {discoverDetailLoading || discoverEventsLoading
-                          ? 'Loading event details...'
-                          : discoverDetailError || 'Event not found'}
-                      </p>
-                      <button
-                        type="button"
-                        className="plan-segment plan-segment--on"
-                        onClick={closeDiscoverDetail}
-                      >
-                        {discoverMapMode ? 'Back to map' : 'Back to discover'}
-                      </button>
-                    </div>
-                  )
-                ) : discoverMapMode ? (
-                  <MapView
-                    events={discoverEvents}
-                    filters={discoverFilters}
-                    onFiltersChange={setDiscoverFilters}
-                    loading={discoverEventsLoading}
-                    loadingMore={discoverEventsLoadingMore}
-                    hasMore={discoverEventsHasMore}
-                    onLoadMore={loadMoreDiscoverEvents}
-                    onBackToFeed={() => setDiscoverMapMode(false)}
-                    onMoreDetails={openDiscoverDetail}
-                    onRefresh={refreshDiscoverEvents}
-                  />
-                ) : (
-                  <EventCardFeed
-                    events={discoverEvents}
-                    filters={discoverFilters}
-                    onFiltersChange={setDiscoverFilters}
-                    loading={discoverEventsLoading}
-                    loadingMore={discoverEventsLoadingMore}
-                    error={discoverEventsError}
-                    hasMore={discoverEventsHasMore}
-                    totalAvailable={discoverEventsTotalAvailable}
-                    onLoadMore={loadMoreDiscoverEvents}
-                    onMoreDetails={openDiscoverDetail}
-                    onMapView={() => setDiscoverMapMode(true)}
-                    onRefresh={refreshDiscoverEvents}
-                  />
-                )
+                <>
+                  <div
+                    className={
+                      discoverDetailEventId ? 'screen-tab-pane screen-tab-underlay' : 'screen-tab-pane'
+                    }
+                    aria-hidden={discoverDetailEventId ? true : undefined}
+                  >
+                    {discoverMapMode ? (
+                      <MapView
+                        events={discoverEvents}
+                        filters={discoverFilters}
+                        onFiltersChange={setDiscoverFilters}
+                        loading={discoverEventsLoading}
+                        loadingMore={discoverEventsLoadingMore}
+                        hasMore={discoverEventsHasMore}
+                        onLoadMore={loadMoreDiscoverEvents}
+                        onBackToFeed={() => setDiscoverMapMode(false)}
+                        onMoreDetails={openDiscoverDetail}
+                        onRefresh={refreshDiscoverEvents}
+                      />
+                    ) : (
+                      <EventCardFeed
+                        events={discoverEvents}
+                        filters={discoverFilters}
+                        onFiltersChange={setDiscoverFilters}
+                        loading={discoverEventsLoading}
+                        loadingMore={discoverEventsLoadingMore}
+                        error={discoverEventsError}
+                        hasMore={discoverEventsHasMore}
+                        totalAvailable={discoverEventsTotalAvailable}
+                        onLoadMore={loadMoreDiscoverEvents}
+                        onMoreDetails={openDiscoverDetail}
+                        onMapView={() => setDiscoverMapMode(true)}
+                        onRefresh={refreshDiscoverEvents}
+                      />
+                    )}
+                  </div>
+                  {discoverDetailEventId ? discoverDetailBody : null}
+                </>
               )}
               {tab === 'ask' && (
-                <DiscoverTab
-                  onOpenEvent={openEvent}
-                  prefillPrompt={discoverPrefill}
-                  onConsumePrefill={consumeDiscoverPrefill}
-                  events={discoverEvents}
-                />
+                <>
+                  <div
+                    className={
+                      askBuzoDetailEventId ? 'screen-tab-pane screen-tab-underlay' : 'screen-tab-pane'
+                    }
+                    aria-hidden={askBuzoDetailEventId ? true : undefined}
+                  >
+                    <DiscoverTab
+                      onOpenEvent={openAskBuzoEventDetail}
+                      prefillPrompt={discoverPrefill}
+                      onConsumePrefill={consumeDiscoverPrefill}
+                      events={discoverEvents}
+                      cityId={feedLocationCityId}
+                    />
+                  </div>
+                  {askBuzoDetailEventId ? askBuzoDetailBody : null}
+                </>
               )}
               {tab === 'favorites' && (
                 <FavoritesTab

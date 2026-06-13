@@ -35,6 +35,25 @@ type PlanHistoryPage = {
   nextOffset: number | null
 }
 
+type DiscoverSuggestedEvent = {
+  id: string
+  title: string
+  venue: string
+  district: string
+  category: string
+  categoryId: string
+  locationCityId: string
+  eventDateTime: string | null
+  displayDateTimeLabel: string
+  imageUrl: string
+  host: string
+  summary: string
+  tags: string[]
+  ticketPrice: string
+  lat: number | null
+  lng: number | null
+}
+
 export const appRouter = t.router({
   discover: t.router({
     recommend: t.procedure
@@ -48,7 +67,7 @@ export const appRouter = t.router({
               content: z.string(),
             }),
           ).optional(),
-          events: z.array(z.unknown()),
+          cityId: z.string().optional(),
         }),
       )
       .mutation(() => ({
@@ -56,6 +75,7 @@ export const appRouter = t.router({
         suggestedEventId: null as string | null,
         suggestedEventIds: [] as string[],
         suggestedReplies: [] as string[],
+        suggestedEvents: [] as DiscoverSuggestedEvent[],
       })),
     matchAgent: t.procedure
       .input(z.object({ prompt: z.string() }))

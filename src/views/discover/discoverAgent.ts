@@ -1,11 +1,13 @@
 import type { BuzoAgentId } from '../../config/buzoAgents'
 import type { EventItem } from '../../types'
+import type { DiscoverEventListItem } from '../../lib/useDiscoverEvents'
 
 export type DiscoverAgentResult = {
   reply: string
   suggestedEventId: string | null
   suggestedEventIds?: string[]
   suggestedReplies?: string[]
+  suggestedEvents?: DiscoverEventListItem[]
 }
 
 export type DiscoverChatMessage = {
@@ -91,6 +93,7 @@ export async function fetchOpenAIDiscoverResult(
       suggestedEventId: suggestedEventIds?.[0] ?? parsedSuggestedEventId,
       suggestedEventIds,
       suggestedReplies: normalizeSuggestedReplies(payload.suggestedReplies),
+      suggestedEvents: Array.isArray(payload.suggestedEvents) ? payload.suggestedEvents : undefined,
     }
   } catch {
     return null

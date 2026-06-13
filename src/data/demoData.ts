@@ -150,9 +150,9 @@ export const planPageEvent: PlanPageEvent = {
 export const discoverTargetPrompt = 'any good jazz tonight near tiong bahru ?'
 
 export const discoverSuggestedPrompts = [
-  'any good jazz tonight near Tiong Bahru ?',
-  'best techno tonight in Marina Bay?',
-  'who is going to neon pulse tonight?',
+  'Recommend me music events around me?',
+  'Best techno tonight in Marina Bay?',
+  'Who is going to neon pulse tonight?',
 ]
 
 /** Layla-style welcome shortcuts → prefilled into Discover when the user enters the app. */

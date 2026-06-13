@@ -50,7 +50,7 @@ import { ensureAccessTokenFresh } from '../../lib/auth-api'
 import { handleEventImageError } from '../../lib/event-image-fallback'
 import { DISCOVER_COMPOSER_CONFIG } from '../../config/discoverUi'
 import { EventShareSheet } from '../../components/EventShareSheet'
-import { openDiscoverEventSource } from '../../lib/useDiscoverEvents'
+import { mapDiscoverEventListItemToEventItem, openDiscoverEventSource } from '../../lib/useDiscoverEvents'
 import type { EventItem } from '../../types'
 import { BuzoAgentPicker } from './BuzoAgentPicker'
 import { BuzoAgentRemoveConfirmDialog } from './BuzoAgentRemoveConfirmDialog'
@@ -59,10 +59,11 @@ import { compactDateTimeLabel, getAccent } from './map/map-pin-html'
 import { ASK_BUZO_PATHS, askBuzoShellViewFromPath } from '../../lib/tabRoutes'
 
 type DiscoverTabProps = {
-  onOpenEvent: (eventId: string) => void
+  onOpenEvent: (event: EventItem) => void
   prefillPrompt: string
   onConsumePrefill: () => void
   events: EventItem[]
+  cityId: string
 }
 
 type ChatMessage = {
@@ -71,6 +72,7 @@ type ChatMessage = {
   content: string
   eventId?: string | null
   eventIds?: string[]
+  eventItems?: EventItem[]
   suggestions?: string[]
 }
 
@@ -131,7 +133,7 @@ function toFavoriteEvent(event: EventItem) {
   }
 }
 
-function resolveRankedEventIds(result: DiscoverAgentResult, eventById: Map<string, EventItem>) {
+function resolveRankedEvents(result: DiscoverAgentResult, eventById: Map<string, EventItem>) {
   const rawIds =
     result.suggestedEventIds && result.suggestedEventIds.length > 0
       ? result.suggestedEventIds
@@ -139,9 +141,14 @@ function resolveRankedEventIds(result: DiscoverAgentResult, eventById: Map<strin
         ? [result.suggestedEventId]
         : []
 
+  const suggestedById = new Map(
+    (result.suggestedEvents ?? []).map((item) => [item.id, mapDiscoverEventListItemToEventItem(item)]),
+  )
+
   return Array.from(new Set(rawIds))
-    .filter((eventId) => eventById.has(eventId))
     .slice(0, MAX_AGENT_EVENT_CARDS)
+    .map((eventId) => eventById.get(eventId) ?? suggestedById.get(eventId))
+    .filter((event): event is EventItem => event != null)
 }
 
 function AgentRankedEventCard({
@@ -155,7 +162,7 @@ function AgentRankedEventCard({
 }: {
   event: EventItem
   rank: number
-  onOpenEvent: (eventId: string) => void
+  onOpenEvent: (event: EventItem) => void
   isSaved: boolean
   onSave: (event: EventItem) => void
   onOpenSource: (event: EventItem) => void
@@ -167,7 +174,7 @@ function AgentRankedEventCard({
     <div
       className="mv-card discover-agent-ranked-card"
       style={{ '--card-accent': accent } as CSSProperties}
-      onClick={() => onOpenEvent(event.id)}
+      onClick={() => onOpenEvent(event)}
     >
       <span className="discover-agent-rank-badge">{rank === 0 ? 'Best pick' : `#${rank + 1}`}</span>
       <img
@@ -191,7 +198,7 @@ function AgentRankedEventCard({
             className="mv-card-details-btn"
             onClick={(e) => {
               e.stopPropagation()
-              onOpenEvent(event.id)
+              onOpenEvent(event)
             }}
           >
             <Info size={13} strokeWidth={2} aria-hidden />
@@ -254,7 +261,7 @@ function RankedEventRail({
   onShare,
 }: {
   events: EventItem[]
-  onOpenEvent: (eventId: string) => void
+  onOpenEvent: (event: EventItem) => void
   isEventFavorited: (eventId: string) => boolean
   onSave: (event: EventItem) => void
   onOpenSource: (event: EventItem) => void
@@ -313,6 +320,7 @@ export function DiscoverTab({
   prefillPrompt,
   onConsumePrefill,
   events,
+  cityId,
 }: DiscoverTabProps) {
   const discoverMut = api.discover.recommend.useMutation()
   const discoverChipAgentPromptsNormalized = useMemo(() => {
@@ -481,7 +489,7 @@ export function DiscoverTab({
   }
 
   const handleOpenRankedEventSource = (event: EventItem) => {
-    void openDiscoverEventSource(event.id, event.sourceUrl, () => onOpenEvent(event.id))
+    void openDiscoverEventSource(event.id, event.sourceUrl, () => onOpenEvent(event))
   }
 
   const handleSelectConversation = (conv: Conversation) => {
@@ -648,16 +656,7 @@ export function DiscoverTab({
           prompt: nextPrompt,
           agentId: selectedAgentId,
           messages: modelMessages,
-          events: events.map((e) => ({
-            id: e.id,
-            title: e.title,
-            venue: e.venue,
-            district: e.district,
-            genre: e.genre,
-            time: e.displayDateTimeLabel ?? e.time,
-            verified: e.verified,
-            vibeTags: e.vibeTags,
-          })),
+          cityId,
         })
       } catch {
         resolvedAgentResult = null
@@ -687,7 +686,8 @@ export function DiscoverTab({
 
     const finalReply = resolvedAgentResult.reply
 
-    const finalEventIds = resolveRankedEventIds(resolvedAgentResult, eventById)
+    const finalEvents = resolveRankedEvents(resolvedAgentResult, eventById)
+    const finalEventIds = finalEvents.map((event) => event.id)
     const finalEventId = finalEventIds[0] ?? null
     const assistantMessage: ChatMessage = {
       id: makeMessageId('assistant'),
@@ -695,6 +695,7 @@ export function DiscoverTab({
       content: finalReply,
       eventId: finalEventId,
       eventIds: finalEventIds,
+      eventItems: finalEvents,
       suggestions: resolvedAgentResult.suggestedReplies?.slice(0, 4) ?? [],
     }
 
@@ -1199,7 +1200,8 @@ export function DiscoverTab({
             {activeMessages.map((message) => {
               const rankedEvents =
                 message.role === 'assistant'
-                  ? (message.eventIds ?? (message.eventId ? [message.eventId] : []))
+                  ? message.eventItems ??
+                    (message.eventIds ?? (message.eventId ? [message.eventId] : []))
                       .map((eventId) => eventById.get(eventId))
                       .filter((event): event is EventItem => event != null)
                   : []
