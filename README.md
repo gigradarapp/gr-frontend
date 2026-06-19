@@ -62,8 +62,8 @@ These repositories are the planned public evaluation package:
 
 | Surface | URL |
 | --- | --- |
-| Hosted app | `https://gr-frontend-dev.vercel.app/` |
-| Hosted API health | `https://gr-backend-dev.gigradar.workers.dev/health` |
+| Hosted app | `https://getbuzo.vercel.app/` |
+| Hosted API health | `https://buzo-be-dev.buzo.workers.dev/health` |
 | Waitlist | `https://gr-waitlist.vercel.app/` |
 
 ## Demo Video
@@ -250,7 +250,7 @@ For the full review path, see [`gr-architecture/docs/evaluation-readiness.md`](h
 
 | Signal | Evidence |
 | --- | --- |
-| Live deployment | `https://gr-frontend-dev.vercel.app/` backed by the hosted Worker. |
+| Live deployment | `https://getbuzo.vercel.app/` backed by the hosted Worker. |
 | Real data boundary | Discover reads backend-projected Turso event rows, not hardcoded frontend fixtures. |
 | Server-side secret boundary | LLM, Stripe, Supabase service-role, Turso, and OpenClaw credentials stay out of the browser. |
 | Typed API integration | tRPC client and frontend route mirror live in `src/trpc/app-router.ts`. |
