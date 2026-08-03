@@ -168,9 +168,8 @@ export function PlanEventDetail({
   const mapSearchUrl = googleMapsSearchUrl(mapQuery)
 
   const openEventSourceInNewTab = () => {
-    // Open the new tab while still in the click gesture. If the list payload did
-    // not include a source URL, the shared helper fetches it and navigates that
-    // already-open tab, avoiding browser popup blocking.
+    // Redirect to the source in this tab. The shared helper fetches the source
+    // first when it was omitted from the list payload.
     void openDiscoverEventSource(data.eventId, data.sourceUrl, () => onOpenEvent(data.eventId))
   }
 
