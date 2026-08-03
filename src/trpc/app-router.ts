@@ -18,6 +18,10 @@ type PlanEventListItem = {
   eventDateTime: string | null
   displayDateTimeLabel: string
   imageUrl: string
+  imageStatus: {
+    eventImg: 'ok' | 'failed' | 'unknown'
+    fallbackImg: 'ok' | 'failed' | 'unknown'
+  }
   host: string
   summary: string
   tags: string[]
@@ -70,6 +74,15 @@ export const appRouter = t.router({
           cityId: z.string().optional(),
         }),
       )
+      .output(
+        z.object({
+          reply: z.string(),
+          suggestedEventId: z.string().nullable(),
+          suggestedEventIds: z.array(z.string()).optional(),
+          suggestedReplies: z.array(z.string()).optional(),
+          suggestedEvents: z.array(z.custom<DiscoverSuggestedEvent>()).optional(),
+        }),
+      )
       .mutation(() => ({
         reply: '',
         suggestedEventId: null as string | null,
@@ -84,16 +97,16 @@ export const appRouter = t.router({
         reason: '',
       })),
   }),
-  events: t.router({
-    list: t.procedure
+  feed: t.router({
+    get: t.procedure
       .input(
         z.object({
+          cursor: z.string().optional(),
+          limit: z.number().int().min(1).max(50).default(20),
           cityId: z.string().optional(),
-          categoryId: z.string().optional(),
         }),
       )
-      .query(() => [] as unknown[]),
-    byId: t.procedure.input(z.object({ id: z.string() })).query(() => null as unknown),
+      .query(() => ({ items: [] as never[], nextCursor: null })),
   }),
   plan: t.router({
     ids: t.procedure.query(() => ({ ids: [] as string[] })),
@@ -150,6 +163,8 @@ export const appRouter = t.router({
         icon_key: string
         sort_order: number
         unlock_hint: string
+        default_status: 'locked' | 'in_progress' | 'earned'
+        default_progress_target: number
         status: 'locked' | 'in_progress' | 'earned'
         progress_value: number
         progress_target: number

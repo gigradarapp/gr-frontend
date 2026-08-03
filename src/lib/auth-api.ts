@@ -117,13 +117,29 @@ export async function postProfileDefaultCity(defaultCityId: string | null): Prom
 }
 
 export async function postSignOut(): Promise<void> {
+  const accessToken = getAccessToken()
   const refresh_token = getRefreshToken()
-  await fetch(`${apiBase()}/api/auth/signout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token }),
-  }).catch(() => {})
-  clearSession()
+  try {
+    if (accessToken || refresh_token) {
+      const r = await fetch(`${apiBase()}/api/auth/signout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ refresh_token }),
+      })
+      if (!r.ok && import.meta.env.DEV) {
+        console.warn(`[gigradar] Supabase session revocation failed (${r.status})`)
+      }
+    }
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[gigradar] Supabase session revocation request failed', error)
+    }
+  } finally {
+    clearSession()
+  }
 }
 
 async function parseErrorMessage(r: Response, fallback: string): Promise<string> {
