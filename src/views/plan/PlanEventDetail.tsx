@@ -15,7 +15,7 @@ import { fallbackImageForEvent, handleEventImageError } from '../../lib/event-im
 import { formatEventPriceLabel } from '../../lib/event-price-label'
 import { fetchEventWeatherSummary, type EventWeatherSummary } from '../../lib/event-weather-summary'
 import { formatForecastTemperatureRange } from '../../lib/weather-forecast-format'
-import { fetchDiscoverEventById } from '../../lib/useDiscoverEvents'
+import { openDiscoverEventSource } from '../../lib/useDiscoverEvents'
 import { getPlanScheduledEventPath } from '../../lib/tabRoutes'
 import type { EventItem } from '../../types'
 import { EventShareSheet } from '../../components/EventShareSheet'
@@ -167,40 +167,11 @@ export function PlanEventDetail({
   const mapEmbedSrc = googleMapsEmbedSrc(mapQuery)
   const mapSearchUrl = googleMapsSearchUrl(mapQuery)
 
-  const openEventSourceInNewTab = async () => {
-    const toExternalHttpUrl = (value?: string | null): string | null => {
-      const raw = value?.trim()
-      if (!raw) return null
-      if (/^https?:\/\//i.test(raw)) return raw
-      if (/^\/\//.test(raw)) return `https:${raw}`
-      if (/^[^\s./]+\.[^\s]+/.test(raw)) return `https://${raw}`
-      return null
-    }
-
-    const openTarget = (target: string): boolean => {
-      const safeTarget = toExternalHttpUrl(target)
-      if (!safeTarget) return false
-
-      const opened = window.open(safeTarget, '_blank', 'noopener,noreferrer')
-      return Boolean(opened)
-    }
-
-    const directUrl = toExternalHttpUrl(data.sourceUrl)
-    if (directUrl && openTarget(directUrl)) {
-      return
-    }
-
-    try {
-      const detail = await fetchDiscoverEventById(data.eventId)
-      const resolvedUrl = toExternalHttpUrl(detail.sourceUrl)
-      if (resolvedUrl && openTarget(resolvedUrl)) {
-        return
-      }
-    } catch {
-      // Fall back below.
-    }
-
-    onOpenEvent(data.eventId)
+  const openEventSourceInNewTab = () => {
+    // Open the new tab while still in the click gesture. If the list payload did
+    // not include a source URL, the shared helper fetches it and navigates that
+    // already-open tab, avoiding browser popup blocking.
+    void openDiscoverEventSource(data.eventId, data.sourceUrl, () => onOpenEvent(data.eventId))
   }
 
   return (
