@@ -220,7 +220,12 @@ export function normalizeExternalEventSourceUrl(value?: string | null): string |
 }
 
 function openExternalEventSourceWindow(target: string) {
-  window.open(target, '_blank', 'noopener,noreferrer')
+  const opened = window.open(target, '_blank', 'noopener,noreferrer')
+  try {
+    opened?.focus()
+  } catch {
+    // Focus is best-effort and depends on the browser's tab policy.
+  }
 }
 
 function openPendingEventSourceWindow(): Window | null {
@@ -235,6 +240,11 @@ function openPendingEventSourceWindow(): Window | null {
     pending.document.close()
   } catch {
     // The blank tab can still be navigated even if the loading message fails.
+  }
+  try {
+    pending.focus()
+  } catch {
+    // Focus is best-effort and depends on the browser's tab policy.
   }
 
   return pending
