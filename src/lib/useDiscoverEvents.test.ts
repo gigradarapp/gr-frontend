@@ -116,45 +116,71 @@ describe('normalizeExternalEventSourceUrl', () => {
 })
 
 describe('openDiscoverEventSource', () => {
-  it('redirects to a direct source URL without fetching detail', async () => {
-    const assign = vi.fn()
+  it('opens a direct source URL without fetching detail', async () => {
+    const open = vi.fn()
     const fetch = vi.fn()
-    vi.stubGlobal('window', { location: { assign } })
+    vi.stubGlobal('window', { open })
     vi.stubGlobal('fetch', fetch)
 
     await openDiscoverEventSource('event-1', 'example.com/events/1')
 
-    expect(assign).toHaveBeenCalledWith('https://example.com/events/1')
+    expect(open).toHaveBeenCalledWith('https://example.com/events/1', '_blank', 'noopener,noreferrer')
     expect(fetch).not.toHaveBeenCalled()
   })
 
-  it('redirects after fetching the detail source URL', async () => {
-    const assign = vi.fn()
+  it('pre-opens a tab and navigates it after fetching the detail source URL', async () => {
+    const replace = vi.fn()
+    const pendingWindow = {
+      opener: {},
+      closed: false,
+      document: {
+        write: vi.fn(),
+        close: vi.fn(),
+      },
+      location: {
+        replace,
+      },
+      close: vi.fn(),
+    }
+    const open = vi.fn(() => pendingWindow)
     const fetch = vi.fn(async () => new Response(JSON.stringify(discoverEventDetail('https://example.com/events/1'))))
     const onFallback = vi.fn()
-    vi.stubGlobal('window', { location: { assign } })
+    vi.stubGlobal('window', { open })
     vi.stubGlobal('fetch', fetch)
 
     await openDiscoverEventSource('event-1', null, onFallback)
 
+    expect(open).toHaveBeenCalledWith('', '_blank')
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/discover/events/event-1'), {
       credentials: 'include',
       signal: undefined,
     })
-    expect(assign).toHaveBeenCalledWith('https://example.com/events/1')
+    expect(replace).toHaveBeenCalledWith('https://example.com/events/1')
     expect(onFallback).not.toHaveBeenCalled()
   })
 
-  it('falls back when detail has no valid source URL', async () => {
-    const assign = vi.fn()
+  it('closes the pending tab and falls back when detail has no valid source URL', async () => {
+    const pendingWindow = {
+      opener: {},
+      closed: false,
+      document: {
+        write: vi.fn(),
+        close: vi.fn(),
+      },
+      location: {
+        replace: vi.fn(),
+      },
+      close: vi.fn(),
+    }
+    const open = vi.fn(() => pendingWindow)
     const fetch = vi.fn(async () => new Response(JSON.stringify(discoverEventDetail(null))))
     const onFallback = vi.fn()
-    vi.stubGlobal('window', { location: { assign } })
+    vi.stubGlobal('window', { open })
     vi.stubGlobal('fetch', fetch)
 
     await openDiscoverEventSource('event-1', null, onFallback)
 
-    expect(assign).not.toHaveBeenCalled()
+    expect(pendingWindow.close).toHaveBeenCalled()
     expect(onFallback).toHaveBeenCalledTimes(1)
   })
 })

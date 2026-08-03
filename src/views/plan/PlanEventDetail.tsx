@@ -168,8 +168,8 @@ export function PlanEventDetail({
   const mapSearchUrl = googleMapsSearchUrl(mapQuery)
 
   const openEventSourceInNewTab = () => {
-    // Redirect to the source in this tab. The shared helper fetches the source
-    // first when it was omitted from the list payload.
+    // Open a tab within the click gesture. The shared helper fetches the source
+    // when it was omitted from the list payload, then navigates that tab.
     void openDiscoverEventSource(data.eventId, data.sourceUrl, () => onOpenEvent(data.eventId))
   }
 

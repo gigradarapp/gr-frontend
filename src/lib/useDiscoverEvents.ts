@@ -219,8 +219,36 @@ export function normalizeExternalEventSourceUrl(value?: string | null): string |
   return null
 }
 
-function navigateToExternalEventSource(target: string) {
-  window.location.assign(target)
+function openExternalEventSourceWindow(target: string) {
+  window.open(target, '_blank', 'noopener,noreferrer')
+}
+
+function openPendingEventSourceWindow(): Window | null {
+  const pending = window.open('', '_blank')
+  if (!pending) return null
+
+  pending.opener = null
+  try {
+    pending.document.write(
+      '<!doctype html><title>Opening event source</title><body style="margin:0;background:#0b0b0b;color:#f5f5f5;font:16px system-ui,sans-serif;display:grid;min-height:100vh;place-items:center;">Opening event source...</body>',
+    )
+    pending.document.close()
+  } catch {
+    // The blank tab can still be navigated even if the loading message fails.
+  }
+
+  return pending
+}
+
+function closePendingEventSourceWindow(pending: Window | null) {
+  if (!pending || pending.closed) return
+  pending.close()
+}
+
+function navigatePendingEventSourceWindow(pending: Window | null, target: string): boolean {
+  if (!pending || pending.closed) return false
+  pending.location.replace(target)
+  return true
 }
 
 export async function openDiscoverEventSource(
@@ -230,21 +258,25 @@ export async function openDiscoverEventSource(
 ) {
   const directUrl = normalizeExternalEventSourceUrl(sourceUrl)
   if (directUrl) {
-    navigateToExternalEventSource(directUrl)
+    openExternalEventSourceWindow(directUrl)
     return
   }
 
+  const pendingWindow = openPendingEventSourceWindow()
   try {
     const detail = await fetchDiscoverEventById(eventId)
     const resolvedUrl = normalizeExternalEventSourceUrl(detail.sourceUrl)
     if (resolvedUrl) {
-      navigateToExternalEventSource(resolvedUrl)
+      if (!navigatePendingEventSourceWindow(pendingWindow, resolvedUrl)) {
+        openExternalEventSourceWindow(resolvedUrl)
+      }
       return
     }
   } catch {
     // Fall back below.
   }
 
+  closePendingEventSourceWindow(pendingWindow)
   onFallback?.()
 }
 
