@@ -34,7 +34,7 @@ type StatusReport = {
     message: string
     affectedServiceIds: string[]
     generatedAt: string
-    source: "ai" | "automated"
+    source: "rule-based"
   } | null
 }
 
@@ -255,7 +255,7 @@ export function StatusPage() {
                   <h3>{report.incident.title}</h3>
                   <p>{report.incident.message}</p>
                   <span className="status-incident-meta">
-                    {report.incident.source === "ai" ? "AI-assisted update" : "Automated update"} ·{" "}
+                    Rule-based update ·{" "}
                     {relativeTime(report.incident.generatedAt)}
                   </span>
                 </article>
