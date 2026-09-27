@@ -91,7 +91,7 @@ export function StatusPage() {
   const loadStatus = useCallback(async (background = false) => {
     if (!background) setRefreshing(true)
     try {
-      const response = await fetch(`${apiBase()}/api/status`, {
+      const response = await fetch(`${apiBase()}/api/status${background ? '' : '?refresh=1'}`, {
         headers: { Accept: 'application/json' },
       })
       if (!response.ok) throw new Error(`Status API returned HTTP ${response.status}`)
