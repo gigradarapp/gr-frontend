@@ -28,6 +28,13 @@ type StatusReport = {
   }
   history: HistoryPoint[]
   monitoringWindowHours: number
+  incident: {
+    title: string
+    message: string
+    affectedServiceIds: string[]
+    generatedAt: string
+    source: "ai" | "automated"
+  } | null
 }
 
 const stateCopy: Record<ServiceState, { headline: string; label: string }> = {
@@ -105,8 +112,13 @@ export function StatusPage() {
           Back to app
         </Link>
         <Link className="status-brand" to="/discover" aria-label="Buzo home">
-          <span className="status-brand-mark" aria-hidden>B</span>
-          <span>Buzo</span>
+          <img
+            className="status-brand-mark"
+            src="/assets/logo/b-logo.svg"
+            alt=""
+            width={32}
+            height={32}
+          />
         </Link>
       </header>
 
@@ -217,6 +229,19 @@ export function StatusPage() {
             </div>
           ) : report ? (
             <div className="status-incident-list">
+              {report.incident ? (
+                <article className="status-incident-update">
+                  <span className={`status-state status-state--${report.current.overall}`}>
+                    {report.current.overall === "outage" ? "Investigating" : "Monitoring"}
+                  </span>
+                  <h3>{report.incident.title}</h3>
+                  <p>{report.incident.message}</p>
+                  <span className="status-incident-meta">
+                    {report.incident.source === "ai" ? "AI-assisted update" : "Automated update"} ·{" "}
+                    {relativeTime(report.incident.generatedAt)}
+                  </span>
+                </article>
+              ) : null}
               {affectedServices.map((service) => (
                 <article key={service.id}>
                   <span className={`status-state status-state--${service.state}`}>{stateCopy[service.state].label}</span>
@@ -231,7 +256,6 @@ export function StatusPage() {
         </section>
 
         <footer className="status-footer">
-          <span>GigRadar / Buzo</span>
           <span>Automated checks every 15 minutes</span>
         </footer>
       </div>

@@ -1,15 +1,15 @@
 .status-page {
-  --status-bg: #f6f7f5;
-  --status-surface: #ffffff;
-  --status-text: #18201c;
-  --status-muted: #69736d;
-  --status-border: #dfe4e0;
-  --status-success: #18864b;
-  --status-success-soft: #e9f6ee;
+  --status-bg: var(--bg);
+  --status-surface: color-mix(in oklab, var(--card) 94%, var(--bg));
+  --status-text: var(--text);
+  --status-muted: var(--muted);
+  --status-border: var(--stroke);
+  --status-success: #20a35a;
+  --status-success-soft: color-mix(in oklab, var(--status-success) 13%, var(--status-surface));
   --status-warning: #b56806;
-  --status-warning-soft: #fff5df;
+  --status-warning-soft: color-mix(in oklab, var(--status-warning) 13%, var(--status-surface));
   --status-danger: #c53f3f;
-  --status-danger-soft: #fdeeee;
+  --status-danger-soft: color-mix(in oklab, var(--status-danger) 13%, var(--status-surface));
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -17,8 +17,10 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   color: var(--status-text);
-  background: var(--status-bg);
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(900px 360px at 20% -10%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 66%),
+    var(--status-bg);
+  font-family: Sora, Manrope, 'Segoe UI', sans-serif;
 }
 
 .status-page *,
@@ -35,8 +37,8 @@
   width: 100%;
   min-height: 68px;
   padding: 12px max(24px, calc((100vw - 920px) / 2));
-  border-bottom: 1px solid rgba(24, 32, 28, 0.08);
-  background: rgba(246, 247, 245, 0.9);
+  border-bottom: 1px solid var(--status-border);
+  background: color-mix(in oklab, var(--status-bg) 88%, transparent);
   backdrop-filter: blur(16px);
 }
 
@@ -50,22 +52,16 @@
 
 .status-brand { gap: 10px; font-size: 16px; font-weight: 720; letter-spacing: -0.02em; }
 .status-brand-mark {
-  display: grid;
   width: 32px;
   height: 32px;
-  place-items: center;
-  border-radius: 10px;
-  color: #fff;
-  background: #e24325;
-  font-size: 15px;
-  font-weight: 800;
+  flex: 0 0 auto;
 }
 .status-back-link { min-height: 44px; gap: 7px; color: var(--status-muted); font-size: 14px; font-weight: 600; }
 .status-back-link:hover { color: var(--status-text); }
 .status-brand:focus-visible,
 .status-back-link:focus-visible,
 .status-meta button:focus-visible,
-.status-notice button:focus-visible { outline: 3px solid rgba(24, 134, 75, 0.25); outline-offset: 3px; }
+.status-notice button:focus-visible { outline: 3px solid color-mix(in oklab, var(--primary) 48%, transparent); outline-offset: 3px; }
 
 /* Keep the status content comfortably inset from both viewport edges. */
 .status-shell { width: min(920px, calc(100% - 112px)); margin: 0 auto; padding: 56px 0 42px; }
@@ -78,11 +74,11 @@
   border: 1px solid var(--status-border);
   border-radius: 20px;
   background: var(--status-surface);
-  box-shadow: 0 12px 36px rgba(31, 42, 35, 0.06);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
 }
-.status-tone--operational { border-color: #b9ddc7; background: linear-gradient(135deg, var(--status-success-soft), #fff 62%); }
-.status-tone--degraded { border-color: #ecd6a7; background: linear-gradient(135deg, var(--status-warning-soft), #fff 62%); }
-.status-tone--outage { border-color: #efc6c6; background: linear-gradient(135deg, var(--status-danger-soft), #fff 62%); }
+.status-tone--operational { border-color: color-mix(in oklab, var(--status-success) 42%, var(--status-border)); background: linear-gradient(135deg, var(--status-success-soft), var(--status-surface) 62%); }
+.status-tone--degraded { border-color: color-mix(in oklab, var(--status-warning) 42%, var(--status-border)); background: linear-gradient(135deg, var(--status-warning-soft), var(--status-surface) 62%); }
+.status-tone--outage { border-color: color-mix(in oklab, var(--status-danger) 42%, var(--status-border)); background: linear-gradient(135deg, var(--status-danger-soft), var(--status-surface) 62%); }
 .status-hero-icon {
   display: grid;
   width: 48px;
@@ -90,8 +86,8 @@
   place-items: center;
   border-radius: 50%;
   color: var(--status-success);
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(31, 42, 35, 0.08);
+  background: color-mix(in oklab, var(--status-surface) 88%, var(--text));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 .status-tone--degraded .status-hero-icon { color: var(--status-warning); }
 .status-tone--outage .status-hero-icon { color: var(--status-danger); }
@@ -128,7 +124,7 @@
   border: 1px solid var(--status-border);
   border-radius: 16px;
   background: var(--status-surface);
-  box-shadow: 0 4px 14px rgba(31, 42, 35, 0.03);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 .status-service-copy { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
 .status-service h3,
@@ -145,7 +141,7 @@
 .status-history-bar { min-width: 3px; flex: 1 1 4px; border-radius: 3px; background: var(--status-success); }
 .status-history-bar--degraded { background: var(--status-warning); }
 .status-history-bar--outage { background: var(--status-danger); }
-.status-history-bar--empty { background: #e9ece9; }
+.status-history-bar--empty { background: color-mix(in oklab, var(--status-border) 74%, var(--status-surface)); }
 .status-service-foot { display: flex; justify-content: space-between; margin-top: 8px; color: var(--status-muted); font-size: 11px; }
 
 .status-empty,
@@ -163,15 +159,25 @@
 .status-incident-list { display: grid; gap: 12px; }
 .status-incident-list article { display: block; border-left: 4px solid var(--status-danger); }
 .status-incident-list .status-state { margin-bottom: 10px; }
-.status-notice { justify-content: space-between; align-items: center; margin-top: 10px; border-color: #efc6c6; background: var(--status-danger-soft); }
+.status-incident-list .status-incident-update {
+  border-left-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 8%, var(--status-surface));
+}
+.status-incident-meta {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--status-muted);
+  font-size: 11px;
+}
+.status-notice { justify-content: space-between; align-items: center; margin-top: 10px; border-color: color-mix(in oklab, var(--status-danger) 42%, var(--status-border)); background: var(--status-danger-soft); }
 .status-notice h2 { margin: 0; font-size: 15px; }
-.status-notice p { margin: 4px 0 0; color: #7b4646; font-size: 13px; }
-.status-notice button { padding: 0 14px; background: #fff; }
+.status-notice p { margin: 4px 0 0; color: var(--status-muted); font-size: 13px; }
+.status-notice button { padding: 0 14px; background: var(--status-surface); }
 .status-muted { color: var(--status-muted); }
-.status-footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--status-border); color: var(--status-muted); font-size: 12px; }
+.status-footer { display: flex; justify-content: flex-end; gap: 20px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--status-border); color: var(--status-muted); font-size: 12px; }
 
 .status-service--loading { display: grid; gap: 12px; }
-.status-service--loading i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, #edf0ed 25%, #f7f8f7 50%, #edf0ed 75%); background-size: 200% 100%; animation: status-shimmer 1.2s infinite; }
+.status-service--loading i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--status-border) 25%, color-mix(in oklab, var(--status-surface) 82%, var(--text)) 50%, var(--status-border) 75%); background-size: 200% 100%; animation: status-shimmer 1.2s infinite; }
 .status-service--loading i:nth-child(1) { width: 32%; }
 .status-service--loading i:nth-child(2) { width: 52%; }
 .status-service--loading i:nth-child(3) { width: 100%; height: 28px; }
