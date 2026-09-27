@@ -64,6 +64,7 @@ export default defineConfig({
       '/api/auth': toBackend,
       '/api/profile/taste': toBackend,
       '/api/profile': toBackend,
+      '/api/status': toBackend,
       '/health': toBackend,
     },
   },

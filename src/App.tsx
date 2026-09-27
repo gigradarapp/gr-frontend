@@ -129,6 +129,9 @@ const EventListPage = lazy(() =>
 const NotFound404Page = lazy(() =>
   import('./views/not-found/NotFound404Page').then((m) => ({ default: m.NotFound404Page })),
 )
+const StatusPage = lazy(() =>
+  import('./views/status/StatusPage').then((m) => ({ default: m.StatusPage })),
+)
 
 type SheetPlanOverlay =
   | { kind: 'upcoming'; id: string }
@@ -1105,6 +1108,7 @@ export default function App() {
       </Route>
       <Route path="/event-list" element={<Navigate to="/admin/event-list" replace />} />
       <Route path="/not-found-404" element={lazyRoute(<NotFound404Page />)} />
+      <Route path="/status" element={lazyRoute(<StatusPage />)} />
       <Route path="/design-theme" element={<Navigate to="/admin/design-theme/orange" replace />} />
       <Route path="/design-theme/orange" element={<Navigate to="/admin/design-theme/orange" replace />} />
       <Route path="/design-theme/purple" element={<Navigate to="/admin/design-theme/purple" replace />} />
