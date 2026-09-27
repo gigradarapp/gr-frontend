@@ -1,7 +1,9 @@
 import type { ComponentType, ReactNode } from 'react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
+  Activity,
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
@@ -160,6 +162,7 @@ function DeleteAccountModal({
 export function SettingsScreen() {
   const [deleteState, setDeleteState] = useState<DeleteModalState>('idle')
   const [deleteError, setDeleteError] = useState('')
+  const navigate = useNavigate()
 
   const {
     closeSettings,
@@ -256,6 +259,14 @@ export function SettingsScreen() {
         <SettingsGroup title="Support">
           <SettingsRow icon={Shield} label="Privacy & safety" onClick={openPrivacySafety} />
           <SettingsRow icon={MessageSquare} label="Send feedback" onClick={openFeedback} />
+          <SettingsRow
+            icon={Activity}
+            label="System status"
+            onClick={() => {
+              closeSettings()
+              navigate('/status', { state: { returnToSettings: true } })
+            }}
+          />
         </SettingsGroup>
 
         <SettingsGroup title="About">

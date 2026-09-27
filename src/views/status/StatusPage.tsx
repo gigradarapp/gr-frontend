@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowLeft, RefreshCw } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { apiBase } from '../../lib/api-base'
+import { useAppState } from '../../store/appStore'
 import './status.css'
 
 type ServiceState = 'operational' | 'degraded' | 'outage'
@@ -69,6 +70,23 @@ export function StatusPage() {
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [, setClock] = useState(0)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const openSettings = useAppState((state) => state.openSettings)
+  const returnToSettings =
+    typeof location.state === 'object' &&
+    location.state !== null &&
+    'returnToSettings' in location.state &&
+    location.state.returnToSettings === true
+
+  const handleBack = () => {
+    if (returnToSettings) {
+      openSettings()
+      navigate('/profile')
+      return
+    }
+    navigate('/discover')
+  }
 
   const loadStatus = useCallback(async (background = false) => {
     if (!background) setRefreshing(true)
@@ -107,10 +125,10 @@ export function StatusPage() {
   return (
     <main className="status-page">
       <header className="status-header">
-        <Link className="status-back-link" to="/discover">
+        <button type="button" className="status-back-link" onClick={handleBack}>
           <ArrowLeft size={16} aria-hidden />
-          Back to app
-        </Link>
+          {returnToSettings ? 'Back to settings' : 'Back to app'}
+        </button>
         <Link className="status-brand" to="/discover" aria-label="Buzo home">
           <img
             className="status-brand-mark"
