@@ -32,6 +32,25 @@ function isInstalled(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches || navigatorWithStandalone.standalone === true
 }
 
+function syncStandaloneViewport() {
+  if (typeof window === 'undefined') return
+
+  const root = document.documentElement
+  if (!isInstalled()) {
+    root.style.removeProperty('--pwa-standalone-height')
+    return
+  }
+
+  const devicePixelRatio = window.devicePixelRatio || 1
+  const screenHeight = window.matchMedia('(orientation: landscape)').matches
+    ? window.screen.width / devicePixelRatio
+    : window.screen.height / devicePixelRatio
+  const visualHeight = window.visualViewport?.height ?? 0
+  const height = Math.ceil(Math.max(window.innerHeight, visualHeight, screenHeight))
+
+  root.style.setProperty('--pwa-standalone-height', `${height}px`)
+}
+
 export function getPwaInstallState(): PwaInstallState {
   return {
     platform: platform(),
@@ -45,6 +64,7 @@ function notify() {
   // even though navigator.standalone is true. Keep an explicit class in sync so
   // the shell can reliably use the installed app's full viewport.
   document.documentElement.classList.toggle('pwa-standalone', isInstalled())
+  syncStandaloneViewport()
   const state = getPwaInstallState()
   listeners.forEach((listener) => listener(state))
 }
@@ -64,6 +84,9 @@ export function initializePwaInstall() {
     notify()
   })
   window.matchMedia('(display-mode: standalone)').addEventListener('change', notify)
+  window.addEventListener('resize', notify)
+  window.addEventListener('orientationchange', notify)
+  window.visualViewport?.addEventListener('resize', notify)
 }
 
 export function subscribeToPwaInstall(listener: (state: PwaInstallState) => void): () => void {
@@ -85,6 +108,9 @@ export async function requestPwaInstall(): Promise<boolean> {
 export function registerPwaServiceWorker() {
   if (!('serviceWorker' in navigator)) return
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch(() => undefined)
+    void navigator.serviceWorker
+      .register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => registration.update())
+      .catch(() => undefined)
   })
 }

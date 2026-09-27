@@ -1945,12 +1945,12 @@ html.pwa-standalone,
 html.pwa-standalone body,
 html.pwa-standalone #root,
 html.pwa-standalone .app {
-  height: 100dvh;
-  min-height: 100dvh;
+  height: var(--pwa-standalone-height, 100dvh);
+  min-height: var(--pwa-standalone-height, 100dvh);
 }
 
 html.pwa-standalone .app {
-  max-height: 100dvh;
+  max-height: var(--pwa-standalone-height, 100dvh);
   background: var(--bg);
 }
 
