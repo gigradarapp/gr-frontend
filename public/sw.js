@@ -1,4 +1,4 @@
-const CACHE_NAME = 'buzo-shell-v4'
+const CACHE_NAME = 'buzo-shell-v5'
 const APP_SHELL = ['/discover', '/favicon/site.webmanifest']
 
 self.addEventListener('install', (event) => {
