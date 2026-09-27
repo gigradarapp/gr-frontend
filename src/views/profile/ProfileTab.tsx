@@ -272,19 +272,6 @@ export function ProfileTab() {
         </button>
       </div>
 
-      {showInstallBanner ? (
-        <Link className="profile-install-banner" to="/install">
-          <span className="profile-install-banner-icon" aria-hidden>
-            <Smartphone size={19} />
-          </span>
-          <span className="profile-install-banner-copy">
-            <strong>Install Buzo</strong>
-            <span>Add Buzo to your home screen</span>
-          </span>
-          <ChevronRight size={18} aria-hidden />
-        </Link>
-      ) : null}
-
       {/* Hero */}
       <div className={`profile-hero-new${subscriptionTier === 'pro' ? ' profile-hero-new--pro' : ''}`}>
         {subscriptionTier === 'pro' ? (
@@ -374,6 +361,13 @@ export function ProfileTab() {
           </span>
         ) : null}
         <span className="profile-handle-pill">@{userProfile.username}</span>
+        {showInstallBanner ? (
+          <Link className="profile-install-link" to="/install">
+            <Smartphone size={15} aria-hidden />
+            Install app
+            <ChevronRight size={15} aria-hidden />
+          </Link>
+        ) : null}
       </div>
 
       {/* Taste & recommendations */}
