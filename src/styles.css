@@ -1940,6 +1940,20 @@ body {
   }
 }
 
+/* JavaScript fallback for iOS web apps that omit the display-mode media query. */
+html.pwa-standalone,
+html.pwa-standalone body,
+html.pwa-standalone #root,
+html.pwa-standalone .app {
+  height: 100dvh;
+  min-height: 100dvh;
+}
+
+html.pwa-standalone .app {
+  max-height: 100dvh;
+  background: var(--bg);
+}
+
 .tab-suspense-fallback {
   flex: 1;
   min-height: 0;

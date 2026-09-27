@@ -41,6 +41,10 @@ export function getPwaInstallState(): PwaInstallState {
 }
 
 function notify() {
+  // iOS does not always expose `display-mode: standalone` to CSS media queries,
+  // even though navigator.standalone is true. Keep an explicit class in sync so
+  // the shell can reliably use the installed app's full viewport.
+  document.documentElement.classList.toggle('pwa-standalone', isInstalled())
   const state = getPwaInstallState()
   listeners.forEach((listener) => listener(state))
 }
@@ -48,6 +52,7 @@ function notify() {
 export function initializePwaInstall() {
   if (initialized || typeof window === 'undefined') return
   initialized = true
+  notify()
 
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault()
