@@ -41,10 +41,9 @@ function syncStandaloneViewport() {
     return
   }
 
-  const devicePixelRatio = window.devicePixelRatio || 1
   const screenHeight = window.matchMedia('(orientation: landscape)').matches
-    ? window.screen.width / devicePixelRatio
-    : window.screen.height / devicePixelRatio
+    ? window.screen.width
+    : window.screen.height
   const visualHeight = window.visualViewport?.height ?? 0
   const height = Math.ceil(Math.max(window.innerHeight, visualHeight, screenHeight))
 
