@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -15,6 +15,7 @@ import {
   Moon,
   Shield,
   Sparkles,
+  Smartphone,
   Sun,
   Trash2,
   User,
@@ -23,6 +24,10 @@ import { APP_RELEASE_LABEL } from '../../../config/profileSettings'
 import { getLocationCityById } from '../../../data/locationRegions'
 import { postDeleteAccount } from '../../../lib/auth-api'
 import { clearLastUsedAccount } from '../../../lib/last-used-account'
+import {
+  getPwaInstallState,
+  subscribeToPwaInstall,
+} from '../../../lib/pwa-install'
 import { useAppState } from '../../../store/appStore'
 
 type RowIcon = ComponentType<{ size?: number; className?: string }>
@@ -162,6 +167,7 @@ function DeleteAccountModal({
 export function SettingsScreen() {
   const [deleteState, setDeleteState] = useState<DeleteModalState>('idle')
   const [deleteError, setDeleteError] = useState('')
+  const [pwaInstallState, setPwaInstallState] = useState(getPwaInstallState)
   const navigate = useNavigate()
 
   const {
@@ -182,6 +188,9 @@ export function SettingsScreen() {
   } = useAppState()
   const hasDefaultCity = !isAuthenticated || profileDefaultCityId != null
   const cityName = hasDefaultCity ? (getLocationCityById(feedLocationCityId)?.name ?? 'Singapore') : 'Not set'
+  const showInstallApp = !pwaInstallState.isInstalled && pwaInstallState.platform !== 'other'
+
+  useEffect(() => subscribeToPwaInstall(setPwaInstallState), [])
 
   const handleDeleteAccount = () => {
     setDeleteError('')
@@ -236,6 +245,17 @@ export function SettingsScreen() {
       </header>
 
       <div className="settings-scroll">
+        {showInstallApp ? (
+          <SettingsGroup title="Buzo app">
+            <SettingsRow
+              icon={Smartphone}
+              label="Install Buzo"
+              value="Add to home screen"
+              onClick={() => navigate('/install')}
+            />
+          </SettingsGroup>
+        ) : null}
+
         <SettingsGroup title="Buzo Pro">
           <SettingsRow icon={CreditCard} label="Manage subscription" onClick={openSubscription} />
         </SettingsGroup>

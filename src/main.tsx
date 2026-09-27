@@ -5,7 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import { AuthSync } from './lib/AuthSync'
 import { TrpcProvider } from './lib/trpc'
+import { initializePwaInstall, registerPwaServiceWorker } from './lib/pwa-install'
 import './styles.css'
+
+initializePwaInstall()
+registerPwaServiceWorker()
 
 const queryClient = new QueryClient()
 

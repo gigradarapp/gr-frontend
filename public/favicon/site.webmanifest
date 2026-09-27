@@ -1,7 +1,8 @@
 {
   "name": "Buzo",
   "short_name": "Buzo",
-  "start_url": "/",
+  "id": "/discover",
+  "start_url": "/discover",
   "scope": "/",
   "icons": [
     {
@@ -23,7 +24,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#eceff4",
-  "background_color": "#eceff4",
+  "theme_color": "#060607",
+  "background_color": "#060607",
   "display": "standalone"
 }

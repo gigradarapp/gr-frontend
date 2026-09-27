@@ -90,6 +90,9 @@ const EmailLoginScreen = lazy(() =>
 const SubscriptionScreen = lazy(() =>
   import('./views/profile/settings/SubscriptionScreen').then((m) => ({ default: m.SubscriptionScreen })),
 )
+const InstallBuzoPage = lazy(() =>
+  import('./views/install/InstallBuzoPage').then((m) => ({ default: m.InstallBuzoPage })),
+)
 const OnboardingScreen = lazy(() =>
   import('./views/onboarding/OnboardingScreen').then((m) => ({ default: m.OnboardingScreen })),
 )
@@ -1109,6 +1112,7 @@ export default function App() {
       <Route path="/event-list" element={<Navigate to="/admin/event-list" replace />} />
       <Route path="/not-found-404" element={lazyRoute(<NotFound404Page />)} />
       <Route path="/status" element={lazyRoute(<StatusPage />)} />
+      <Route path="/install" element={lazyRoute(<InstallBuzoPage />)} />
       <Route path="/design-theme" element={<Navigate to="/admin/design-theme/orange" replace />} />
       <Route path="/design-theme/orange" element={<Navigate to="/admin/design-theme/orange" replace />} />
       <Route path="/design-theme/purple" element={<Navigate to="/admin/design-theme/purple" replace />} />

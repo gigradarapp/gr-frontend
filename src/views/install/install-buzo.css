@@ -1,0 +1,144 @@
+.install-buzo-page {
+  min-height: 100dvh;
+  color: var(--text);
+  background:
+    radial-gradient(700px 360px at 50% -10%, color-mix(in oklab, var(--primary) 26%, transparent), transparent 68%),
+    var(--bg);
+}
+
+.install-buzo-header {
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.install-buzo-header img { width: 34px; height: 34px; }
+
+.install-buzo-back,
+.install-buzo-primary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.install-buzo-back {
+  padding: 0 2px;
+  color: var(--muted);
+  background: transparent;
+}
+
+.install-buzo-back:hover { color: var(--text); }
+.install-buzo-back:focus-visible,
+.install-buzo-primary:focus-visible { outline: 3px solid color-mix(in oklab, var(--primary) 58%, transparent); outline-offset: 3px; }
+
+.install-buzo-content {
+  width: min(100% - 48px, 430px);
+  margin: 0 auto;
+  padding: 88px 0 48px;
+  text-align: center;
+}
+
+.install-buzo-icon {
+  display: inline-grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  margin-bottom: 24px;
+  border: 1px solid color-mix(in oklab, var(--primary) 45%, var(--stroke));
+  border-radius: 24px;
+  color: var(--primary-soft);
+  background: color-mix(in oklab, var(--primary) 13%, var(--card));
+  box-shadow: 0 16px 38px color-mix(in oklab, var(--primary) 24%, transparent);
+}
+
+.install-buzo-eyebrow {
+  margin: 0 0 10px;
+  color: var(--primary-soft);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.install-buzo-content h1 {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 2.7rem);
+  letter-spacing: -0.045em;
+}
+
+.install-buzo-lead {
+  margin: 14px auto 28px;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.install-buzo-primary {
+  width: 100%;
+  color: #fff;
+  background: linear-gradient(180deg, var(--primary-soft), var(--primary));
+  box-shadow: 0 12px 30px color-mix(in oklab, var(--primary) 38%, transparent);
+}
+
+.install-buzo-steps,
+.install-buzo-note {
+  margin: 28px 0 0;
+  padding: 20px;
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  text-align: left;
+}
+
+.install-buzo-steps {
+  display: grid;
+  gap: 18px;
+  list-style: none;
+}
+
+.install-buzo-steps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.install-buzo-steps strong,
+.install-buzo-note strong { color: var(--text); }
+
+.install-buzo-step-number {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--primary-soft);
+  background: color-mix(in oklab, var(--primary) 16%, var(--card));
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.install-buzo-note h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.install-buzo-note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

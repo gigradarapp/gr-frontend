@@ -1,6 +1,6 @@
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Lock, LogOut, Settings, ShieldCheck, Sparkles } from 'lucide-react'
+import { Check, ChevronRight, Lock, LogOut, Settings, ShieldCheck, Smartphone, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getBuzoAgent, type BuzoAgentId } from '../../config/buzoAgents'
 import { BUZO_PRO_UPSELL_CTA } from '../../config/pricing'
@@ -16,6 +16,7 @@ import {
   warmAvatarCacheIfEmpty,
 } from '../../lib/avatar-image-cache.ts'
 import { readSelectedBuzoAgentId } from '../../lib/buzo-agent-preference'
+import { getPwaInstallState, subscribeToPwaInstall } from '../../lib/pwa-install'
 import { postProfileTastePreferences, postSignOut } from '../../lib/auth-api'
 import { navigateShellToTab } from '../../lib/tabRoutes'
 import { useAdminAccess } from '../../lib/useAdminAccess'
@@ -80,6 +81,10 @@ export function ProfileTab() {
     savedTasteLabels,
     setSavedTasteLabels,
   } = useAppState()
+  const [pwaInstallState, setPwaInstallState] = useState(getPwaInstallState)
+  const showInstallBanner = !pwaInstallState.isInstalled && pwaInstallState.platform !== 'other'
+
+  useEffect(() => subscribeToPwaInstall(setPwaInstallState), [])
 
   // ── Inline taste editing ────────────────────────────────────────────────
   const [tasteEditing, setTasteEditing] = useState(false)
@@ -236,7 +241,7 @@ export function ProfileTab() {
 
   return (
     <motion.div
-      className="screen-content profile-screen"
+      className={`screen-content profile-screen${showInstallBanner ? ' profile-screen--with-install' : ''}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
@@ -266,6 +271,19 @@ export function ProfileTab() {
           <LogOut size={18} aria-hidden />
         </button>
       </div>
+
+      {showInstallBanner ? (
+        <Link className="profile-install-banner" to="/install">
+          <span className="profile-install-banner-icon" aria-hidden>
+            <Smartphone size={19} />
+          </span>
+          <span className="profile-install-banner-copy">
+            <strong>Install Buzo</strong>
+            <span>Add Buzo to your home screen</span>
+          </span>
+          <ChevronRight size={18} aria-hidden />
+        </Link>
+      ) : null}
 
       {/* Hero */}
       <div className={`profile-hero-new${subscriptionTier === 'pro' ? ' profile-hero-new--pro' : ''}`}>
