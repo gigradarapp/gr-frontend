@@ -45,7 +45,7 @@ function syncStandaloneViewport() {
     ? window.screen.width
     : window.screen.height
   const visualHeight = window.visualViewport?.height ?? 0
-  const height = Math.ceil(Math.max(window.innerHeight, visualHeight, screenHeight))
+  const height = Math.ceil(Math.max(window.innerHeight, window.outerHeight, visualHeight, screenHeight))
 
   root.style.setProperty('--pwa-standalone-height', `${height}px`)
 }
