@@ -15428,6 +15428,52 @@ button.taste-tag:focus-visible {
   padding: 0 8px 8px;
 }
 
+.welcome-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 8px 4px;
+  border-top: 1px solid var(--stroke);
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.welcome-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.welcome-footer-links a:last-child::before {
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #16894b;
+  content: '';
+}
+
+.welcome-footer-links a:hover {
+  color: var(--primary-soft);
+}
+
+.welcome-footer-links a:focus-visible {
+  outline: 2px solid var(--primary-soft);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .welcome-signin-sheet {
   position: fixed;
   inset: 0;

@@ -327,6 +327,14 @@ export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps
           <p className="welcome-footnote">
             Getting started is free. Sign in to start planning your evenings.
           </p>
+
+          <footer className="welcome-footer">
+            <span>© 2026 Buzo</span>
+            <nav className="welcome-footer-links" aria-label="Footer navigation">
+              <a href="https://getbuzo.com/">About Buzo</a>
+              <a href="/status">System status</a>
+            </nav>
+          </footer>
         </div>
       </motion.div>
     </div>
