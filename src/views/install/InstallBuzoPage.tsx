@@ -6,6 +6,7 @@ import {
   requestPwaInstall,
   subscribeToPwaInstall,
 } from '../../lib/pwa-install'
+import { BuzoWordmark } from '../../components/BuzoWordmark'
 import './install-buzo.css'
 
 export function InstallBuzoPage() {
@@ -32,7 +33,7 @@ export function InstallBuzoPage() {
           <ArrowLeft size={19} aria-hidden />
           Back to profile
         </button>
-        <img src="/assets/logo/b-logo.svg" alt="Buzo" width={34} height={34} />
+        <BuzoWordmark className="install-buzo-wordmark" alt="Buzo" />
       </header>
 
       <section className="install-buzo-content" aria-labelledby="install-buzo-title">

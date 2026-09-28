@@ -231,12 +231,36 @@ body {
   font-weight: 700;
 }
 
-.brand-logo {
-  margin-left: 0.3em;
-  height: 34px;
-  width: auto;
+.buzo-wordmark {
+  position: relative;
+  display: inline-grid;
+  align-items: center;
+}
+
+.buzo-wordmark__light,
+.buzo-wordmark__dark {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   display: block;
+}
+
+.buzo-wordmark__dark {
+  display: none;
+}
+
+.theme-dark .buzo-wordmark__light {
+  display: none;
+}
+
+.theme-dark .buzo-wordmark__dark {
+  display: block;
+}
+
+.brand-logo {
+  width: 74px;
+  height: 46px;
 }
 
 .brand-wordmark {
@@ -2002,7 +2026,8 @@ html.pwa-standalone .phone-shell {
   }
 
   .brand-logo {
-    height: 40px;
+    width: 80px;
+    height: 49px;
   }
 
   .topbar {
@@ -2050,7 +2075,8 @@ html.pwa-standalone .phone-shell {
   }
 
   .brand-logo {
-    height: 28px;
+    width: 58px;
+    height: 36px;
   }
 
   .screen-content {

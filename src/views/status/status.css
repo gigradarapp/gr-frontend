@@ -56,8 +56,8 @@
 
 .status-brand { gap: 10px; font-size: 16px; font-weight: 720; letter-spacing: -0.02em; }
 .status-brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 62px;
+  height: 38px;
   flex: 0 0 auto;
 }
 .status-back-link { min-height: 44px; gap: 7px; border: 0; background: transparent; font: inherit; color: var(--status-muted); font-size: 14px; font-weight: 600; cursor: pointer; }

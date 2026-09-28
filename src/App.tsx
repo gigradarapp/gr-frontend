@@ -25,6 +25,7 @@ import type { EventItem, PlanPageEvent, Tab } from './types'
 import { tabNavItems } from './config/tabNavigation'
 import { GoingCelebrationHost } from './components/GoingCelebrationBurst'
 import { UploadToast } from './components/UploadToast'
+import { BuzoWordmark } from './components/BuzoWordmark'
 import { fetchDiscoverEventById, useDiscoverEvents } from './lib/useDiscoverEvents'
 import { useEventPlans } from './lib/useEventPlans'
 import { readInitialDiscoverFilters, type DiscoverEventFilters } from './lib/discover-filters'
@@ -262,6 +263,13 @@ function MainApp() {
     [location.pathname],
   )
   const shouldShowWelcome = !welcomeDismissed && !discoverRouteEventId
+
+  useEffect(() => {
+    document.documentElement.style.colorScheme = theme
+    document
+      .querySelector('meta[name="theme-color"][data-app-theme-color]')
+      ?.setAttribute('content', theme === 'dark' ? '#060607' : '#eceff4')
+  }, [theme])
 
   useLayoutEffect(() => {
     setShellNavigate(navigate)
@@ -813,13 +821,9 @@ function MainApp() {
               >
                 <header className="topbar">
                   <div className="brand-wrap">
-                    <img
+                    <BuzoWordmark
                       className="brand-logo"
-                      src="/assets/logo/b-logo.svg"
                       alt="Buzo"
-                      width={34}
-                      height={34}
-                      decoding="async"
                     />
                   </div>
                   <div className="actions">

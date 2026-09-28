@@ -15,7 +15,7 @@
   border-bottom: 1px solid var(--stroke);
 }
 
-.install-buzo-header img { width: 34px; height: 34px; }
+.install-buzo-wordmark { width: 68px; height: 42px; }
 
 .install-buzo-back,
 .install-buzo-primary {

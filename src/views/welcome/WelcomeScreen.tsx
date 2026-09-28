@@ -24,6 +24,7 @@ import {
 import type { Tab } from '../../types'
 import { useAppState } from '../../store/appStore'
 import { LaylaAttachDropdown } from '../../components/LaylaAttachDropdown'
+import { BuzoWordmark } from '../../components/BuzoWordmark'
 
 const SAMPLE_PLACEHOLDER =
   'Techno in Marina Bay tonight under $50, credible lineups only'
@@ -116,13 +117,9 @@ export function WelcomeScreen({ onEnterApp, onStashPrefill }: WelcomeScreenProps
     <div className="welcome-root">
       <header className="welcome-topbar">
         <div className="brand-wrap">
-          <img
+          <BuzoWordmark
             className="brand-logo"
-            src="/assets/logo/b-logo.svg"
             alt="Buzo"
-            width={34}
-            height={34}
-            decoding="async"
           />
         </div>
         <div className="welcome-topbar-actions">

@@ -3,6 +3,7 @@ import { Activity, ArrowLeft, RefreshCw } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { apiBase } from '../../lib/api-base'
 import { useAppState } from '../../store/appStore'
+import { BuzoWordmark } from '../../components/BuzoWordmark'
 import './status.css'
 
 type ServiceState = 'operational' | 'degraded' | 'outage'
@@ -130,12 +131,9 @@ export function StatusPage() {
           {returnToSettings ? 'Back to settings' : 'Back to app'}
         </button>
         <Link className="status-brand" to="/discover" aria-label="Buzo home">
-          <img
+          <BuzoWordmark
             className="status-brand-mark"
-            src="/assets/logo/b-logo.svg"
             alt=""
-            width={32}
-            height={32}
           />
         </Link>
       </header>
